@@ -1506,9 +1506,12 @@ def _build_html_report(report_data):
         ("AS-REP", len(asrep_hashes), "bad" if asrep_hashes else "neutral", "fingerprint", "ad"),
         ("Kerberoast", len(kerberoast_hashes), "bad" if kerberoast_hashes else "neutral", "fire", "ad"),
     ]
+    # Ordenar el resumen por criticidad: critico/alto -> medio -> info -> ok
+    tone_rank = {"bad": 0, "warn": 1, "info": 2, "good": 3, "neutral": 4}
+    kpis_shown = sorted((k for k in kpis if k[1]), key=lambda k: tone_rank.get(k[2], 9))
     kpi_html = "<div class='kpis'>" + "".join(
         f"<a class='metric metric-{tone}' href='#{target}'><span><i class='ph ph-{icon}'></i>{esc(label)}</span><strong>{esc(value)}</strong></a>"
-        for label, value, tone, icon, target in kpis if value
+        for label, value, tone, icon, target in kpis_shown
     ) + "</div>"
 
     tech_rows = []
@@ -1958,10 +1961,12 @@ code,pre{ font-family:"JetBrains Mono",Consolas,Menlo,Monaco,monospace; }
 .brand-txt{ overflow:hidden; }
 .brand-txt strong{ display:block; font-size:1rem; color:var(--ink); font-weight:700; white-space:nowrap; }
 .brand-txt span{ display:block; color:var(--muted); font-size:.7rem; font-family:"JetBrains Mono",monospace; letter-spacing:.4px; text-transform:uppercase; white-space:nowrap; }
-.collapse-btn{ margin-left:auto; border:1px solid var(--line); background:var(--surface); color:var(--muted);
-  width:28px; height:28px; border-radius:8px; cursor:pointer; display:grid; place-items:center; flex:0 0 auto; transition:.15s; }
+.collapse-btn{ position:fixed; top:20px; left:calc(var(--sidew) - 14px); z-index:55;
+  width:28px; height:28px; border-radius:50%; border:1px solid var(--line); background:var(--surface); color:var(--muted);
+  cursor:pointer; display:grid; place-items:center; box-shadow:0 2px 10px var(--shadow);
+  transition:left .22s ease, color .15s, border-color .15s, background .15s; }
 .collapse-btn:hover{ border-color:var(--accent); color:var(--accent); }
-.collapse-btn svg{ transition:transform .22s ease; }
+.collapse-btn #collapseIcon{ transition:transform .22s ease; }
 .side-nav{ display:flex; flex-direction:column; gap:2px; }
 .side-nav a{ display:flex; align-items:center; gap:10px; color:var(--muted); padding:9px 11px; border-radius:10px;
   font-size:.9rem; border-left:2px solid transparent; transition:.15s; white-space:nowrap; }
@@ -1980,7 +1985,7 @@ svg.nicon{ display:inline-block; vertical-align:-2px; } svg.shic{ display:inline
 .theme-btn:hover{ border-color:var(--accent); color:var(--ink); }
 .theme-btn #themeIcon{ flex:0 0 auto; width:18px; text-align:center; }
 .collapsed .brand{ justify-content:center; gap:0; }
-.collapsed .brand-txt,.collapsed .ntext,.collapsed .ncount,.collapsed .nidx,.collapsed #themeLabel,.collapsed .collapse-btn{ display:none; }
+.collapsed .brand-txt,.collapsed .ntext,.collapsed .ncount,.collapsed .nidx,.collapsed #themeLabel{ display:none; }
 .collapsed .side-nav a{ justify-content:center; padding:11px 0; }
 .collapsed .theme-btn{ justify-content:center; }
 .main{ padding:22px clamp(14px,3vw,36px) 40px; max-width:1580px; width:100%; }
@@ -2124,18 +2129,18 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
 <div class="layout" id="layout">
   <aside class="side" id="sidebar">
     <div class="brand">
-      <div class="logo"><i class="ph-fill ph-shield-checkered"></i></div>
+      <div class="logo"><i class="ph-fill ph-magnifying-glass"></i></div>
       <div class="brand-txt">
         <strong>WSTG&nbsp;Scanner</strong>
         <span>Security Report</span>
       </div>
-      <button class="collapse-btn" id="collapseBtn" type="button" title="Colapsar menu" aria-label="Colapsar menu">
-        <i id="collapseIcon" class="ph ph-caret-left"></i>
-      </button>
     </div>
     __NAV__
     <button id="themeBtn" class="theme-btn" type="button"><i id="themeIcon" class="ph ph-moon"></i> <span id="themeLabel">Tema</span></button>
   </aside>
+  <button class="collapse-btn" id="collapseBtn" type="button" title="Colapsar / expandir menu" aria-label="Colapsar o expandir menu">
+    <i id="collapseIcon" class="ph ph-caret-left"></i>
+  </button>
   <main class="main">
     <div class="topbar">
       <label class="search"><i class="ph ph-magnifying-glass muted"></i><input id="q" type="search" placeholder="Filtrar tablas (host, puerto, CVE, hash...)"></label>
