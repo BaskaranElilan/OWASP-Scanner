@@ -1856,7 +1856,6 @@ def _build_html_report(report_data):
         return (
             f"<a href='#{sid}' data-target='{sid}' title='{esc(title)}'>"
             f"{sec_icon_html(sid, 'nicon')}"
-            f"<span class='nidx'>{idx:02d}</span>"
             f"<span class='ntext'>{esc(title)}</span>{cnt}</a>"
         )
 
@@ -1972,11 +1971,9 @@ code,pre{ font-family:"JetBrains Mono",Consolas,Menlo,Monaco,monospace; }
   font-size:.9rem; border-left:2px solid transparent; transition:.15s; white-space:nowrap; }
 .side-nav a:hover{ background:var(--surface-2); color:var(--text); }
 .side-nav a.active{ background:color-mix(in srgb,var(--accent) 12%,var(--surface)); color:var(--ink); border-left-color:var(--accent); }
-.side-nav a.active .nidx{ opacity:1; }
 .nicon{ font-size:1.15rem; color:var(--muted); flex:0 0 auto; width:20px; text-align:center; transition:color .15s; }
 svg.nicon{ display:inline-block; vertical-align:-2px; } svg.shic{ display:inline-block; vertical-align:-3px; }
 .side-nav a:hover .nicon,.side-nav a.active .nicon{ color:var(--accent); }
-.nidx{ font-family:"JetBrains Mono",monospace; font-size:.66rem; color:var(--muted); opacity:.6; flex:0 0 auto; width:16px; text-align:center; }
 .ntext{ flex:1; overflow:hidden; text-overflow:ellipsis; }
 .ncount{ font-family:"JetBrains Mono",monospace; font-size:.72rem; background:var(--surface); border:1px solid var(--line);
   border-radius:999px; padding:1px 7px; color:var(--muted); }
@@ -1985,7 +1982,7 @@ svg.nicon{ display:inline-block; vertical-align:-2px; } svg.shic{ display:inline
 .theme-btn:hover{ border-color:var(--accent); color:var(--ink); }
 .theme-btn #themeIcon{ flex:0 0 auto; width:18px; text-align:center; }
 .collapsed .brand{ justify-content:center; gap:0; }
-.collapsed .brand-txt,.collapsed .ntext,.collapsed .ncount,.collapsed .nidx,.collapsed #themeLabel{ display:none; }
+.collapsed .brand-txt,.collapsed .ntext,.collapsed .ncount,.collapsed #themeLabel{ display:none; }
 .collapsed .side-nav a{ justify-content:center; padding:11px 0; }
 .collapsed .theme-btn{ justify-content:center; }
 .main{ padding:22px clamp(14px,3vw,36px) 40px; max-width:1580px; width:100%; }
