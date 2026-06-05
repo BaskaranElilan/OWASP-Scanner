@@ -1,5 +1,16 @@
 # Registro de cambios
 
+## v1.4.1 — 2026-06-06
+
+### Pruebas avanzadas (SSRF / SSTI / XXE) que atacan los endpoints reales de la app
+
+Las pruebas avanzadas solo sondeaban la URL raiz, por lo que no detectaban endpoints vulnerables internos (p.ej. `/ssrf?url=`, `/ssti?template=`, `/xxe/api`). Ahora aprovechan todo lo descubierto por el spider y los formularios:
+
+- **Nuevo recolector `_collect_injection_points`:** reune vectores `(url, parametro, metodo)` y la lista de endpoints a partir del spider (URLs con query y formularios), del modulo de inyeccion, de los directorios encontrados y de los endpoints de API. SSRF/SSTI/XXE lo usan para atacar los endpoints reales, no solo el objetivo raiz.
+- **SSRF efectivo:** prueba los parametros y endpoints descubiertos (ademas de nombres SSRF habituales por endpoint) con **oraculos deterministas** (`file:///etc/passwd`, metadatos cloud). Confirma solo cuando el contenido interno aparece en la respuesta. Filtra marcadores contenidos en el propio payload para no marcar como SSRF un simple eco/reflexion del input.
+- **SSTI corregido y mas fiable:** se arregla el bug que leia `spider["urls_found"]` (clave inexistente; el spider guarda `sample_urls`), por lo que en la practica no probaba nada. Ahora prueba parametros de URL **y de formularios** (GET/POST) y hace un fuzz ligero de nombres de parametro. Operandos distintivos (`{{1337*1337}}` → `1787569`) para confirmar evaluacion real y no reflexiones casuales; marcadores de error reducidos a firmas especificas de motor (no palabras genericas como "jinja2"/"template").
+- **XXE que encuentra el endpoint XML real:** nuevo descubrimiento de candidatos (`_xml_endpoint_candidates`) que deriva sufijos `/api`, `/xml`, etc. y normaliza prefijos `/lab/<x>` → `/<x>` y `/<x>/api` (donde suele vivir el parser). Payloads multi-campo (`_build_xxe_payloads`) que inyectan la entidad en varios nombres de campo (incluidos los descubiertos en formularios) para forzar la reflexion del contenido leido.
+
 ## v1.4.0 — 2026-06-05
 
 ### Soporte multi-objetivo
