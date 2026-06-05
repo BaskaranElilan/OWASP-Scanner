@@ -1,5 +1,16 @@
 # Registro de cambios
 
+## v1.4.2 — 2026-06-06
+
+### Fuzzing de directorios autenticado: resuelve las redirecciones 3xx
+
+En fuzzing autenticado muchos endpoints aparecian como `302` cuando en realidad, siguiendo la redireccion con la sesion, son accesibles (`200`). Ahora se resuelven:
+
+- **Resolucion de redirecciones con la sesion (`_resolve_authenticated_status`):** para cada hit `3xx`, si el objetivo autenticado resuelve a contenido real se reporta el **estado final** (p.ej. `302→200`) con su tamano real. Aplica a ffuf y al metodo interno.
+- **Deteccion de rebote a login (`_is_login_location`):** si la redireccion lleva a una pagina de auth (parametro `next=`/`return=`/`redirect=`… o ruta tipo `/login`, `/account/login`, `/signin`) o el destino sigue mostrando un formulario de login, el endpoint esta **protegido** (la sesion no tiene acceso): se conserva el `3xx` y se anota `redirige a login (protegido)`, en vez de inventar un `200` enganoso de la propia pagina de login.
+- **Nueva columna `NOTA`** en la tabla de resultados y anotacion en `FINDINGS`/reportes para distinguir de un vistazo lo accesible de lo protegido.
+- El metodo interno ahora sondea con `allow_redirects=False` para capturar el estado real antes de resolver (antes seguia redirecciones de forma silenciosa y reportaba la pagina de login como `200`).
+
 ## v1.4.1 — 2026-06-06
 
 ### Pruebas avanzadas (SSRF / SSTI / XXE) que atacan los endpoints reales de la app

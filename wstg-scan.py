@@ -132,7 +132,7 @@ BANNER = r"""
 """
 DESCRIPTION = "OWASP Web Security Testing Scanner"
 DEVELOPER = "developed by @afsh4ck"
-VERSION = "1.4.1"
+VERSION = "1.4.2"
 
 # ========== CONFIGURACIÓN ==========
 DEFAULT_TIMEOUT = 10
@@ -4012,6 +4012,45 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
         return results
 
 
+# Una redireccion se considera "rebote a login" si el destino lleva un parametro
+# de retorno tipico (next/return/redirect...) o la ruta es una pagina de auth.
+_LOGIN_LOCATION_RE = re.compile(
+    r'(?:[?&](?:next|return|returnurl|return_url|redirect|redirect_uri|continue|come_from|dest|destination)=)'
+    r'|(?:/(?:account/)?(?:login|signin|sign[-_]?in|auth|sso|session/new)\b)',
+    re.I,
+)
+
+
+def _is_login_location(loc):
+    return bool(loc) and bool(_LOGIN_LOCATION_RE.search(loc))
+
+
+def _resolve_authenticated_status(url, session, status, size):
+    """En fuzzing autenticado, resuelve los hits 3xx siguiendo la redireccion con
+    la sesion y devuelve (status_final, size_final, nota).
+
+    - Si la redireccion rebota a una pagina de login (param next= o ruta de auth,
+      o el destino sigue mostrando un formulario de login) el endpoint esta
+      protegido: se conserva el 3xx y se anota.
+    - Si resuelve a contenido real, se devuelve el estado final (p.ej. 200) para
+      no reportar un 302 enganoso cuando el recurso si es accesible autenticado."""
+    if status not in (301, 302, 303, 307, 308):
+        return status, size, None
+    try:
+        nofollow = session.get(url, timeout=DEFAULT_TIMEOUT, allow_redirects=False)
+    except requests.RequestException:
+        return status, size, None
+    if _is_login_location(nofollow.headers.get("Location", "") or ""):
+        return status, size, "redirige a login (protegido)"
+    try:
+        final = session.get(url, timeout=DEFAULT_TIMEOUT, allow_redirects=True)
+    except requests.RequestException:
+        return status, size, None
+    if _is_login_location(getattr(final, "url", "") or "") or _response_has_login_form(final):
+        return status, size, "redirige a login (protegido)"
+    return final.status_code, len(final.content), f"{status}→{final.status_code}"
+
+
 def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=True):
     try:
         if wordlist is None:
@@ -4095,6 +4134,8 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                         if not hits:
                             print(f"\n  {Fore.YELLOW}Sin resultados (todos filtrados por auto-calibración){Style.RESET_ALL}\n")
                         else:
+                            if AUTHENTICATED:
+                                print_info("Sesion autenticada: resolviendo redirecciones de los hits 3xx...")
                             table_rows = []
                             for hit in sorted(hits, key=lambda x: (x.get('status', 0), x.get('input', {}).get('FUZZ', ''))):
                                 path    = hit.get('input', {}).get('FUZZ', '') or hit.get('url', '')
@@ -4104,6 +4145,12 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                                 dur_ns  = hit.get('duration', 0)
                                 dur_ms  = dur_ns // 1_000_000 if dur_ns else 0
                                 url_hit = hit.get('url', urljoin(target, path))
+                                note    = None
+                                # Con sesion autenticada, un 302 puede esconder un 200 real:
+                                # seguir la redireccion y reportar el estado final.
+                                if AUTHENTICATED:
+                                    status, size, note = _resolve_authenticated_status(
+                                        url_hit, session, status, size)
                                 color   = STATUS_COLOR.get(status, Fore.WHITE)
                                 table_rows.append([
                                     f"{color}[{status}]{Style.RESET_ALL}",
@@ -4111,13 +4158,14 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                                     f"{size:,}",
                                     f"{words_h:,}",
                                     f"{dur_ms}ms",
+                                    note or "",
                                 ])
-                                results.append({'url': url_hit, 'status': status, 'size': size})
-                                FINDINGS.append(f"[DIR] {url_hit} [{status}]")
+                                results.append({'url': url_hit, 'status': status, 'size': size, 'note': note})
+                                FINDINGS.append(f"[DIR] {url_hit} [{status}]" + (f" ({note})" if note else ""))
                             print_table(
-                                headers=["STATUS", "PATH", "SIZE", "WORDS", "DUR"],
+                                headers=["STATUS", "PATH", "SIZE", "WORDS", "DUR", "NOTA"],
                                 rows=table_rows,
-                                alignments=['<', '<', '>', '>', '>'],
+                                alignments=['<', '<', '>', '>', '>', '<'],
                                 footer=f"  Total: {Fore.GREEN}{len(hits)}{Style.RESET_ALL} endpoint(s) encontrados\n",
                             )
                     except Exception as e:
@@ -4182,9 +4230,13 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
             def test_path(path):
                 url = urljoin(target, path)
                 try:
-                    resp = session.get(url, timeout=DEFAULT_TIMEOUT)
+                    resp = session.get(url, timeout=DEFAULT_TIMEOUT, allow_redirects=False)
                     if resp.status_code < 400:
-                        return (url, resp.status_code, len(resp.content))
+                        status, size, note = resp.status_code, len(resp.content), None
+                        if AUTHENTICATED:
+                            status, size, note = _resolve_authenticated_status(
+                                url, session, status, size)
+                        return (url, status, size, note)
                 except Exception:
                     pass
                 return None
@@ -4196,9 +4248,10 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                         for future in as_completed(future_to_path):
                             res = future.result()
                             if res:
-                                url, code, size = res
-                                print_good(f"Encontrado: {url} (código {code}, tamaño {size})")
-                                results.append({'url': url, 'status': code, 'size': size})
+                                url, code, size, note = res
+                                print_good(f"Encontrado: {url} (código {code}, tamaño {size})"
+                                           + (f" [{note}]" if note else ""))
+                                results.append({'url': url, 'status': code, 'size': size, 'note': note})
                             pbar.update(1)
             else:
                 completed = 0
@@ -4210,9 +4263,10 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                             print_info(f"Progreso: {completed}/{len(paths)} rutas probadas")
                         res = future.result()
                         if res:
-                            url, code, size = res
-                            print_good(f"Encontrado: {url} (código {code}, tamaño {size})")
-                            results.append({'url': url, 'status': code, 'size': size})
+                            url, code, size, note = res
+                            print_good(f"Encontrado: {url} (código {code}, tamaño {size})"
+                                       + (f" [{note}]" if note else ""))
+                            results.append({'url': url, 'status': code, 'size': size, 'note': note})
             return results
     except Exception as e:
         print_error(f"Error en fuzzing: {e}")
