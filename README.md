@@ -1,530 +1,159 @@
-# 🔍 OWASP Web Security Testing Scanner
+# OWASP Scanner
 
-<p align="center">
-  <img src="https://img.shields.io/badge/Python-3.8+-blue.svg" alt="Python">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
-  <img src="https://img.shields.io/badge/Status-Active-brightgreen.svg" alt="Status">
-  <img src="https://img.shields.io/badge/Platform-Kali%20Linux-lightgrey.svg" alt="Platform">
-</p>
+OWASP Scanner is an interactive web security testing toolkit based on the OWASP Web Security Testing Guide (WSTG) and OWASP API Security testing concepts. It helps authorized testers perform reconnaissance, mapping, vulnerability discovery, API checks, authentication-aware testing, and report generation from one Python CLI.
 
-<p align="center">
-  <strong>Herramienta interactiva y completa de pruebas de seguridad web</strong> basada en la metodología OWASP WSTG.
-</p>
+> OWASP Scanner is an independent open-source project. It is not affiliated with, endorsed by, or sponsored by the OWASP Foundation.
 
-<p align="center">
-  <a href="#-características">Características</a> •
-  <a href="#-instalación">Instalación</a> •
-  <a href="#-uso-rápido">Uso</a> •
-  <a href="#-reportes">Reportes</a> •
-  <a href="#-contribuciones">Contribuir</a>
-</p>
+## Features
 
----
+- Authentication-aware testing with Basic Auth, form login, manual session data, and optional Playwright-based headless login for SPAs and OAuth-style flows.
+- Reconnaissance for headers, cookies, server details, robots.txt, sitemap.xml, HTTP methods, SSL/TLS, CORS, and technology detection.
+- Nmap service/version scanning with XML parsing and report integration.
+- Nuclei vulnerability scanning with JSON export parsing and severity summaries.
+- Directory and virtual-host fuzzing with ffuf when available, plus internal fallback methods.
+- Site spidering with form and parameter discovery.
+- Source-code analysis for exposed secrets, credentials, API keys, JWTs, private keys, comments, internal paths, and source maps.
+- Injection checks for SQLi, XSS, path traversal/LFI, command injection, and open redirect vectors.
+- Advanced checks for SSRF, SSTI, XXE, CRLF injection, HTTP request smuggling, and cache poisoning.
+- API testing for endpoint discovery, BOLA/IDOR, auth bypass, JWT weaknesses, mass assignment, verbose errors, GraphQL, CORS, and rate limiting.
+- WordPress enumeration and attack workflows through WPScan when available.
+- Active Directory workflows for Kerbrute, LDAP, NetExec/NXC, and Impacket-based roasting checks.
+- Reports in TXT, JSON, Markdown, and standalone HTML dashboard formats.
 
-<img width="2062" height="1258" alt="image" src="https://github.com/user-attachments/assets/2f1cc379-f672-429f-978c-d70b1f201fff" />
-<img width="3440" height="1920" alt="image" src="https://github.com/user-attachments/assets/aac7aed1-cc98-4e97-a123-60a0263c8350" />
+## Requirements
 
+| Dependency | Required | Notes |
+| --- | --- | --- |
+| Python 3.8+ | Yes | Main runtime |
+| requests | Yes | Installed from `requirements.txt` |
+| beautifulsoup4 | Yes | HTML parsing |
+| colorama | Yes | Colored terminal output |
+| tqdm | Yes | Progress bars |
+| ffuf | Optional | Faster directory and vhost fuzzing |
+| nmap | Optional | Port and service scanning |
+| nuclei | Optional | Template-based vulnerability scanning |
+| whatweb | Optional | Technology fingerprinting |
+| hydra | Optional | Login brute force support |
+| wpscan | Optional | WordPress testing |
+| SecLists | Optional | Recommended wordlists |
+| Playwright | Optional | Headless login for SPAs/OAuth-style flows |
+| Kerbrute, ldap-utils, NetExec/NXC, Impacket | Optional | Active Directory module |
 
-## 📋 Tabla de Contenidos
-
-- [Descripción](#-descripción)
-- [Características](#-características)
-- [Requisitos Previos](#-requisitos-previos)
-- [Instalación](#-instalación)
-- [Uso Rápido](#-uso-rápido)
-- [Menú Principal](#-menú-principal)
-- [Reportes](#-reportes)
-- [Configuración Avanzada](#-configuración-avanzada)
-- [Solución de Problemas](#-solución-de-problemas)
-- [Contribuciones](#-contribuciones)
-- [Licencia](#-licencia)
-- [Disclaimer](#-️-disclaimer)
-
----
-
-## 📝 Descripción
-
-**WSTG Scanner** es una herramienta de pentesting web **interactiva y comprehensiva** que implementa las mejores prácticas del [OWASP Web Security Testing Guide](https://owasp.org/www-project-web-security-testing-guide/) y el [OWASP API Top 10](https://owasp.org/API-Security/).
-
-Diseñada para bug bounty hunters y pentesters, automatiza tareas comunes de reconocimiento, análisis y pentesting web:
-- 🕷️ Mapeo completo y exhaustivo de aplicaciones web (spidering con detección de formularios e inputs)
-- 🔬 **Análisis del código fuente** de páginas y scripts JS expuestos (credenciales, API keys, JWT, claves PEM, comentarios sensibles)
-- 🛡️ Análisis de vulnerabilidades con **Nuclei** (10.000+ templates)
-- 🔍 Fuzzing rápido de directorios con **ffuf** (pre-filtrado de wordlist + baseline anti-falsos positivos)
-- 💉 Pruebas de inyección avanzadas (SQLi, XSS, LFI, RCE, Open Redirect)
-- 🔌 Detección y testing de APIs (IDOR, Mass Assignment, GraphQL, JWT, CORS)
-- 🔍 **Escaneo de puertos con Nmap** (`-sV` para detección de servicios y versiones)
-- 🌐 **Fuzzing de subdominios (vhost)** con `ffuf` y baseline `Content-Length`
-- 🧩 **WordPress / WPScan** – enumeración de usuarios, detección de plugins/temas vulnerables y ataques dirigidos
-- 🏛️ **Pentesting de Active Directory** – Kerbrute, LDAP, NetExec (nxc) e Impacket (AS-REP Roasting y Kerberoasting)
-- 👤 Enumeración de usuarios y emails
-- 🔐 Fuerza bruta con **hydra** + fallback CSRF-aware y **autodetección del mensaje de error**
-- 📊 Reportes en **TXT, JSON, Markdown y HTML** (dashboard SaaS con tema claro/oscuro, exportable a PDF)
-
-## ☠️ Video Completo
-[![WSTG Scan Video](https://github.com/user-attachments/assets/cf26228c-0914-4ee7-ad85-c06ea5f4713c)](https://youtu.be/-zMs3HmNVvg)
-
----
-
-## ⭐ Características
-
-### 🔐 Autenticación
-- **Pre-autenticación** – Login automático con credenciales (Basic Auth o formulario)
-- **Login headless (Playwright)** – Para SPAs (Angular, Vue, React) y flujos OAuth2/OIDC/PKCE donde no existe `<form>` HTML; detecta campos de email/usuario en dos pasos y extrae cookies de sesión del navegador
-- **Validación real de credenciales** – Basic Auth solo se da por bueno si el servidor envía el desafío `401 WWW-Authenticate: Basic`; en formularios detecta mensajes de fallo (ES/EN) y rechaza si la respuesta sigue mostrando el campo de contraseña
-- **Login con usuario o email** – Un solo campo identificador; detecta el tipo por `@` y rellena el campo de formulario correcto
-- **User-Agent personalizado** – Aplicable al login con credenciales, headless y modo manual
-- **Modo manual de sesión** – Carga cookie/token, cabecera `Authorization` y cabeceras extra; valida la sesión antes de confiar en ella
-- **Verificación post-login** – Confirma que la sesión persiste tras autenticar
-- **Sesión persistente** – Todas las pruebas posteriores usan la sesión autenticada
-- Manejo de cookies y campos hidden (CSRF tokens)
-
-### 🔎 Reconocimiento
-- **Información general** – Server, headers, cookies, SSL/TLS, métodos HTTP, robots.txt / sitemap.xml
-- **Detección de tecnologías** – Integración con `whatweb` (auto-instalación) con fallback por cabeceras
-- **Análisis de cabeceras de seguridad** – HSTS, CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy
-- **Seguridad de cookies** – Flags `Secure`, `HttpOnly`, `SameSite`
-- **CORS avanzado** – Wildcard + Credentials, origen reflejado, preflight con orígenes maliciosos
-
-### 🔍 Escaneo de Puertos con Nmap
-- Ejecuta `nmap -sV` sobre el host del objetivo (extraído de la URL)
-- **Auto-instalación de nmap** vía `apt` si no está presente
-- Parsing **XML** (`-oX -`) robusto: extrae puerto, protocolo, estado, servicio, producto, versión y `extrainfo`
-- Tabla visual con colores por estado (open / open|filtered) al terminar el escaneo
-- Cada puerto abierto se registra en `FINDINGS` con prefijo `[PORT]` y queda agrupado en una categoría propia en los reportes
-- Timeout configurable (600s por defecto), interrumpible con Ctrl+C
-
-### 🛡️ Análisis de Vulnerabilidades con Nuclei
-- **Auto-instalación de Nuclei** vía `apt` si no está presente
-- Soporte para `-jsonl-export` (formato actual) con fallback a `-json-export`
-- **Deduplicación** automática por `(template_id, url, severity)`
-- **Tabla resumen** por severidad y **listado de hallazgos relevantes** (critical/high/medium/low)
-- Ruido del backend Interactsh (`Could not unmarshal interaction data`) filtrado
-- Resultados integrados directamente en los reportes (TXT/JSON/HTML)
-
-### 🕷️ Spidering
-- Crawling BFS configurable (profundidad, número de páginas, respeto a robots.txt)
-- Detección de **formularios con inputs reales** (excluye submit/button/file)
-- Deduplicación por `(action, method, inputs)` — no infla con el form de login del navbar
-- Manejo robusto de redirecciones (`TooManyRedirects` no aborta la fase)
-- Resultados reutilizados por las pruebas de inyección y el análisis de código fuente
-
-### 🔬 Análisis del Código Fuente
-- **Reutiliza las URLs descubiertas por el spider** (o lanza un spider rápido si no hay datos previos)
-- Descarga el HTML de cada página y los recursos enlazados del mismo dominio: **JS, JSON, source maps (`.map`), CSS, YAML, XML, `.env`**
-- Cap de **2 MB por archivo** y `stream=True` para evitar descargas masivas
-- 15 catálogos de patrones con severidad ponderada:
-  - **Critical** – claves PEM privadas, cadenas de conexión de BD con credenciales embebidas
-  - **High** – AWS Access Key/Secret, Google API Key, GitHub/Slack/Stripe tokens, JWT, credenciales hardcoded genéricas (`password=`, `api_key=`, `bearer=`, …)
-  - **Medium** – comentarios HTML sensibles (`TODO password`, `FIXME admin`, …), Basic Auth en URL, source maps expuestos, IPs privadas (10/8, 172.16/12, 192.168/16)
-  - **Low** – rutas internas (`/admin`, `/.git`, `/.env`, `/actuator`, …), emails expuestos
-- Los hallazgos **critical/high se vuelcan a `FINDINGS`** con el prefijo `[CODE:SEV]`
-- Snippet de **contexto (±30 caracteres)** alrededor de cada coincidencia, deduplicación global por `(tipo, valor, url)`
-- Resumen por severidad, tablas visuales, exportación a TXT/JSON/MD/HTML (card dedicado en el reporte)
-
-### 🌐 Fuzzing de Subdominios (VHost)
-- **Detección de vhosts** con `ffuf` enviando `Host: FUZZ.<dominio>`
-- **Baseline por Content-Length** – envía un Host inválido (`defnotvalid<rnd>.<dominio>`) para obtener el tamaño base y filtrar con `-fs` todas las respuestas que coincidan
-- **Autodetección del dominio base** si el target es un FQDN; pide manual si es una IP
-- Wordlist por defecto: `Discovery/DNS/namelist.txt` (SecLists)
-- Fallback a método interno multihilo si no hay `ffuf`
-
-### 🔀 Fuzzing de Directorios & Enumeración
-- **Fuzzing de directorios** con `ffuf` (ultra-rápido) o método interno multihilo
-- **Pre-filtrado de wordlist** – descarta comentarios (`#`), líneas vacías y entradas con espacios
-- **Filtro `-fs` por baseline** – descarta páginas-comodín (apps que devuelven 200 con el index para cualquier ruta)
-- **Auto-calibración** (`-ac`) habilitada
-- Wordlist por defecto: `raft-small-directories.txt` (SecLists)
-- Tabla con anchos dinámicos y separación por status code
-
-### 💉 Pruebas de Inyección
-- **SQLi** – Error-based, time-based blind, boolean-based
-- **XSS** – Reflejado con análisis contextual
-- **Path Traversal / LFI** – `/etc/passwd`, `win.ini`, encodings y bypass
-- **Command Injection** – Linux y Windows
-- **Open Redirect** – Detección de redirecciones a hosts arbitrarios
-- Reutiliza los formularios e inputs detectados por el spider (eficiente)
-
-### 🐘 Enumeración y ataques WordPress
-- Enumera usuarios y rutas de login.
-- Detecta la versión del core, los plugins y los temas instalados.
-- Busca vulnerabilidades conocidas (CVE) en plugins y temas.
-- Realiza fuerza bruta del login con wordlists.
-
-### 🔥 Pruebas Avanzadas de Seguridad (opción 10)
-- **SSRF** – Payloads contra parámetros URL (`url`, `redirect`, `src`, …) y cabeceras (`X-Forwarded-For`, `X-Original-URL`, …); detecta respuestas de metadatos cloud (AWS IMDSv1, GCP, Alibaba); soporte OOB via colaborador externo (Burp, interactsh)
-- **SSTI** – Detección por math probes para Jinja2, Twig, FreeMarker, ERB, Pebble, Tornado; identifica el engine y detección por mensajes de error de template
-- **XXE** – Descubre endpoints XML/SOAP (`/xmlrpc.php`, `/soap`, `/api/xml`, WSDL); inyecta entidades externas con `file:///etc/passwd`, hostname y SSRF via DTD externo
-- **CRLF Injection** – Payloads `%0d%0a` en path y parámetros de redirección; verifica cabeceras inyectadas en respuestas sin seguimiento de redireccionamiento
-- **HTTP Request Smuggling** – Usa `smuggler.py` si está disponible; prueba manual CL.TE con socket raw; instrucciones para instalar smuggler.py si falta
-- **Cache Poisoning** – Inyecta `X-Forwarded-Host`, `X-Host`, `X-Original-URL` con valor aleatorio único; verifica si el valor persiste en respuesta posterior sin la cabecera (cache confirmed); detecta presencia de cache via `X-Cache`/`Age`/`CF-Cache-Status`
-
-### 🏛️ Pentesting de Active Directory
-Módulo dedicado (opción **14** del menú) que orquesta las herramientas estándar de AD de Kali. Funciona en dos modos: **sin credenciales** (solo enumeración) o **autenticado** (usuario/contraseña para ataques más profundos).
-
-- **Enumeración de usuarios** con `kerbrute userenum` a partir de una wordlist.
-- **Consultas LDAP** (`ldapsearch`) para listar usuarios, grupos y equipos del dominio.
-- **SMB con NetExec** (`nxc smb`) para enumeración y *password spraying* / fuerza bruta.
-- **AS-REP Roasting** con `impacket-GetNPUsers` sobre los usuarios sin pre-autenticación Kerberos.
-- **Kerberoasting** con `impacket-GetUserSPNs -request` para extraer hashes de cuentas de servicio.
-- Todos los hashes y credenciales obtenidos quedan integrados en los reportes (sección *Active Directory*).
-
-> **Herramientas recomendadas:** `kerbrute`, `ldap-utils`, `netexec`/`nxc` e `impacket-scripts`.
-
-### 🔌 Testing de APIs (OWASP API Top 10)
-- **Descubrimiento de endpoints** (`/api`, `/swagger`, `/graphql`, `/actuator`, etc.) con fuzzing recursivo **multihilo** y parsing de OpenAPI (reporta documentación Swagger expuesta como API9)
-- **IDOR / BOLA (API1)** – Modificación de IDs numéricos, UUID y parámetros, con **sonda de control** que descarta endpoints que devuelven el mismo shell para cualquier id (anti falso positivo)
-- **JWT (API2)** – Detección en cabeceras, cookies de sesión, cuerpo de respuesta y endpoints descubiertos; `alg:none` bypass activo, RS256→HS256 key confusion, `kid` path traversal/SQLi, brute force de secreto HMAC con wordlist, claims de privilegio, token caducado aceptado
-- **Rate Limiting (API4)** – 429, soft-block por latencia progresiva, captcha, ban por IP (403 repetido)
-- **Auth Bypass (API5)** – Cabeceras `X-Original-URL`/`X-Rewrite-URL` apuntando al path real del endpoint, `X-Forwarded-For`, etc., con baseline que ignora páginas de login genéricas
-- **Mass Assignment (API6)** – Inyección de `is_admin`, `role`, `privilege` con **verificación de persistencia** vía re-GET del objeto
-- **Verbose Errors (API7)** – Detección de stack traces y rutas internas
-- **CORS / GraphQL (API8)** – Introspección habilitada, enumeración de users
-- Todos los hallazgos de API se integran en `FINDINGS` y aparecen en los reportes HTML/Markdown/TXT y en el resumen final
-
-### 👥 Enumeración & Fuerza Bruta
-- **Enumeración de usuarios** – Desde APIs (`/api/users`, etc.) y formularios diferenciales
-- **Fuerza bruta de contraseñas** – Soporta POST forms y Basic Auth
-- **Integración con `hydra`** (`-t 4 -I -u` para fiabilidad y deduplicación)
-- **Fallback CSRF-aware** al método interno con `requests.Session` (mantiene cookies y hidden fields)
-- **Autodetección del mensaje de error de login** – Envía credenciales imposibles, extrae frases candidatas del HTML y las propone para confirmar
-- **Heurística estricta** (≥2 señales positivas) cuando no hay mensaje de error confirmado, para evitar falsos positivos
-- Wordlists personalizables, soporta SecLists
-
-### 🎨 Experiencia de Usuario
-- **Menú interactivo** con autocompletado de rutas (Tab) en Kali
-- **Fases visualmente separadas** con cabeceras `[INFO] ======= ... =======`
-- **Tablas box-drawing** unificadas con anchos dinámicos y colores por severidad/status
-- **Barras de progreso** para spidering, fuzzing y bruteforce (tqdm)
-- **Manejo robusto de Ctrl+C** – Cualquier fase se interrumpe limpiamente, guardando hallazgos parciales
-
----
-
-## 🔧 Requisitos Previos
-
-| Requisito | Versión | Requerido |
-|-----------|---------|----------|
-| Python | 3.8+ | ✅ Sí |
-| pip | Última | ✅ Sí |
-| nmap | Última | ❌ Opcional (auto-instalable, requerido para escaneo de puertos) |
-| nuclei | 3.x | ❌ Opcional (auto-instalable) |
-| ffuf | Última | ❌ Opcional (mejora el fuzzing) |
-| hydra | Última | ❌ Opcional (mejora el bruteforce) |
-| whatweb | Última | ❌ Opcional (mejora fingerprinting) |
-| wpscan | Última | ❌ Opcional (enumeración y ataques WordPress) |
-| kerbrute, ldap-utils, netexec/nxc, impacket-scripts | Última | ❌ Opcional (módulo de Active Directory) |
-| SecLists | Última | ❌ Opcional (wordlists) |
-
-### Requisitos del Sistema
-- **SO**: Kali Linux (recomendado) o cualquier Debian/Ubuntu con SecLists instalado
-- **RAM**: 512 MB mínimo, 2 GB recomendado
-- **Almacenamiento**: ~500 MB para dependencias y wordlists
-- **Red**: Conexión al objetivo (interna o internet)
-
----
-
-## 📦 Instalación
-
-### 1️⃣ Instalación rápida (Kali Linux)
+## Installation
 
 ```bash
-git clone https://github.com/afsh4ck/WSTG-Scan.git
-cd WSTG-Scan
-
-# Crear entorno virtual (recomendado)
-python3 -m venv venv
-source venv/bin/activate
-
-# Dependencias Python
-pip install -r requirements.txt
-
-# Ejecutar
-python3 wstg-scan.py
+git clone https://github.com/BaskaranElilan/OWASP-Scanner.git
+cd OWASP-Scanner
+python3 -m pip install -r requirements.txt
 ```
 
-### 2️⃣ Instalación con herramientas opcionales (recomendado para máxima cobertura)
+Optional tools can be installed through your operating system package manager or their official installation methods. On Kali Linux, many of them are available through `apt`.
+
+## Usage
+
+Start the interactive scanner:
 
 ```bash
-# Tras los pasos de la instalación rápida:
-sudo apt update
-sudo apt install -y nmap ffuf hydra whatweb seclists wpscan
-
-# Nuclei: usa los binarios oficiales (más recientes que apt)
-GO111MODULE=on go install -v github.com/projectdiscovery/nuclei/v3/cmd/nuclei@latest
-# O bien:
-sudo apt install -y nuclei
-nuclei -update-templates
+python3 owasp-scanner.py
 ```
 
-> El script ofrecerá instalar Nuclei, WhatWeb, SecLists y WPScan automáticamente vía `apt` si no los encuentra.
-
----
-
-## 🚀 Uso Rápido
-
-### Modo interactivo
+Scan a single target:
 
 ```bash
-python3 wstg-scan.py
+python3 owasp-scanner.py --url https://example.com
 ```
 
-Se pedirá la URL objetivo y se mostrará el menú principal.
-
-### Modo argumentos CLI
+Save reports with a custom output base:
 
 ```bash
-python3 wstg-scan.py --url https://example.com --output report.html --threads 10 --timeout 15
+python3 owasp-scanner.py --url https://example.com --output report.txt
 ```
 
-| Argumento | Descripción |
-|---|---|
-| `--url, -u` | URL objetivo. Repetible y admite varias separadas por comas (`-u a.com,b.com -u c.com`) |
-| `--list, -L` | Fichero con una URL por línea (admite `#` comentarios). Repetible |
-| `--batch` | No interactivo: pentest completo en cada objetivo y un reporte por objetivo. Requiere `-u`/`-L` |
-| `--output, -o` | Ruta base del reporte (genera TXT/JSON/HTML) |
-| `--threads, -t` | Número de hilos (default: 5) |
-| `--timeout` | Timeout por request en segundos (default: 10) |
-| `--delay, -d` | Delay entre requests para evasión, aplicado a TODAS las peticiones de la sesión (default: 0) |
-| `--insecure, -k` | Desactiva la verificación TLS (uso en labs / certificados auto-firmados) |
-| `--no-color` | Desactiva colores ANSI |
-| `--version, -V` | Versión del scanner |
-
-### Múltiples objetivos
+Scan multiple targets interactively:
 
 ```bash
-# Interactivo: la opción que elijas se ejecuta en TODOS los objetivos, con estado por objetivo
-python3 wstg-scan.py -u https://a.com -u https://b.com
-python3 wstg-scan.py -L targets.txt
-
-# Batch no interactivo: pentest completo por objetivo + un reporte por objetivo + resumen global
-python3 wstg-scan.py -L targets.txt --batch
-
-# Sin argumentos: el script pregunta si quieres una URL única o una lista
-python3 wstg-scan.py
+python3 owasp-scanner.py -u https://a.example -u https://b.example
+python3 owasp-scanner.py -u https://a.example,https://b.example
 ```
 
-- Sin `-u`/`-L`, al arrancar se ofrece elegir: **1) URL única** o **2) Lista** (varias URLs separadas por coma/espacio, o ruta a un fichero), con opción de batch.
-- Las fuentes `-u` (repetible/coma) y `-L` (ficheros) se combinan y deduplican.
-- Cada objetivo mantiene su propio `SCAN_DATA`/`FINDINGS`; los reportes se guardan en `reports/<host>/`.
-- En batch, el módulo Active Directory se omite (no interactivo); el resto del pentest se ejecuta completo.
-
-### Pre-autenticación
+Run a non-interactive full pentest for each target in a list:
 
 ```bash
-python3 wstg-scan.py
-# Menú → 1. Configurar autenticación (login)
-# (Opcional) User-Agent personalizado
-# Modo credenciales: URL de login + usuario o email + contraseña
-#   o Modo manual: pega cookie/token de sesión y cabeceras
-# Se valida la sesión; las siguientes pruebas usarán la sesión autenticada
+python3 owasp-scanner.py -L targets.txt --batch
 ```
 
-> **SPA / OAuth2 (SSO):** si el login se renderiza en JavaScript (Angular/Vue/React) o usa OAuth2/PKCE, el tool intentará automáticamente el login headless con Playwright. Si Playwright no está instalado, se ofrecerá instalarlo. Como alternativa usa el **modo manual**: inicia sesión en el navegador, copia la cookie completa y pégala en la opción 1.
+## CLI Options
 
----
+| Option | Description |
+| --- | --- |
+| `-u, --url URL` | Target URL. Can be repeated and can contain comma-separated values. |
+| `-L, --list FILE` | File containing one URL per line. Supports comments with `#`. |
+| `--batch` | Run the full pentest for each target and save one report per target. Requires `-u` or `-L`. |
+| `-o, --output FILE` | Output path or base name for generated reports. |
+| `-t, --threads N` | Number of worker threads. |
+| `--timeout S` | Request timeout in seconds. |
+| `-d, --delay S` | Delay between requests in seconds. |
+| `-k, --insecure` | Disable TLS certificate verification for lab and test environments. |
+| `--no-color` | Disable colored terminal output. |
+| `-V, --version` | Print the tool version. |
 
-## 📋 Menú Principal
+## Reports
 
-```
- _       __       __         _____                   
-| |     / /_____ / /_ ____ _/ ___/ _____ ____ _ ____ 
-| | /| / // ___// __// __ `/\__ \ / ___// __ `// __ \
-| |/ |/ /(__  )/ /_ / /_/ /___/ // /__ / /_/ // / / /
-|__/|__//____/ \__/ \__, //____/ \___/ \__,_//_/ /_/ 
-                   /____/                            
+By default, reports are written under:
 
-OWASP Web Security Testing Scanner
-developed by @afsh4ck
-
-====================================================
-  WSTG SCANNER v1.4.0  [Sin autenticación]
-====================================================
- 1. Configurar autenticación (login / headless SPA / OAuth2)
- 2. Información general y enumeración
- 3. Escaneo de puertos con Nmap (-sV + NSE dirigido)
- 4. Análisis de vulnerabilidades con Nuclei
- 5. Fuzzing de subdominios (vhost) con ffuf
- 6. Fuzzing de directorios (usa ffuf si está instalado)
- 7. Spidering / Mapeo completo del sitio
- 8. Análisis de código fuente (credenciales/secretos en HTML y JS)
- 9. Pruebas de inyección (SQLi, XSS, Path Traversal, Command Injection)
-10. Pruebas avanzadas (SSRF / SSTI / XXE / CRLF / Smuggling / Cache)
-11. Pruebas de API (descubrimiento, IDOR, mass assignment, JWT, Rate limit)
-12. Enumeración de usuarios/emails y fuerza bruta de contraseñas
-13. Enumeración y ataques WordPress (WPScan)
-14. Pentesting Active Directory (Kerbrute/LDAP/NXC)
-15. PENTESTING COMPLETO (ejecuta todas las pruebas anteriores)
-                                          (tras escanear aparecen)
-16. Mostrar resumen en Markdown
-17. Mostrar tablas de resultados
-                                          (siempre visible)
-18. Salir
-====================================================
-Selecciona una opción:
+```text
+reports/<host>/<host>.txt
+reports/<host>/<host>.json
+reports/<host>/<host>.html
+reports/<host>/<host>.md
 ```
 
-**Cómo leer el menú:**
+The HTML report is a standalone dashboard with a sidebar, filters, dark/light theme support, searchable tables, and print-to-PDF support.
 
-- **Opciones 2–14** ejecutan cada fase de forma independiente. Puedes lanzarlas en cualquier orden; los resultados se acumulan en la misma sesión.
-- **Opción 1** configura el login una sola vez: Basic Auth, formulario HTML, login headless Playwright (SPA/OAuth2) o sesión manual (cookie/token).
-- **Opción 10 — Pruebas avanzadas:** SSRF (parámetros URL + cabeceras + metadatos cloud), SSTI (Jinja2/Twig/FreeMarker/ERB), XXE, CRLF injection, HTTP Request Smuggling (via smuggler.py o prueba manual CL.TE) y Cache Poisoning.
-- **Opción 15 — Pentesting completo:** encadena automáticamente información → Nmap → Nuclei → vhost → directorios → spidering → código fuente → inyección → pruebas avanzadas → API → bruteforce → WordPress → Active Directory (opcional). Al terminar muestra todas las tablas y ofrece guardar el reporte.
-- **Opciones 16 y 17** solo aparecen en el menú una vez que hay datos de algún escaneo. Sirven para revisar resultados sin volver a escanear: la **16** imprime el resumen en Markdown (listo para pegar en GitBook/GitHub) y la **17** reimprime las tablas visuales.
+## Configuration
 
----
-
-## 📊 Reportes
-
-Los reportes se generan automáticamente en `reports/<host>/<host>.{txt,json,html,md}` con cuatro formatos:
-
-| Formato | Contenido |
-|---|---|
-| `*.txt` | Resumen plano + secciones por categoría (general, vhost, spider, **análisis de código fuente**, API, directorios, credenciales, hallazgos, Nuclei) |
-| `*.json` | Datos serializados completos (ideal para integrar con otras herramientas) |
-| `*.html` | **Dashboard SaaS** en un único archivo: tema claro/oscuro, barra lateral colapsable, buscador de tablas y exportación a PDF |
-| `*.md`  | Resumen completo en **Markdown** estándar — copia/pega directo en GitBook, GitHub u Obsidian |
-
-### El dashboard HTML
-
-<img width="3440" height="1920" alt="image" src="https://github.com/user-attachments/assets/4c5ea1ad-112d-4ad7-a1f4-2965fd25c3c6" />
-
-El reporte HTML es un **dashboard interactivo** tipo Saas profesional:
-
-- 🎨 **Tema claro/oscuro** con detección automática del sistema y conmutador persistente.
-- 🧭 **Barra lateral colapsable** con navegación e indicador de la sección activa al hacer scroll.
-- 🔎 **Buscador en vivo** que filtra todas las tablas (host, puerto, CVE, hash…).
-- 📊 **Resumen visual** con tarjetas-KPI (enlazadas a su sección) y un medidor de riesgo por severidad.
-- 🖨️ **Exportación a PDF** optimizada (paleta clara, márgenes y sin cortes entre páginas).
-- 🧩 **Solo se muestran las secciones con datos.** Las disponibles son: Resumen, Información general, Nmap y NSE, Hallazgos, Nuclei, API, VHosts, Directorios, Superficie expuesta, WordPress, Spidering, Código fuente, **Active Directory**, Credenciales y un volcado JSON completo.
-
----
-
-## ⚙️ Configuración Avanzada
-
-### Personalizar wordlists
-
-Edita las constantes en `wstg-scan.py`:
+Common defaults are defined near the top of `owasp-scanner.py`:
 
 ```python
-SECLISTS_SMALL     = "/usr/share/seclists/Discovery/Web-Content/raft-small-directories.txt"
-SECLISTS_MEDIUM    = "/usr/share/seclists/Discovery/Web-Content/directory-list-lowercase-2.3-medium.txt"
-SECLISTS_PASSWORDS = "/usr/share/seclists/Passwords/xato-net-10-million-passwords-10000.txt"
+DEFAULT_TIMEOUT = 10
+MAX_REDIRECTS = 10
+THREADS = 5
+REQUEST_DELAY = 0.0
 ```
 
-### Parámetros de red y concurrencia
+Default SecLists paths are also configured in the script and can be changed to match your local Kali, Debian, Ubuntu, or WSL environment.
 
-```python
-DEFAULT_TIMEOUT = 10   # segundos por request
-MAX_REDIRECTS   = 10   # redirecciones máximas seguidas
-THREADS         = 5    # hilos concurrentes
-REQUEST_DELAY   = 0.0  # delay entre requests
-```
+## Responsible Use
 
-### Usar Burp Suite como proxy
+Only run OWASP Scanner against systems you own or have explicit written permission to test. Unauthorized scanning, brute forcing, exploitation, or access attempts may be illegal.
 
-```bash
-export HTTP_PROXY=http://127.0.0.1:8080
-export HTTPS_PROXY=http://127.0.0.1:8080
-python3 wstg-scan.py
-```
+Recommended safeguards:
 
----
+- Get written authorization before testing.
+- Define scope, dates, rate limits, and allowed techniques.
+- Avoid destructive payloads unless explicitly approved.
+- Preserve logs and evidence for reporting.
+- Follow applicable laws and program rules.
 
-## 🐛 Solución de Problemas
+## Project Status
 
-### `ModuleNotFoundError: No module named 'requests'`
-```bash
-pip install -r requirements.txt
-```
+Current adapted version: `1.4.2`
 
-### `ffuf: command not found`
-```bash
-sudo apt install -y ffuf
-```
+Primary repository: https://github.com/BaskaranElilan/OWASP-Scanner
 
-### Nuclei se queda colgado o emite muchos errores Interactsh
-Es ruido del backend OAST. El script filtra los `Could not unmarshal interaction data`. Para desactivar Interactsh completamente, edita la llamada a Nuclei y añade `-ni`.
+## Credits
 
-### El bruteforce no encuentra ciertas credenciales
-Hydra no maneja CSRF tokens ni sesiones; el script detectará los usuarios pendientes y caerá al método interno (CSRF-aware con `requests.Session`). Si aun así no las encuentra, comprueba account lockout o rate limiting en el servidor.
+Maintainer: Elilan Baskaran
 
-### Spidering se queda en pocas páginas
-Si ves `Exceeded N redirects`, el target tiene cadenas de redirección largas. Sube `MAX_REDIRECTS` en el script.
+Additional ecosystem credits:
 
----
+- OWASP for the Web Security Testing Guide and API Security resources.
+- ProjectDiscovery for Nuclei.
+- ffuf contributors.
+- van Hauser and THC Hydra contributors.
+- Daniel Miessler and SecLists contributors.
+- WPScan contributors.
 
-## 📚 Recursos Útiles
+## License
 
-- [OWASP WSTG](https://owasp.org/www-project-web-security-testing-guide/) – Guía oficial
-- [OWASP API Security Top 10](https://owasp.org/API-Security/)
-- [Nuclei Templates](https://github.com/projectdiscovery/nuclei-templates)
-- [ffuf](https://github.com/ffuf/ffuf) – Web fuzzer
-- [hydra](https://github.com/vanhauser-thc/thc-hydra) – Fuerza bruta
-- [SecLists](https://github.com/danielmiessler/SecLists) – Listas para pentesting
-
----
-
-## 🤝 Contribuciones
-
-¡Las contribuciones son bienvenidas!
-
-1. **Fork** el repositorio
-2. Crea una rama (`git checkout -b feature/AmazingFeature`)
-3. Commit tus cambios (`git commit -m 'Add AmazingFeature'`)
-4. Push (`git push origin feature/AmazingFeature`)
-5. Abre un **Pull Request**
-
-### Áreas para Contribuir
-- [ ] Imagen Docker oficial
-- [ ] Reportes en PDF
-- [ ] Tests automatizados (pytest)
-- [ ] Soporte WebSocket / Server-Sent Events
-- [ ] Plugins de detección de WAF
-- [ ] Interfaz gráfica (TUI con Textual)
-
----
-
-## 📄 Licencia
-
-Este proyecto está bajo la licencia **MIT**. Ver [LICENSE](LICENSE) para detalles.
-
----
-
-## 👨‍💻 Autor
-
-**afsh4ck** – Offensive Security Engineer | Pentester
-
-- 🐙 GitHub: [@afsh4ck](https://github.com/afsh4ck)
-- 🔗 LinkedIn: [afsh4ck](https://linkedin.com/in/afsh4ck)
-
----
-
-## ⚠️ Disclaimer
-
-**IMPORTANTE**: Esta herramienta solo debe usarse en sistemas donde tienes permiso explícito para realizar pruebas de seguridad.
-
-- ❌ **El uso no autorizado es ILEGAL**
-- ❌ El autor **NO se hace responsable** del mal uso
-- ⚠️ Respeta leyes locales e internacionales
-- ✅ Siempre obtén consentimiento escrito antes de testar
-
-```
-"This tool is for authorized security testing only.
-Unauthorized access to computer systems is illegal."
-```
-
----
-
-<div align="center">
-
-⭐ Si te resulta útil, ¡dale una estrella! ⭐
-
-</div>
-
----
-
-### Agradecimientos
-- [OWASP](https://owasp.org/) por la guía WSTG y el API Security Top 10
-- [ProjectDiscovery](https://github.com/projectdiscovery) por Nuclei
-- [Daniel Miessler](https://github.com/danielmiessler) por SecLists
-- [van Hauser](https://github.com/vanhauser-thc) por Hydra
+This project is distributed under the MIT License. See `LICENSE` and `NOTICE.md`.

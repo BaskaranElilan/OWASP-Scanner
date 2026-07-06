@@ -2,9 +2,9 @@
 # -*- coding: utf-8 -*-
 
 """
-OWASP Web Security Testing Scanner
-Web Security Testing (WSTG) Scanner - Interactive & Authenticated Edition
-Author: afsh4ck
+OWASP Scanner
+Web Security Testing Scanner - Interactive & Authenticated Edition
+Author: Elilan Baskaran
 Description: Full web spidering, directory fuzzing (ffuf with progress), injections, API tests, user enumeration & bruteforce.
 """
 
@@ -123,15 +123,14 @@ except ImportError:
 
 # ========== BANNER ==========
 BANNER = r"""
- _       __       __         _____                   
-| |     / /_____ / /_ ____ _/ ___/ _____ ____ _ ____ 
-| | /| / // ___// __// __ `/\__ \ / ___// __ `// __ \
-| |/ |/ /(__  )/ /_ / /_/ /___/ // /__ / /_/ // / / /
-|__/|__//____/ \__/ \__, //____/ \___/ \__,_//_/ /_/ 
-                   /____/                            
+   ____  _       _____   _____ ____    _____                                 
+  / __ \| |     / /   | / ___// __ \  / ___/_________ _____  ____  ___  _____
+ / / / /| | /| / / /| | \__ \/ /_/ /  \__ \/ ___/ __ `/ __ \/ __ \/ _ \/ ___/
+/ /_/ / | |/ |/ / ___ |___/ / ____/  ___/ / /__/ /_/ / / / / / / /  __/ /    
+\____/  |__/|__/_/  |_/____/_/      /____/\___/\__,_/_/ /_/_/ /_/\___/_/     
 """
-DESCRIPTION = "OWASP Web Security Testing Scanner"
-DEVELOPER = "developed by @afsh4ck"
+DESCRIPTION = "OWASP Scanner - Web Security Testing Toolkit"
+DEVELOPER = "developed by Elilan Baskaran"
 VERSION = "1.4.2"
 
 # ========== CONFIGURACIÓN ==========
@@ -144,9 +143,9 @@ AUTHENTICATED = False
 AUTH_SESSION = None
 TARGET_URL = ""
 REQUEST_DELAY = 0.0  # Delay entre requests (segundos)
-OUTPUT_FILE = None   # Ruta del archivo de reporte
+OUTPUT_FILE = None   # Path del archivo de reporte
 VERIFY_TLS = True    # Verificación TLS (desactivable con --insecure)
-FINDINGS = []        # Hallazgos acumulados para el reporte
+FINDINGS = []        # Findings acumulados para el reporte
 
 def _fresh_scan_data():
     """Estructura vacia de SCAN_DATA. Usada al inicio y al cambiar de objetivo."""
@@ -244,10 +243,10 @@ API_ENDPOINTS = [
     "/actuator", "/actuator/env", "/actuator/health", "/actuator/mappings",
     "/actuator/beans", "/actuator/httptrace", "/actuator/loggers",
     "/health", "/metrics", "/info", "/status", "/ping",
-    # Rutas de autenticación
+    # Paths de autenticación
     "/api/auth", "/api/login", "/api/token", "/api/refresh",
     "/api/register", "/api/signup",
-    # Rutas sensibles
+    # Paths sensibles
     "/.well-known/", "/api/version", "/api/changelog",
     "/console", "/api/console", "/h2-console",
 ]
@@ -282,7 +281,7 @@ API_BASE_PREFIXES = [
 
 # Recursos REST típicos. Se prueban bajo cada prefijo de API activo
 # (p. ej. /api/v1/users, /api/v1/transfer, etc.)
-API_RESOURCES = [
+API_REOSURCES = [
     # Identidad / cuentas
     "users", "user", "accounts", "account", "me", "profile", "whoami",
     "auth", "login", "logout", "register", "signup", "signin",
@@ -428,7 +427,7 @@ def run_whatweb(target, session=None):
         if not install_whatweb():
             return None
 
-    # Categorías de color
+    # Categorys de color
     CATEGORY_COLOR = {
         'cms':         Fore.MAGENTA,
         'framework':   Fore.MAGENTA,
@@ -691,7 +690,7 @@ def run_nmap_scan(target):
             headers=["PUERTO", "ESTADO", "SERVICIO", "VERSIÓN"],
             rows=rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Puertos abiertos ({len(ports)}):",
+            title=f"Open ports ({len(ports)}):",
         )
         # Registrar en FINDINGS los puertos abiertos para que aparezcan
         # también en las secciones de hallazgos clasificados.
@@ -831,7 +830,7 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
     cmd.append(host)
 
     visible_cmd = _format_external_command(cmd)
-    print_info(f"Ejecutando escaneo NSE dirigido: {visible_cmd}")
+    print_info(f"Ejecutando escaneo Targeted NSE: {visible_cmd}")
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=2400)
     except subprocess.TimeoutExpired:
@@ -900,15 +899,15 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
                 first_line,
             ])
         print_table(
-            headers=["Puerto", "Servicio", "Script", "Resultado"],
+            headers=["Port", "Service", "Script", "Resultado"],
             rows=rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Resultados NSE dirigidos ({len(results)} scripts con salida):",
+            title=f"Resultados Targeted NSEs ({len(results)} scripts con salida):",
         )
         if len(results) > 40:
             print_info(f"... y {len(results) - 40} resultados NSE mas en el reporte.")
     else:
-        print_info("El escaneo NSE dirigido no devolvio salidas relevantes.")
+        print_info("El escaneo Targeted NSE no devolvio salidas relevantes.")
 
     return {
         "executed": True,
@@ -919,7 +918,7 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
     }
 
 def run_nmap_scan(target, session=None):
-    """Ejecuta nmap -sV y luego NSE dirigido a los puertos encontrados."""
+    """Ejecuta nmap -sV y luego Targeted NSE a los puertos encontrados."""
     print_phase("ESCANEO DE PUERTOS (NMAP)")
     nmap_path = check_nmap()
     if not nmap_path:
@@ -986,7 +985,7 @@ def run_nmap_scan(target, session=None):
             headers=["PUERTO", "ESTADO", "SERVICIO", "VERSION"],
             rows=rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Puertos abiertos ({len(ports)}):",
+            title=f"Open ports ({len(ports)}):",
         )
         for p in ports:
             label = p.get("service", "") or "?"
@@ -1085,7 +1084,7 @@ def run_nuclei_scan(target, session=None):
         _stream(process)
         process.wait()
 
-        # Si la versión de Nuclei no soporta -jsonl-export, reintentar con -json-export
+        # Yes la versión de Nuclei no soporta -jsonl-export, reintentar con -json-export
         if (not os.path.isfile(json_path) or os.path.getsize(json_path) == 0):
             try:
                 cmd_alt = [nuclei_path, "-u", target, "-json-export", json_path]
@@ -1171,7 +1170,7 @@ def run_nuclei_scan(target, session=None):
         normalized.append(ext)
     normalized.sort(key=lambda x: (SEV_ORDER.get(x['severity'], 99), x['template_id']))
 
-    # Resumen por severidad
+    # Severity summary
     summary = {}
     for n in normalized:
         summary.setdefault(n['severity'], []).append(n['template_id'])
@@ -1190,10 +1189,10 @@ def run_nuclei_scan(target, session=None):
                 display,
             ])
         print_table(
-            headers=["Severidad", "Cantidad", "Templates únicos"],
+            headers=["Severity", "Cantidad", "Templates únicos"],
             rows=sum_rows,
             alignments=['<', '>', '<'],
-            title="Resumen de vulnerabilidades por severidad:",
+            title="Summary de vulnerabilidades por severidad:",
         )
 
         # Tabla de hallazgos relevantes (críticos/altos/medios/bajos)
@@ -1209,10 +1208,10 @@ def run_nuclei_scan(target, session=None):
                     n['url'] or '-',
                 ])
             print_table(
-                headers=["Severidad", "Template", "Nombre", "URL"],
+                headers=["Severity", "Template", "Name", "URL"],
                 rows=rel_rows,
                 alignments=['<', '<', '<', '<'],
-                title="Hallazgos relevantes:",
+                title="Findings relevantes:",
             )
             if len(relevant) > 50:
                 print(f"  ... y {len(relevant) - 50} hallazgos relevantes más (ver reporte)")
@@ -1361,10 +1360,10 @@ def _default_report_txt_name(target_url):
     return f"{_safe_filename_from_url(target_url)}.txt"
 
 def _normalize_output_paths(output_file, target_url):
-    """Devuelve rutas estables para TXT/JSON/HTML/MD. Siempre sobrescribe por objetivo."""
+    """Devuelve rutas estables para TXT/JSON/HTML/MD. Yesempre sobrescribe por objetivo."""
     # Carpeta base de reportes
     reports_dir = os.path.join(os.getcwd(), "reports")
-    # Nombre de subcarpeta por host/url
+    # Name de subcarpeta por host/url
     host_dir = _safe_filename_from_url(target_url)
     out_dir = os.path.join(reports_dir, host_dir)
     os.makedirs(out_dir, exist_ok=True)
@@ -1464,7 +1463,7 @@ def _build_html_report(report_data):
             tone = "bad"
         return badge(text, tone)
 
-    def table(headers, rows, empty="Sin datos.", raw_cols=None, row_attrs=None):
+    def table(headers, rows, empty="No data.", raw_cols=None, row_attrs=None):
         raw_cols = set(raw_cols or [])
         if not rows:
             return (
@@ -1499,7 +1498,7 @@ def _build_html_report(report_data):
 
     def compact_list(items):
         if not items:
-            return "<span class='muted'>Sin datos</span>"
+            return "<span class='muted'>No data</span>"
         return "<div class='chips'>" + "".join(f"<span class='chip'>{esc(i)}</span>" for i in items) + "</div>"
 
     def nmap_version(p):
@@ -1529,26 +1528,26 @@ def _build_html_report(report_data):
     sev_total = sum(sev_counts.values())
     risk_score = sev_counts["critical"] * 10 + sev_counts["high"] * 5 + sev_counts["medium"] * 2 + sev_counts["low"]
     if sev_counts["critical"]:
-        risk_label, risk_tone = "CRITICO", "bad"
+        risk_label, risk_tone = "CRITICAL", "bad"
     elif sev_counts["high"]:
-        risk_label, risk_tone = "ALTO", "bad"
+        risk_label, risk_tone = "HIGH", "bad"
     elif sev_counts["medium"]:
-        risk_label, risk_tone = "MEDIO", "warn"
+        risk_label, risk_tone = "MEDIUM", "warn"
     elif sev_counts["low"] or sev_total:
-        risk_label, risk_tone = "BAJO", "info"
+        risk_label, risk_tone = "LOW", "info"
     else:
-        risk_label, risk_tone = "LIMPIO", "good"
+        risk_label, risk_tone = "CLEAN", "good"
 
     kpis = [
-        ("Hallazgos", len(findings), "bad" if findings else "neutral", "warning-octagon", "hallazgos"),
-        ("Puertos", len(nmap_ports), "info", "network", "nmap"),
+        ("Findings", len(findings), "bad" if findings else "neutral", "warning-octagon", "hallazgos"),
+        ("Ports", len(nmap_ports), "info", "network", "nmap"),
         ("NSE", len(nmap_nse), "warn" if nmap_nse else "neutral", "scan", "nmap"),
         ("Nuclei", len(nuclei_findings), "bad" if nuclei_findings else "neutral", "bug-beetle", "nuclei"),
-        ("Tecnologias", len(technologies), "good" if technologies else "neutral", "stack", "info"),
+        ("Technologies", len(technologies), "good" if technologies else "neutral", "stack", "info"),
         ("Endpoints API", len(api_endpoints), "info", "brackets-curly", "api"),
-        ("Directorios", len(directories), "info", "folders", "directorios"),
-        ("Usuarios", len(users), "neutral", "users-three", "info"),
-        ("Credenciales", len(creds), "bad" if creds else "neutral", "key", "credenciales"),
+        ("Directories", len(directories), "info", "folders", "directorios"),
+        ("Users", len(users), "neutral", "users-three", "info"),
+        ("Credentials", len(creds), "bad" if creds else "neutral", "key", "credenciales"),
         ("AD usuarios", len(ad_ldap.get("users") or []), "info", "tree-structure", "ad"),
         ("AS-REP", len(asrep_hashes), "bad" if asrep_hashes else "neutral", "fingerprint", "ad"),
         ("Kerberoast", len(kerberoast_hashes), "bad" if kerberoast_hashes else "neutral", "fire", "ad"),
@@ -1572,33 +1571,33 @@ def _build_html_report(report_data):
     header_rows = [[k, v] for k, v in (general.get("headers") or {}).items()]
     cookie_rows = [[c] for c in (general.get("cookies") or [])]
     auth_rows = [[
-        "Estado", status_badge("Autenticado" if auth.get("authenticated") else "Sin autenticar")
+        "Status", status_badge("Autenticado" if auth.get("authenticated") else "Unauthenticated")
     ], [
-        "Metodo", esc(auth.get("method", "-"))
+        "Method", esc(auth.get("method", "-"))
     ], [
         "Login URL", esc(auth.get("login_url", "-"))
     ], [
-        "Usuario", esc(auth.get("username", "-"))
+        "User", esc(auth.get("username", "-"))
     ], [
         "Cookies", esc(", ".join(auth.get("cookie_names") or []) or "-")
     ], [
-        "Authorization", esc("Si" if auth.get("authorization_header") else "No")
+        "Authorization", esc("Yes" if auth.get("authorization_header") else "No")
     ]]
 
     overview_content = (
         kpi_html
         + "<div class='grid two'>"
-        + "<div class='panel'><h3>Objetivo</h3>"
-        + table(["Campo", "Valor"], [
+        + "<div class='panel'><h3>Target</h3>"
+        + table(["Field", "Value"], [
             ["URL", report_data.get("target", "-")],
-            ["Fecha", report_data.get("date", "-")],
+            ["Date", report_data.get("date", "-")],
             ["Version", report_data.get("tool", "-")],
             ["HTTP status", general.get("status_code", "-")],
-            ["Servidor", general.get("server", "-")],
+            ["Server", general.get("server", "-")],
         ])
         + "</div>"
-        + "<div class='panel'><h3>Autenticacion</h3>"
-        + table(["Campo", "Valor"], auth_rows, raw_cols={1})
+        + "<div class='panel'><h3>Authentication</h3>"
+        + table(["Field", "Value"], auth_rows, raw_cols={1})
         + "</div></div>"
     )
 
@@ -1618,22 +1617,22 @@ def _build_html_report(report_data):
             rows = [[f"<code>{esc(u)}</code>", f"<code>{esc(e)}</code>"] for u, e in pairs]
             rows += [[f"<code>{esc(u)}</code>", "<span class='muted'>-</span>"] for u in users if u not in matched_u]
             rows += [["<span class='muted'>-</span>", f"<code>{esc(e)}</code>"] for e in emails if e not in matched_e]
-            return "<h4>Correlacion usuario &harr; email</h4>" + table(["Usuario", "Email"], rows, raw_cols={0, 1})
-        return "<h4>Usuarios</h4>" + compact_list(users) + "<h4>Emails</h4>" + compact_list(emails)
+            return "<h4>User &harr; email correlation</h4>" + table(["User", "Email"], rows, raw_cols={0, 1})
+        return "<h4>Users</h4>" + compact_list(users) + "<h4>Emails</h4>" + compact_list(emails)
 
     info_content = (
         "<div class='grid two'>"
-        + "<div class='panel'><h3>WhatWeb / Tecnologias</h3>"
-        + table(["Tecnologia", "Detalle", "Fuente"], tech_rows, "No se detectaron tecnologias.")
+        + "<div class='panel'><h3>WhatWeb / Technologies</h3>"
+        + table(["Technology", "Detail", "Source"], tech_rows, "No se detectaron tecnologias.")
         + "</div>"
-        + "<div class='panel'><h3>Usuarios y emails</h3>"
+        + "<div class='panel'><h3>Users and emails</h3>"
         + users_emails_block(users, emails)
         + "</div></div>"
-        + "<div class='panel'><h3>Cabeceras HTTP</h3>"
-        + table(["Header", "Valor"], header_rows, "Sin cabeceras registradas.")
+        + "<div class='panel'><h3>HTTP Headers</h3>"
+        + table(["Header", "Value"], header_rows, "No cabeceras registradas.")
         + "</div>"
         + "<div class='panel'><h3>Cookies</h3>"
-        + table(["Cookie"], cookie_rows, "Sin cookies registradas.")
+        + table(["Cookie"], cookie_rows, "No cookies registradas.")
         + "</div>"
     )
 
@@ -1648,16 +1647,16 @@ def _build_html_report(report_data):
         f"{item.get('port', '-')}/{item.get('protocol', '')}",
         item.get("service", "-"),
         item.get("script_id", "-"),
-        status_badge("interesante" if item.get("interesting") else "info"),
+        status_badge("interesting" if item.get("interesting") else "info"),
         item.get("output", "-"),
     ] for item in nmap_nse]
     nmap_content = (
-        "<div class='panel'><h3>Puertos abiertos</h3>"
-        + f"<p class='muted'>Comando inicial: <code>{esc(nmap_data.get('command', 'nmap -sV'))}</code></p>"
-        + table(["Puerto", "Estado", "Servicio", "Version", "Scripts"], nmap_rows, raw_cols={1})
-        + "</div><div class='panel'><h3>NSE dirigido</h3>"
-        + f"<p class='muted'>Comando NSE: <code>{esc((nmap_data.get('nse') or {}).get('command', '-'))}</code></p>"
-        + table(["Puerto", "Servicio", "Script", "Tipo", "Salida"], nse_rows, "Sin salidas NSE.", raw_cols={3})
+        "<div class='panel'><h3>Open ports</h3>"
+        + f"<p class='muted'>Initial command: <code>{esc(nmap_data.get('command', 'nmap -sV'))}</code></p>"
+        + table(["Port", "Status", "Service", "Version", "Scripts"], nmap_rows, raw_cols={1})
+        + "</div><div class='panel'><h3>Targeted NSE</h3>"
+        + f"<p class='muted'>NSE command: <code>{esc((nmap_data.get('nse') or {}).get('command', '-'))}</code></p>"
+        + table(["Port", "Service", "Script", "Type", "Output"], nse_rows, "No salidas NSE.", raw_cols={3})
         + "</div>"
     )
 
@@ -1669,7 +1668,7 @@ def _build_html_report(report_data):
         msg = m.group(2) if m else text
         grouped.setdefault(key, []).append(msg)
     finding_rows = [[cat, len(items), "<br>".join(esc(i) for i in items)] for cat, items in sorted(grouped.items())]
-    findings_content = "<div class='panel'>" + table(["Categoria", "Total", "Detalle"], finding_rows, "Sin hallazgos.", raw_cols={2}) + "</div>"
+    findings_content = "<div class='panel'>" + table(["Category", "Total", "Detail"], finding_rows, "No hallazgos.", raw_cols={2}) + "</div>"
 
     nuclei_summary_rows = [[sev.upper(), status_badge(sev.upper()), len(tids), ", ".join(sorted(set(map(str, tids))))] for sev, tids in sorted(nuclei_summary.items(), key=lambda x: sev_rank.get(x[0], 99))]
     _nuclei_sorted = sorted(nuclei_findings, key=lambda x: (sev_rank.get((x.get("severity") or "unknown"), 99), x.get("template_id", "")))
@@ -1682,62 +1681,62 @@ def _build_html_report(report_data):
     ] for n in _nuclei_sorted]
     nuclei_row_attrs = [{"data-sev": (n.get("severity") or "info").lower()} for n in _nuclei_sorted]
     nuclei_content = (
-        "<div class='panel'><h3>Resumen por severidad</h3>"
-        + table(["Severidad", "Estado", "Total", "Templates"], nuclei_summary_rows, "Sin resumen Nuclei.", raw_cols={1})
-        + "</div><div class='panel'><h3>Hallazgos</h3>"
-        + table(["Severidad", "Template", "Nombre", "URL", "Tags"], nuclei_rows, "Sin hallazgos Nuclei.", raw_cols={0}, row_attrs=nuclei_row_attrs)
+        "<div class='panel'><h3>Severity summary</h3>"
+        + table(["Severity", "Status", "Total", "Templates"], nuclei_summary_rows, "No resumen Nuclei.", raw_cols={1})
+        + "</div><div class='panel'><h3>Findings</h3>"
+        + table(["Severity", "Template", "Name", "URL", "Tags"], nuclei_rows, "No hallazgos Nuclei.", raw_cols={0}, row_attrs=nuclei_row_attrs)
         + "</div>"
     )
 
     api_content = "<div class='panel'>" + table(
         ["Status", "Endpoint", "URL", "Content-Type"],
         [[status_badge(ep.get("status", "-")), ep.get("endpoint", "-"), ep.get("url", "-"), ep.get("content_type", "-")] for ep in api_endpoints],
-        "Sin endpoints API.",
+        "No endpoints API.",
         raw_cols={0},
     ) + "</div>"
     vhost_content = "<div class='panel'>" + table(
-        ["Status", "VHost", "Tamano"],
+        ["Status", "VHost", "Size"],
         [[status_badge(v.get("status", "-")), v.get("fqdn") or v.get("subdomain", "-"), v.get("size", "-")] for v in vhosts if isinstance(v, dict)],
-        "Sin vhosts.",
+        "No vhosts.",
         raw_cols={0},
     ) + "</div>"
     dir_content = "<div class='panel'>" + table(
-        ["Status", "URL", "Tamano"],
+        ["Status", "URL", "Size"],
         [[status_badge(h.get("status", "-")), h.get("url", "-"), h.get("size", "-")] for h in directories if isinstance(h, dict)],
-        "Sin directorios.",
+        "No directorios.",
         raw_cols={0},
     ) + "</div>"
 
     wp_rows = []
     if wordpress:
         wp_rows = [
-            ["Detectado", "Si" if wordpress.get("detected") else "No confirmado"],
+            ["Detected", "Yes" if wordpress.get("detected") else "Not confirmed"],
             ["Version", (wordpress.get("version") or {}).get("number", "-")],
-            ["Tema", (wordpress.get("main_theme") or {}).get("name", "-")],
+            ["Theme", (wordpress.get("main_theme") or {}).get("name", "-")],
             ["Plugins", len(wordpress.get("plugins") or [])],
-            ["Usuarios", len(wordpress.get("users") or [])],
-            ["Vulnerabilidades", len(wordpress.get("vulnerabilities") or [])],
-            ["Credenciales", len(wordpress.get("credentials") or [])],
+            ["Users", len(wordpress.get("users") or [])],
+            ["Vulnerabilities", len(wordpress.get("vulnerabilities") or [])],
+            ["Credentials", len(wordpress.get("credentials") or [])],
         ]
     wp_user_rows = [[u.get("username", "-"), u.get("name", "-"), u.get("found_by", "-")] for u in (wordpress.get("users") or []) if isinstance(u, dict)]
     wp_vuln_rows = [[v.get("component_type", "-"), v.get("component", "-"), v.get("title", "-"), v.get("fixed_in", "-")] for v in (wordpress.get("vulnerabilities") or []) if isinstance(v, dict)]
     wp_content = (
-        "<div class='panel'><h3>Resumen</h3>" + table(["Campo", "Valor"], wp_rows, "WordPress no ejecutado.") + "</div>"
-        + "<div class='panel'><h3>Usuarios</h3>" + table(["Usuario", "Nombre", "Fuente"], wp_user_rows, "Sin usuarios WordPress.") + "</div>"
-        + "<div class='panel'><h3>Vulnerabilidades</h3>" + table(["Tipo", "Componente", "Titulo", "Fixed in"], wp_vuln_rows, "Sin vulnerabilidades WordPress.") + "</div>"
+        "<div class='panel'><h3>Summary</h3>" + table(["Field", "Value"], wp_rows, "WordPress not run.") + "</div>"
+        + "<div class='panel'><h3>Users</h3>" + table(["User", "Name", "Source"], wp_user_rows, "No usuarios WordPress.") + "</div>"
+        + "<div class='panel'><h3>Vulnerabilities</h3>" + table(["Type", "Component", "Title", "Fixed in"], wp_vuln_rows, "No vulnerabilidades WordPress.") + "</div>"
     )
 
     spider_content = (
-        "<div class='grid two'><div class='panel'><h3>Resumen</h3>"
-        + table(["Metrica", "Valor"], [
+        "<div class='grid two'><div class='panel'><h3>Summary</h3>"
+        + table(["Metric", "Value"], [
             ["URLs", spider.get("total_urls", 0)],
-            ["Parametros", spider.get("total_params", 0)],
-            ["Formularios", spider.get("total_forms", 0)],
+            ["Parameters", spider.get("total_params", 0)],
+            ["Forms", spider.get("total_forms", 0)],
         ])
-        + "</div><div class='panel'><h3>Parametros</h3>"
+        + "</div><div class='panel'><h3>Parameters</h3>"
         + compact_list(spider.get("sample_params") or [])
         + "</div></div><div class='panel'><h3>URLs</h3>"
-        + table(["URL"], [[u] for u in (spider.get("sample_urls") or [])], "Sin URLs de spider.")
+        + table(["URL"], [[u] for u in (spider.get("sample_urls") or [])], "No URLs de spider.")
         + "</div>"
     )
 
@@ -1751,18 +1750,18 @@ def _build_html_report(report_data):
     ] for f in _src_sorted]
     src_row_attrs = [{"data-sev": (f.get("severity") or "low").lower()} for f in _src_sorted]
     source_content = (
-        "<div class='panel'><h3>Resumen</h3>"
-        + table(["Metrica", "Valor"], [
-            ["Paginas analizadas", src_code.get("pages_analyzed", 0)],
-            ["Recursos analizados", src_code.get("assets_analyzed", 0)],
-            ["Hallazgos", len(src_findings)],
+        "<div class='panel'><h3>Summary</h3>"
+        + table(["Metric", "Value"], [
+            ["Pages analyzed", src_code.get("pages_analyzed", 0)],
+            ["Assets analyzed", src_code.get("assets_analyzed", 0)],
+            ["Findings", len(src_findings)],
             ["Critical", (src_code.get("summary") or {}).get("critical", 0)],
             ["High", (src_code.get("summary") or {}).get("high", 0)],
             ["Medium", (src_code.get("summary") or {}).get("medium", 0)],
             ["Low", (src_code.get("summary") or {}).get("low", 0)],
         ])
-        + "</div><div class='panel'><h3>Detalle</h3>"
-        + table(["Severidad", "Tipo", "Valor", "URL", "Contexto"], src_rows, "Sin hallazgos en codigo fuente.", raw_cols={0}, row_attrs=src_row_attrs)
+        + "</div><div class='panel'><h3>Detail</h3>"
+        + table(["Severity", "Type", "Value", "URL", "Context"], src_rows, "No hallazgos en codigo fuente.", raw_cols={0}, row_attrs=src_row_attrs)
         + "</div>"
     )
 
@@ -1770,46 +1769,46 @@ def _build_html_report(report_data):
     if active_directory:
         ad_summary = [
             ["Domain Controller", active_directory.get("target", "-")],
-            ["Dominio", active_directory.get("domain", "-")],
+            ["Domain", active_directory.get("domain", "-")],
             ["Base DN", active_directory.get("base_dn", "-")],
-            ["Modo", active_directory.get("auth_mode", "-")],
-            ["Kerbrute usuarios", len((active_directory.get("kerbrute") or {}).get("valid_users") or [])],
-            ["LDAP usuarios", len(ad_ldap.get("users") or [])],
-            ["LDAP grupos", len(ad_ldap.get("groups") or [])],
-            ["LDAP equipos", len(ad_ldap.get("computers") or [])],
+            ["Mode", active_directory.get("auth_mode", "-")],
+            ["Kerbrute users", len((active_directory.get("kerbrute") or {}).get("valid_users") or [])],
+            ["LDAP users", len(ad_ldap.get("users") or [])],
+            ["LDAP groups", len(ad_ldap.get("groups") or [])],
+            ["LDAP computers", len(ad_ldap.get("computers") or [])],
             ["AS-REP roastable", len(asrep_hashes)],
             ["Kerberoastable SPNs", len(kerberoast_hashes)],
-            ["NXC credenciales", len(ad_creds)],
+            ["NXC credentials", len(ad_creds)],
         ]
     ad_content = (
-        "<div class='panel'><h3>Resumen AD</h3>" + table(["Campo", "Valor"], ad_summary, "Modulo AD no ejecutado.") + "</div>"
-        + "<div class='panel'><h3>Kerbrute usuarios validos</h3>"
-        + table(["Usuario"], [[u] for u in ((active_directory.get("kerbrute") or {}).get("valid_users") or [])], "Sin usuarios Kerbrute.")
-        + "</div><div class='panel'><h3>LDAP usuarios</h3>"
-        + table(["Usuario", "UPN", "CN", "Grupos"], [[u.get("username", "-"), u.get("upn", "-"), u.get("cn", "-"), ", ".join(u.get("memberOf") or [])] for u in (ad_ldap.get("users") or [])], "Sin usuarios LDAP.")
-        + "</div><div class='panel'><h3>LDAP grupos</h3>"
-        + table(["Grupo", "Descripcion", "Miembros"], [[g.get("name", "-"), g.get("description", "-"), len(g.get("members") or [])] for g in (ad_ldap.get("groups") or [])], "Sin grupos LDAP.")
-        + "</div><div class='panel'><h3>LDAP equipos</h3>"
-        + table(["Equipo", "SO", "Version"], [[c.get("name", "-"), c.get("os", "-"), c.get("os_version", "-")] for c in (ad_ldap.get("computers") or [])], "Sin equipos LDAP.")
+        "<div class='panel'><h3>Summary AD</h3>" + table(["Field", "Value"], ad_summary, "AD module not run.") + "</div>"
+        + "<div class='panel'><h3>Kerbrute users validos</h3>"
+        + table(["User"], [[u] for u in ((active_directory.get("kerbrute") or {}).get("valid_users") or [])], "No usuarios Kerbrute.")
+        + "</div><div class='panel'><h3>LDAP users</h3>"
+        + table(["User", "UPN", "CN", "Groups"], [[u.get("username", "-"), u.get("upn", "-"), u.get("cn", "-"), ", ".join(u.get("memberOf") or [])] for u in (ad_ldap.get("users") or [])], "No usuarios LDAP.")
+        + "</div><div class='panel'><h3>LDAP groups</h3>"
+        + table(["Group", "Description", "Members"], [[g.get("name", "-"), g.get("description", "-"), len(g.get("members") or [])] for g in (ad_ldap.get("groups") or [])], "No grupos LDAP.")
+        + "</div><div class='panel'><h3>LDAP computers</h3>"
+        + table(["Computer", "OS", "Version"], [[c.get("name", "-"), c.get("os", "-"), c.get("os_version", "-")] for c in (ad_ldap.get("computers") or [])], "No equipos LDAP.")
         + "</div><div class='panel'><h3>AS-REP Roasting</h3>"
-        + table(["Usuario", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in asrep_hashes], "Sin hashes AS-REP.")
+        + table(["User", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in asrep_hashes], "No hashes AS-REP.")
         + "</div><div class='panel'><h3>Kerberoasting</h3>"
-        + table(["Usuario/SPN", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in kerberoast_hashes], "Sin hashes Kerberoast.")
-        + "</div><div class='panel'><h3>NXC credenciales</h3>"
-        + table(["Usuario", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds], "Sin credenciales NXC.")
+        + table(["User/SPN", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in kerberoast_hashes], "No hashes Kerberoast.")
+        + "</div><div class='panel'><h3>NXC credentials</h3>"
+        + table(["User", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds], "No credenciales NXC.")
         + "</div>"
     )
     ad_raw = active_directory.get("raw_commands") or []
     if ad_raw:
-        ad_content += "<div class='panel'><h3>Salidas de herramientas AD</h3>" + "".join(
-            f"<details><summary>{esc(cmd.get('label', 'comando'))}</summary><p class='muted'><code>{esc(cmd.get('command', '-'))}</code></p><pre>{esc(cmd.get('output', '') or '-')}</pre></details>"
+        ad_content += "<div class='panel'><h3>Outputs de herramientas AD</h3>" + "".join(
+            f"<details><summary>{esc(cmd.get('label', 'command'))}</summary><p class='muted'><code>{esc(cmd.get('command', '-'))}</code></p><pre>{esc(cmd.get('output', '') or '-')}</pre></details>"
             for cmd in ad_raw
         ) + "</div>"
 
     creds_content = "<div class='panel'>" + table(
-        ["Usuario", "Password"],
+        ["User", "Password"],
         [[c.get("username", "-"), c.get("password", "-")] for c in creds if isinstance(c, dict)],
-        "Sin credenciales web validas.",
+        "No credenciales web validas.",
     ) + "</div>"
 
     # Superficie de exposicion: robots.txt, metodos HTTP, pruebas de inyeccion
@@ -1822,15 +1821,15 @@ def _build_html_report(report_data):
     ] for fi in inj_forms]
     exposure_content = (
         "<div class='grid two'>"
-        + "<div class='panel'><h3>Rutas en robots.txt</h3>"
-        + table(["Ruta"], [[p] for p in robots_paths], "Sin rutas en robots.txt.")
-        + "</div><div class='panel'><h3>Metodos HTTP permitidos</h3>"
-        + (compact_list(sorted(http_methods)) if http_methods else "<span class='muted'>Sin metodos detectados (OPTIONS).</span>")
+        + "<div class='panel'><h3>robots.txt paths</h3>"
+        + table(["Path"], [[p] for p in robots_paths], "No rutas en robots.txt.")
+        + "</div><div class='panel'><h3>Methods HTTP permitidos</h3>"
+        + (compact_list(sorted(http_methods)) if http_methods else "<span class='muted'>No metodos detectados (OPTIONS).</span>")
         + "</div></div>"
-        + "<div class='panel'><h3>Pruebas de inyeccion</h3>"
-        + "<h4>Parametros GET probados</h4>" + (compact_list(inj_get) if inj_get else "<span class='muted'>Sin parametros GET probados.</span>")
-        + "<h4>Inputs de formulario probados</h4>"
-        + table(["Form action", "Input", "Metodo"], inj_form_rows, "Sin inputs de formulario probados.")
+        + "<div class='panel'><h3>Injection tests</h3>"
+        + "<h4>Parameters GET probados</h4>" + (compact_list(inj_get) if inj_get else "<span class='muted'>No parametros GET probados.</span>")
+        + "<h4>Tested form inputs</h4>"
+        + table(["Form action", "Input", "Method"], inj_form_rows, "No inputs de formulario probados.")
         + "</div>"
     )
 
@@ -1842,7 +1841,7 @@ def _build_html_report(report_data):
     adv_xxe_rows = [[r.get("url", "-")[:80], r.get("content_type", "-"), r.get("note", "confirmado")] for r in adv_xxe]
     adv_crlf_rows = [[r.get("vector", "-"), (r.get("param") or r.get("url") or "-")[:60], r.get("payload", "-")[:50]] for r in adv_crlf]
     adv_smuggling_rows = [[(r.get("tool") or r.get("type") or "-"), (r.get("note") or r.get("output_snippet") or "-")[:80]] for r in adv_smuggling]
-    adv_cache_rows = [[r.get("header", "-"), r.get("value", "-")[:50], "Confirmado" if r.get("confirmed") else "Reflejado"] for r in adv_cache]
+    adv_cache_rows = [[r.get("header", "-"), r.get("value", "-")[:50], "Confirmed" if r.get("confirmed") else "Reflected"] for r in adv_cache]
     adv_summary_rows = [
         ["SSRF", str(len(adv_ssrf))],
         ["SSTI", str(len(adv_ssti))],
@@ -1852,31 +1851,31 @@ def _build_html_report(report_data):
         ["Cache Poisoning", str(len(adv_cache))],
     ]
     adv_content = (
-        "<div class='panel'><h3>Resumen</h3>"
-        + table(["Modulo", "Hallazgos"], adv_summary_rows, "Sin pruebas avanzadas ejecutadas.")
+        "<div class='panel'><h3>Summary</h3>"
+        + table(["Module", "Findings"], adv_summary_rows, "No pruebas avanzadas ejecutadas.")
         + "</div>"
         + "<div class='panel'><h3>SSRF</h3>"
-        + table(["Tipo", "Vector", "Payload/Valor", "HTTP"], adv_ssrf_rows, "Sin hallazgos SSRF.")
+        + table(["Type", "Vector", "Payload/Value", "HTTP"], adv_ssrf_rows, "No hallazgos SSRF.")
         + "</div>"
         + "<div class='panel'><h3>SSTI</h3>"
-        + table(["URL", "Parametro", "Engine"], adv_ssti_rows, "Sin hallazgos SSTI.")
+        + table(["URL", "Parameter", "Engine"], adv_ssti_rows, "No hallazgos SSTI.")
         + "</div>"
         + "<div class='panel'><h3>XXE</h3>"
-        + table(["URL", "Content-Type", "Estado"], adv_xxe_rows, "Sin hallazgos XXE.")
+        + table(["URL", "Content-Type", "Status"], adv_xxe_rows, "No hallazgos XXE.")
         + "</div>"
         + "<div class='panel'><h3>CRLF Injection</h3>"
-        + table(["Vector", "URL/Param", "Payload"], adv_crlf_rows, "Sin hallazgos CRLF.")
+        + table(["Vector", "URL/Param", "Payload"], adv_crlf_rows, "No hallazgos CRLF.")
         + "</div>"
         + "<div class='panel'><h3>HTTP Request Smuggling</h3>"
-        + table(["Herramienta/Tipo", "Detalle"], adv_smuggling_rows, "Sin hallazgos Smuggling.")
+        + table(["Tool/Type", "Detail"], adv_smuggling_rows, "No hallazgos Smuggling.")
         + "</div>"
         + "<div class='panel'><h3>Cache Poisoning</h3>"
-        + table(["Cabecera", "Valor inyectado", "Estado"], adv_cache_rows, "Sin hallazgos Cache Poisoning.")
+        + table(["Header", "Injected value", "Status"], adv_cache_rows, "No hallazgos Cache Poisoning.")
         + "</div>"
     )
 
     raw_content = (
-        "<div class='panel'><h3>Estadisticas</h3><pre>"
+        "<div class='panel'><h3>Statistics</h3><pre>"
         + esc(json.dumps(stats, indent=2, ensure_ascii=False))
         + "</pre></div><div class='panel'><h3>JSON completo</h3><pre>"
         + esc(json.dumps(scan_data, indent=2, ensure_ascii=False))
@@ -1903,22 +1902,22 @@ def _build_html_report(report_data):
         "raw": bool(scan_data or stats),
     }
     all_sections = [
-        ("resumen", "Resumen", overview_content, None),
-        ("info", "Informacion General", info_content, len(technologies)),
+        ("resumen", "Summary", overview_content, None),
+        ("info", "General Information", info_content, len(technologies)),
         ("nmap", "Nmap y NSE", nmap_content, len(nmap_ports)),
-        ("hallazgos", "Hallazgos", findings_content, len(findings)),
+        ("hallazgos", "Findings", findings_content, len(findings)),
         ("nuclei", "Nuclei", nuclei_content, len(nuclei_findings)),
         ("api", "API", api_content, len(api_endpoints)),
         ("vhosts", "VHosts", vhost_content, len(vhosts)),
-        ("directorios", "Directorios", dir_content, len(directories)),
-        ("exposicion", "Superficie expuesta", exposure_content, len(robots_paths) + len(http_methods)),
-        ("advanced", "Pruebas Avanzadas", adv_content, adv_total),
+        ("directorios", "Directories", dir_content, len(directories)),
+        ("exposicion", "Exposed Surface", exposure_content, len(robots_paths) + len(http_methods)),
+        ("advanced", "Advanced Tests", adv_content, adv_total),
         ("wordpress", "WordPress", wp_content, len(wordpress.get("vulnerabilities") or [])),
         ("spider", "Spidering", spider_content, spider.get("total_urls", 0)),
-        ("codigo", "Codigo Fuente", source_content, len(src_findings)),
+        ("codigo", "Codigo Source", source_content, len(src_findings)),
         ("ad", "Active Directory", ad_content, len(ad_ldap.get("users") or [])),
-        ("credenciales", "Credenciales Web", creds_content, len(creds)),
-        ("raw", "Datos Completos", raw_content, None),
+        ("credenciales", "Web Credentials", creds_content, len(creds)),
+        ("raw", "Complete Data", raw_content, None),
     ]
     sections = [s for s in all_sections if present.get(s[0])]
 
@@ -1964,7 +1963,7 @@ def _build_html_report(report_data):
         return (
             f"<section id='{sid}' class='section'>"
             f"<div class='section-head'>{sec_icon_html(sid, 'shic')}<h2>{esc(title)}</h2>{cnt}"
-            f"<a class='toplink' href='#top' title='Volver arriba'><i class='ph ph-arrow-up'></i></a></div>"
+            f"<a class='toplink' href='#top' title='Back to top'><i class='ph ph-arrow-up'></i></a></div>"
             f"{content}</section>"
         )
 
@@ -1992,15 +1991,15 @@ def _build_html_report(report_data):
     filter_html = (
         "<div class='filter-bar' id='filterBar'>"
         "<div class='filter-group'>"
-        "<span class='filter-lbl'><i class='ph ph-funnel'></i> Criticidad</span>"
+        "<span class='filter-lbl'><i class='ph ph-funnel'></i> Severity</span>"
         "<div class='filter-chips'>"
-        "<button class='fchip active' data-filter-sev='all'>Todos</button>"
+        "<button class='fchip active' data-filter-sev='all'>All</button>"
         f"{sev_chips}</div></div>"
         + (
             "<div class='filter-group'>"
-            "<span class='filter-lbl'><i class='ph ph-squares-four'></i> Seccion</span>"
+            "<span class='filter-lbl'><i class='ph ph-squares-four'></i> Section</span>"
             "<div class='filter-chips'>"
-            "<button class='fchip active' data-filter-sec='all'>Todas</button>"
+            "<button class='fchip active' data-filter-sec='all'>All</button>"
             f"{sec_chips}</div></div>"
             if sec_chips else ""
         )
@@ -2033,17 +2032,17 @@ def _build_html_report(report_data):
     risk_html = (
         "<div class='riskcard'>"
         f"<div class='donut' style='background:conic-gradient({donut_gradient})'>"
-        f"<div class='donut-hole'><span>RIESGO</span><strong class='risk-{risk_tone}'>{esc(risk_label)}</strong>"
+        f"<div class='donut-hole'><span>RISK</span><strong class='risk-{risk_tone}'>{esc(risk_label)}</strong>"
         f"<small>score {esc(risk_score)}</small></div></div>"
         f"<div class='legend'>{legend}</div></div>"
     )
 
     template = """<!doctype html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>WSTG Dashboard - __TITLE_TARGET__</title>
+<title>OWASP Scanner Dashboard - __TITLE_TARGET__</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
@@ -2263,35 +2262,35 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
 </head>
 <body>
 <span id="top"></span>
-<button class="menu-fab" id="menuBtn" type="button" aria-label="Abrir menu"><i class="ph ph-list"></i></button>
+<button class="menu-fab" id="menuBtn" type="button" aria-label="Open menu"><i class="ph ph-list"></i></button>
 <div class="layout" id="layout">
   <aside class="side" id="sidebar">
     <div class="brand">
       <div class="logo"><i class="ph-fill ph-magnifying-glass"></i></div>
       <div class="brand-txt">
-        <strong>WSTG&nbsp;Scanner</strong>
+        <strong>OWASP&nbsp;Scanner</strong>
         <span>Security Report</span>
       </div>
     </div>
     __NAV__
   </aside>
-  <button class="collapse-btn" id="collapseBtn" type="button" title="Colapsar / expandir menu" aria-label="Colapsar o expandir menu">
+  <button class="collapse-btn" id="collapseBtn" type="button" title="Collapse / expand menu" aria-label="Collapse or expand menu">
     <i id="collapseIcon" class="ph ph-caret-left"></i>
   </button>
   <main class="main">
     <div class="topbar">
-      <label class="search"><i class="ph ph-magnifying-glass muted"></i><input id="q" type="search" placeholder="Filtrar tablas (host, puerto, CVE, hash...)"></label>
-      <button class="btn" onclick="window.print()" type="button"><i class="ph ph-file-pdf"></i> <span>Exportar PDF</span></button>
-      <button id="themeBtn" class="btn theme-btn" type="button" aria-label="Cambiar tema"><i id="themeIcon" class="ph ph-moon"></i> <span id="themeLabel">Tema</span></button>
+      <label class="search"><i class="ph ph-magnifying-glass muted"></i><input id="q" type="search" placeholder="Filter tables (host, port, CVE, hash...)"></label>
+      <button class="btn" onclick="window.print()" type="button"><i class="ph ph-file-pdf"></i> <span>Export PDF</span></button>
+      <button id="themeBtn" class="btn theme-btn" type="button" aria-label="Change theme"><i id="themeIcon" class="ph ph-moon"></i> <span id="themeLabel">Theme</span></button>
     </div>
     <section class="hero">
       <div>
-        <div class="eyebrow">OWASP WSTG // Security Assessment</div>
-        <h1>OWASP Web Security Testing Scanner</h1>
+        <div class="eyebrow">OWASP Methodology // Security Assessment</div>
+        <h1>OWASP Scanner</h1>
         <p>__TARGET__</p>
         <div class="tags">
-          <span class="badge badge-info">WSTG v__TOOL__</span>
-          <span class="badge badge-__RISK_TONE__">Riesgo __RISK_LABEL__</span>
+          <span class="badge badge-info">OWASP Scanner v__TOOL__</span>
+          <span class="badge badge-__RISK_TONE__">Risk __RISK_LABEL__</span>
           <span class="badge">__DATE__</span>
         </div>
       </div>
@@ -2303,19 +2302,19 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
 </div>
 <script>
 (function(){
-  var root=document.documentElement, key="wstg_dashboard_theme";
+  var root=document.documentElement, key="owasp_scanner_dashboard_theme";
   var stored=localStorage.getItem(key);
   var initial=stored||((window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light");
   function paint(t){ root.setAttribute("data-theme",t);
     var i=document.getElementById("themeIcon"), l=document.getElementById("themeLabel");
-    if(i) i.className="ph "+((t==="dark")?"ph-sun":"ph-moon"); if(l) l.textContent=(t==="dark")?"Modo claro":"Modo oscuro"; }
+    if(i) i.className="ph "+((t==="dark")?"ph-sun":"ph-moon"); if(l) l.textContent=(t==="dark")?"Light mode":"Dark mode"; }
   paint(initial);
   document.getElementById("themeBtn").addEventListener("click",function(){
     var next=root.getAttribute("data-theme")==="dark"?"light":"dark"; paint(next); localStorage.setItem(key,next); });
   var sb=document.getElementById("sidebar"), mb=document.getElementById("menuBtn");
   if(mb) mb.addEventListener("click",function(){ sb.classList.toggle("open"); });
   // Colapsar sidebar (desktop) con persistencia
-  var layout=document.getElementById("layout"), ck="wstg_sidebar_collapsed";
+  var layout=document.getElementById("layout"), ck="owasp_scanner_sidebar_collapsed";
   function setCollapse(c){ layout.classList.toggle("collapsed",c);
     var ic=document.getElementById("collapseIcon"); if(ic) ic.style.transform=c?"rotate(180deg)":"none"; }
   setCollapse(localStorage.getItem(ck)==="1");
@@ -2383,7 +2382,7 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
 def _md_escape_cell(value):
     """Escapa el contenido de una celda de tabla markdown."""
     text = str(value) if value is not None else ""
-    # Sin saltos de línea ni pipes literales
+    # No saltos de línea ni pipes literales
     text = text.replace('\r', ' ').replace('\n', '<br>')
     text = text.replace('|', '\\|')
     return text or "-"
@@ -2450,44 +2449,44 @@ def _build_markdown_report(report_data):
     SEV_ORDER = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'info': 4, 'unknown': 5}
 
     parts = []
-    parts.append(f"# OWASP WSTG Scanner — Reporte de Pentesting")
+    parts.append(f"# OWASP Scanner - Pentest Report")
     parts.append("")
-    parts.append(f"- **Objetivo:** `{target}`")
-    parts.append(f"- **Fecha:** {date}")
-    parts.append(f"- **Herramienta:** WSTG Scanner v{report_data.get('tool', '')}")
+    parts.append(f"- **Target:** `{target}`")
+    parts.append(f"- **Date:** {date}")
+    parts.append(f"- **Tool:** OWASP Scanner v{report_data.get('tool', '')}")
     parts.append("")
 
-    # 1. Resumen ejecutivo
-    parts.append("## Resumen ejecutivo")
+    # 1. Summary ejecutivo
+    parts.append("## Executive Summary")
     parts.append("")
     techs = general.get("technologies", []) or []
     tech_str = ", ".join(_tech_str(t) for t in techs) or "-"
     overview_rows = [
         ["Status HTTP", str(general.get("status_code", "-"))],
-        ["Servidor", str(general.get("server", "-"))],
-        ["Tecnologías", tech_str],
-        ["Hallazgos (FINDINGS)", str(len(findings))],
-        ["Puertos abiertos (nmap)", str(len(nmap_ports))],
-        ["Resultados NSE dirigidos", str(len(nmap_nse))],
-        ["Vulnerabilidades Nuclei", str(len(nuclei_findings_list))],
+        ["Server", str(general.get("server", "-"))],
+        ["Technologies", tech_str],
+        ["Findings (FINDINGS)", str(len(findings))],
+        ["Open ports (nmap)", str(len(nmap_ports))],
+        ["Resultados Targeted NSEs", str(len(nmap_nse))],
+        ["Vulnerabilities Nuclei", str(len(nuclei_findings_list))],
         ["URLs spider", str(spider.get("total_urls", 0))],
         ["Subdominios (vhosts)", str(len(vhosts))],
-        ["Directorios encontrados", str(len(dir_hits))],
+        ["Directories encontrados", str(len(dir_hits))],
         ["Endpoints API", str(len(api_endpoints))],
-        ["Usuarios", str(len(users))],
+        ["Users", str(len(users))],
         ["Emails", str(len(emails))],
-        ["Credenciales válidas", str(len(creds))],
+        ["Credentials válidas", str(len(creds))],
         ["WordPress vulnerabilidades", str(len(wordpress.get("vulnerabilities") or []))],
-        ["Usuarios AD (LDAP)", str(len(ad_ldap.get("users") or []))],
+        ["Users AD (LDAP)", str(len(ad_ldap.get("users") or []))],
         ["AS-REP roastable", str(len(asrep_hashes))],
         ["Kerberoastable SPNs", str(len(kerberoast_hashes))],
-        ["Credenciales AD (NXC)", str(len(ad_creds))],
-        ["Hallazgos en código fuente", str(len(src_findings))],
+        ["Credentials AD (NXC)", str(len(ad_creds))],
+        ["Findings en código fuente", str(len(src_findings))],
     ]
-    parts.append(_md_table(["Campo", "Valor"], overview_rows))
+    parts.append(_md_table(["Field", "Value"], overview_rows))
     parts.append("")
 
-    # 2. Cabeceras de seguridad
+    # 2. Headers de seguridad
     sec_header_names = [
         "Strict-Transport-Security", "Content-Security-Policy",
         "X-Frame-Options", "X-Content-Type-Options",
@@ -2499,9 +2498,9 @@ def _build_markdown_report(report_data):
         v = headers.get(h) or headers.get(h.lower()) or "-"
         present = v != "-"
         sec_rows.append([h, "OK" if present else "AUSENTE", v])
-    parts.append("## Cabeceras de seguridad")
+    parts.append("## Headers de seguridad")
     parts.append("")
-    parts.append(_md_table(["Header", "Estado", "Valor"], sec_rows))
+    parts.append(_md_table(["Header", "Status", "Value"], sec_rows))
     parts.append("")
 
     # 3. Cookies
@@ -2517,11 +2516,11 @@ def _build_markdown_report(report_data):
     if http_methods:
         misc_rows.append(["HTTP Methods permitidos", ", ".join(http_methods)])
     if robots_paths:
-        misc_rows.append([f"Rutas robots/sitemap ({len(robots_paths)})", ", ".join(robots_paths[:15])])
+        misc_rows.append([f"Paths robots/sitemap ({len(robots_paths)})", ", ".join(robots_paths[:15])])
     if misc_rows:
-        parts.append("## Información HTTP adicional")
+        parts.append("## Information HTTP adicional")
         parts.append("")
-        parts.append(_md_table(["Categoría", "Valor"], misc_rows))
+        parts.append(_md_table(["Category", "Value"], misc_rows))
         parts.append("")
 
     # 4b. Nmap (puertos abiertos)
@@ -2545,11 +2544,11 @@ def _build_markdown_report(report_data):
                 str(p.get("service", "") or "-"),
                 version_str,
             ])
-        parts.append(_md_table(["Puerto", "Estado", "Servicio", "Versión"], nm_rows))
+        parts.append(_md_table(["Port", "Status", "Service", "Version"], nm_rows))
         parts.append("")
 
     if nmap_nse:
-        parts.append(f"## Nmap NSE dirigido ({len(nmap_nse)})")
+        parts.append(f"## Nmap Targeted NSE ({len(nmap_nse)})")
         parts.append("")
         if (nmap_data.get("nse") or {}).get("command"):
             parts.append(f"- **Comando:** `{(nmap_data.get('nse') or {}).get('command')}`")
@@ -2560,7 +2559,7 @@ def _build_markdown_report(report_data):
             str(item.get("script_id") or "-"),
             str(item.get("output") or "-"),
         ] for item in nmap_nse]
-        parts.append(_md_table(["Puerto", "Servicio", "Script", "Salida"], rows))
+        parts.append(_md_table(["Port", "Service", "Script", "Output"], rows))
         parts.append("")
 
     # 5. Spider
@@ -2570,9 +2569,9 @@ def _build_markdown_report(report_data):
         spider_rows = [
             ["URLs totales", str(spider.get("total_urls", 0))],
             ["Parámetros únicos", str(spider.get("total_params", 0))],
-            ["Formularios", str(spider.get("total_forms", 0))],
+            ["Forms", str(spider.get("total_forms", 0))],
         ]
-        parts.append(_md_table(["Métrica", "Valor"], spider_rows))
+        parts.append(_md_table(["Metric", "Value"], spider_rows))
         parts.append("")
         sample_urls = spider.get("sample_urls") or []
         if sample_urls:
@@ -2589,20 +2588,20 @@ def _build_markdown_report(report_data):
         code_overview = [
             ["Páginas analizadas", str(src_code.get("pages_analyzed", 0))],
             ["Recursos JS/JSON analizados", str(src_code.get("assets_analyzed", 0))],
-            ["Hallazgos totales", str(len(src_findings))],
+            ["Findings totales", str(len(src_findings))],
             ["Critical", str(sev_stats.get("critical", 0))],
             ["High", str(sev_stats.get("high", 0))],
             ["Medium", str(sev_stats.get("medium", 0))],
             ["Low", str(sev_stats.get("low", 0))],
         ]
-        parts.append(_md_table(["Métrica", "Valor"], code_overview))
+        parts.append(_md_table(["Metric", "Value"], code_overview))
         parts.append("")
         if src_findings:
             sorted_src = sorted(
                 src_findings,
                 key=lambda x: SEV_ORDER.get(x.get("severity", "low"), 9),
             )
-            parts.append(f"### Detalle de hallazgos en código fuente ({len(sorted_src)})")
+            parts.append(f"### Detail de hallazgos en código fuente ({len(sorted_src)})")
             parts.append("")
             rows = [[
                 (f.get("severity") or "").upper(),
@@ -2610,7 +2609,7 @@ def _build_markdown_report(report_data):
                 str(f.get("value", "-")),
                 str(f.get("url", "-")),
             ] for f in sorted_src]
-            parts.append(_md_table(["Severidad", "Tipo", "Valor detectado", "URL"], rows))
+            parts.append(_md_table(["Severity", "Type", "Value detectado", "URL"], rows))
             parts.append("")
 
     # 6a. Subdominios (vhosts)
@@ -2621,16 +2620,16 @@ def _build_markdown_report(report_data):
                  str(v.get("fqdn") or v.get("subdomain", "-")),
                  str(v.get("size", "-"))]
                 for v in vhosts]
-        parts.append(_md_table(["Status", "VHost", "Tamaño"], rows))
+        parts.append(_md_table(["Status", "VHost", "Size"], rows))
         parts.append("")
 
-    # 6b. Directorios
+    # 6b. Directories
     if dir_hits:
-        parts.append(f"## Directorios encontrados ({len(dir_hits)})")
+        parts.append(f"## Directories encontrados ({len(dir_hits)})")
         parts.append("")
         rows = [[str(h.get("status", "-")), str(h.get("url", "-")), str(h.get("size", "-"))]
                 for h in dir_hits]
-        parts.append(_md_table(["Status", "URL", "Tamaño"], rows))
+        parts.append(_md_table(["Status", "URL", "Size"], rows))
         parts.append("")
 
     # 6c. WordPress / WPScan
@@ -2644,24 +2643,24 @@ def _build_markdown_report(report_data):
         parts.append("## WordPress / WPScan")
         parts.append("")
         wp_rows = [
-            ["Detectado", "Sí" if wordpress.get("detected") else "No confirmado"],
-            ["Versión", str(wp_version.get("number") or "-")],
-            ["Estado versión", str(wp_version.get("status") or "-")],
-            ["Tema principal", str(wp_theme.get("name") or "-")],
+            ["Detected", "Yes" if wordpress.get("detected") else "Not confirmed"],
+            ["Version", str(wp_version.get("number") or "-")],
+            ["Status versión", str(wp_version.get("status") or "-")],
+            ["Theme principal", str(wp_theme.get("name") or "-")],
             ["Plugins detectados", str(len(wp_plugins))],
-            ["Usuarios WPScan", str(len(wp_users))],
-            ["Vulnerabilidades", str(len(wp_vulns))],
-            ["Credenciales WP", str(len(wp_creds))],
+            ["Users WPScan", str(len(wp_users))],
+            ["Vulnerabilities", str(len(wp_vulns))],
+            ["Credentials WP", str(len(wp_creds))],
         ]
-        parts.append(_md_table(["Campo", "Valor"], wp_rows))
+        parts.append(_md_table(["Field", "Value"], wp_rows))
         parts.append("")
         if wp_users:
-            parts.append("### Usuarios WordPress")
+            parts.append("### Users WordPress")
             parts.append("")
-            parts.append(_md_table(["Usuario", "Nombre"], [[u.get("username", "-"), u.get("name", "-")] for u in wp_users]))
+            parts.append(_md_table(["User", "Name"], [[u.get("username", "-"), u.get("name", "-")] for u in wp_users]))
             parts.append("")
         if wp_vulns:
-            parts.append("### Vulnerabilidades WordPress")
+            parts.append("### Vulnerabilities WordPress")
             parts.append("")
             rows = [[
                 v.get("component_type", "-"),
@@ -2669,7 +2668,7 @@ def _build_markdown_report(report_data):
                 v.get("title", "-"),
                 v.get("fixed_in", "-"),
             ] for v in wp_vulns]
-            parts.append(_md_table(["Tipo", "Componente", "Título", "Fixed in"], rows))
+            parts.append(_md_table(["Type", "Component", "Título", "Fixed in"], rows))
             parts.append("")
 
     if active_directory:
@@ -2684,66 +2683,66 @@ def _build_markdown_report(report_data):
         parts.append("")
         ad_rows = [
             ["Domain Controller", str(active_directory.get("target") or "-")],
-            ["Dominio", str(active_directory.get("domain") or "-")],
+            ["Domain", str(active_directory.get("domain") or "-")],
             ["Base DN", str(active_directory.get("base_dn") or "-")],
-            ["Modo", str(active_directory.get("auth_mode") or "-")],
-            ["Kerbrute usuarios validos", str(len(ad_kb.get("valid_users") or []))],
+            ["Mode", str(active_directory.get("auth_mode") or "-")],
+            ["Kerbrute users validos", str(len(ad_kb.get("valid_users") or []))],
             ["AS-REP roastable", str(len(asrep_hashes))],
             ["Kerberoastable SPNs", str(len(kerberoast_hashes))],
-            ["LDAP usuarios", str(len(ad_ldap.get("users") or []))],
-            ["LDAP grupos", str(len(ad_ldap.get("groups") or []))],
-            ["LDAP equipos", str(len(ad_ldap.get("computers") or []))],
-            ["NXC credenciales", str(len(ad_creds))],
+            ["LDAP users", str(len(ad_ldap.get("users") or []))],
+            ["LDAP groups", str(len(ad_ldap.get("groups") or []))],
+            ["LDAP computers", str(len(ad_ldap.get("computers") or []))],
+            ["NXC credentials", str(len(ad_creds))],
         ]
-        parts.append(_md_table(["Campo", "Valor"], ad_rows))
+        parts.append(_md_table(["Field", "Value"], ad_rows))
         parts.append("")
         if ad_kb.get("valid_users"):
-            parts.append("### Kerbrute usuarios validos")
+            parts.append("### Kerbrute users validos")
             parts.append("")
-            parts.append(_md_table(["Usuario"], [[u] for u in ad_kb.get("valid_users", [])]))
+            parts.append(_md_table(["User"], [[u] for u in ad_kb.get("valid_users", [])]))
             parts.append("")
         if ad_ldap.get("users"):
-            parts.append("### LDAP usuarios")
+            parts.append("### LDAP users")
             parts.append("")
             rows = [[u.get("username", "-"), u.get("upn", "-"), u.get("cn", "-"), ", ".join(u.get("memberOf") or [])]
                     for u in ad_ldap.get("users", [])]
-            parts.append(_md_table(["Usuario", "UPN", "CN", "Grupos"], rows))
+            parts.append(_md_table(["User", "UPN", "CN", "Groups"], rows))
             parts.append("")
         if ad_ldap.get("groups"):
-            parts.append("### LDAP grupos")
+            parts.append("### LDAP groups")
             parts.append("")
             rows = [[g.get("name", "-"), g.get("description", "-"), str(len(g.get("members") or []))]
                     for g in ad_ldap.get("groups", [])]
-            parts.append(_md_table(["Grupo", "Descripcion", "Miembros"], rows))
+            parts.append(_md_table(["Group", "Description", "Members"], rows))
             parts.append("")
         if ad_ldap.get("computers"):
-            parts.append("### LDAP equipos")
+            parts.append("### LDAP computers")
             parts.append("")
             rows = [[c.get("name", "-"), c.get("os", "-"), c.get("os_version", "-")]
                     for c in ad_ldap.get("computers", [])]
-            parts.append(_md_table(["Equipo", "SO", "Version"], rows))
+            parts.append(_md_table(["Computer", "OS", "Version"], rows))
             parts.append("")
         if ad_creds:
-            parts.append("### Credenciales AD validas (NXC)")
+            parts.append("### Credentials AD validas (NXC)")
             parts.append("")
-            parts.append(_md_table(["Usuario", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds]))
+            parts.append(_md_table(["User", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds]))
             parts.append("")
         if asrep_hashes:
             parts.append("### AS-REP Roasting (impacket-GetNPUsers)")
             parts.append("")
-            parts.append(_md_table(["Usuario", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in asrep_hashes]))
+            parts.append(_md_table(["User", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in asrep_hashes]))
             parts.append("")
         if kerberoast_hashes:
             parts.append("### Kerberoasting (impacket-GetUserSPNs)")
             parts.append("")
-            parts.append(_md_table(["Usuario/SPN", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in kerberoast_hashes]))
+            parts.append(_md_table(["User/SPN", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in kerberoast_hashes]))
             parts.append("")
         raw_commands = active_directory.get("raw_commands") or []
         if raw_commands:
-            parts.append("### Salida bruta de herramientas AD")
+            parts.append("### Output bruta de herramientas AD")
             parts.append("")
             for cmd in raw_commands:
-                parts.append(f"#### {cmd.get('label', 'comando')}")
+                parts.append(f"#### {cmd.get('label', 'command')}")
                 parts.append("")
                 parts.append(f"- **Comando:** `{cmd.get('command', '-')}`")
                 parts.append(f"- **Return code:** `{cmd.get('returncode', '-')}`")
@@ -2764,16 +2763,16 @@ def _build_markdown_report(report_data):
         parts.append(_md_table(["Status", "Endpoint", "Content-Type"], rows))
         parts.append("")
 
-    # 8. Usuarios y emails
+    # 8. Users and emails
     if users or emails:
-        parts.append("## Usuarios y emails descubiertos")
+        parts.append("## Users and emails descubiertos")
         parts.append("")
         ue_rows = []
         if users:
-            ue_rows.append(["Usuarios", ", ".join(users)])
+            ue_rows.append(["Users", ", ".join(users)])
         if emails:
             ue_rows.append(["Emails", ", ".join(emails)])
-        parts.append(_md_table(["Categoría", "Valores"], ue_rows))
+        parts.append(_md_table(["Category", "Values"], ue_rows))
         parts.append("")
 
     # 9b. Pruebas avanzadas (SSRF/SSTI/XXE/CRLF/Smuggling/Cache)
@@ -2785,9 +2784,9 @@ def _build_markdown_report(report_data):
         adv_md_crlf = adv_sec_md.get("crlf") or []
         adv_md_smuggling = adv_sec_md.get("smuggling") or []
         adv_md_cache = adv_sec_md.get("cache_poisoning") or []
-        parts.append("## Pruebas Avanzadas de Seguridad")
+        parts.append("## Advanced Tests de Seguridad")
         parts.append("")
-        parts.append(_md_table(["Modulo", "Hallazgos"], [
+        parts.append(_md_table(["Module", "Findings"], [
             ["SSRF", str(len(adv_md_ssrf))],
             ["SSTI", str(len(adv_md_ssti))],
             ["XXE", str(len(adv_md_xxe))],
@@ -2799,7 +2798,7 @@ def _build_markdown_report(report_data):
         if adv_md_ssrf:
             parts.append(f"### SSRF ({len(adv_md_ssrf)})")
             parts.append("")
-            parts.append(_md_table(["Tipo", "Vector", "Payload/Valor", "HTTP"],
+            parts.append(_md_table(["Type", "Vector", "Payload/Value", "HTTP"],
                 [[r.get("type","ssrf"), r.get("param") or r.get("header") or "-",
                   (r.get("payload") or r.get("value") or "")[:80], str(r.get("status","-"))]
                  for r in adv_md_ssrf]))
@@ -2807,13 +2806,13 @@ def _build_markdown_report(report_data):
         if adv_md_ssti:
             parts.append(f"### SSTI ({len(adv_md_ssti)})")
             parts.append("")
-            parts.append(_md_table(["URL", "Parametro", "Engine"],
+            parts.append(_md_table(["URL", "Parameter", "Engine"],
                 [[r.get("url","-")[:80], r.get("param","-"), r.get("engine","-")] for r in adv_md_ssti]))
             parts.append("")
         if adv_md_xxe:
             parts.append(f"### XXE ({len(adv_md_xxe)})")
             parts.append("")
-            parts.append(_md_table(["URL", "Content-Type", "Estado"],
+            parts.append(_md_table(["URL", "Content-Type", "Status"],
                 [[r.get("url","-")[:80], r.get("content_type","-"), r.get("note","confirmado")] for r in adv_md_xxe]))
             parts.append("")
         if adv_md_crlf:
@@ -2826,15 +2825,15 @@ def _build_markdown_report(report_data):
         if adv_md_smuggling:
             parts.append(f"### HTTP Request Smuggling ({len(adv_md_smuggling)})")
             parts.append("")
-            parts.append(_md_table(["Herramienta/Tipo", "Detalle"],
+            parts.append(_md_table(["Tool/Type", "Detail"],
                 [[(r.get("tool") or r.get("type") or "-"), (r.get("note") or r.get("output_snippet") or "-")[:100]]
                  for r in adv_md_smuggling]))
             parts.append("")
         if adv_md_cache:
             parts.append(f"### Cache Poisoning ({len(adv_md_cache)})")
             parts.append("")
-            parts.append(_md_table(["Cabecera", "Valor inyectado", "Estado"],
-                [[r.get("header","-"), r.get("value","-")[:50], "Confirmado" if r.get("confirmed") else "Reflejado"]
+            parts.append(_md_table(["Header", "Injected value", "Status"],
+                [[r.get("header","-"), r.get("value","-")[:50], "Confirmed" if r.get("confirmed") else "Reflected"]
                  for r in adv_md_cache]))
             parts.append("")
 
@@ -2843,35 +2842,35 @@ def _build_markdown_report(report_data):
         parts.append("## Pruebas de inyección")
         parts.append("")
         inj_rows = [
-            ["Formularios detectados", str(injection.get("forms_found", 0))],
+            ["Forms detectados", str(injection.get("forms_found", 0))],
             ["Parámetros GET detectados", str(injection.get("url_params_found", 0))],
             ["Parámetros GET probados", str(len(injection.get("tested_get_params", [])))],
-            ["Inputs de formulario probados", str(len(injection.get("tested_form_inputs", [])))],
+            ["Tested form inputs", str(len(injection.get("tested_form_inputs", [])))],
         ]
-        parts.append(_md_table(["Métrica", "Valor"], inj_rows))
+        parts.append(_md_table(["Metric", "Value"], inj_rows))
         parts.append("")
 
-    # 10. Credenciales válidas
+    # 10. Credentials válidas
     if creds:
-        parts.append("## Credenciales válidas encontradas")
+        parts.append("## Credentials válidas encontradas")
         parts.append("")
         rows = []
         for c in creds:
             user = c.get("username") if isinstance(c, dict) else str(c)
             pwd = c.get("password") if isinstance(c, dict) else "-"
             rows.append([str(user), str(pwd)])
-        parts.append(_md_table(["Usuario", "Contraseña"], rows))
+        parts.append(_md_table(["User", "Password"], rows))
         parts.append("")
 
     # 11. Nuclei
     if nuclei_summary:
-        parts.append("## Vulnerabilidades por severidad (Nuclei)")
+        parts.append("## Vulnerabilities por severidad (Nuclei)")
         parts.append("")
         rows = []
         for sev in sorted(nuclei_summary.keys(), key=lambda s: SEV_ORDER.get(s, 99)):
             tids = nuclei_summary[sev]
             rows.append([sev.upper(), str(len(tids)), ", ".join(sorted(set(map(str, tids))))])
-        parts.append(_md_table(["Severidad", "Cantidad", "Templates únicos"], rows))
+        parts.append(_md_table(["Severity", "Cantidad", "Templates únicos"], rows))
         parts.append("")
 
     relevant_nuclei = [n for n in nuclei_findings_list
@@ -2880,17 +2879,17 @@ def _build_markdown_report(report_data):
         sorted_rel = sorted(relevant_nuclei,
                             key=lambda x: (SEV_ORDER.get((x.get('severity') or 'unknown').lower(), 99),
                                            str(x.get('template_id', ''))))
-        parts.append(f"## Hallazgos Nuclei relevantes ({len(sorted_rel)})")
+        parts.append(f"## Findings Nuclei relevantes ({len(sorted_rel)})")
         parts.append("")
         rows = [[(n.get('severity') or '').upper(),
                  str(n.get('template_id', '-')),
                  str(n.get('name', '-')),
                  str(n.get('url', '-'))]
                 for n in sorted_rel]
-        parts.append(_md_table(["Severidad", "Template", "Nombre", "URL"], rows))
+        parts.append(_md_table(["Severity", "Template", "Name", "URL"], rows))
         parts.append("")
 
-    # 12. Hallazgos clasificados (FINDINGS)
+    # 12. Findings clasificados (FINDINGS)
     if findings:
         cats = {}
         for f in findings:
@@ -2898,12 +2897,12 @@ def _build_markdown_report(report_data):
             m = re.match(r'^\[([^\]]+)\]', text)
             cat = m.group(1) if m else "OTROS"
             cats.setdefault(cat, []).append(text)
-        parts.append(f"## Hallazgos clasificados (total: {len(findings)})")
+        parts.append(f"## Findings clasificados (total: {len(findings)})")
         parts.append("")
         cat_rows = [[cat, str(len(cats[cat]))] for cat in sorted(cats.keys())]
-        parts.append(_md_table(["Categoría", "Cantidad"], cat_rows))
+        parts.append(_md_table(["Category", "Cantidad"], cat_rows))
         parts.append("")
-        parts.append(f"### Detalle de hallazgos ({len(findings)})")
+        parts.append(f"### Detail de hallazgos ({len(findings)})")
         parts.append("")
         rows = []
         for f in findings:
@@ -2913,12 +2912,12 @@ def _build_markdown_report(report_data):
                 rows.append([m.group(1), m.group(2)])
             else:
                 rows.append(["OTROS", text])
-        parts.append(_md_table(["Categoría", "Detalle"], rows))
+        parts.append(_md_table(["Category", "Detail"], rows))
         parts.append("")
 
     parts.append("---")
     parts.append("")
-    parts.append("_Generado automáticamente por WSTG Scanner._")
+    parts.append("_Generated automatically by OWASP Scanner._")
     return "\n".join(parts)
 
 
@@ -2979,10 +2978,10 @@ def save_report(output_file=None):
     errors = []
     try:
         with open(txt_file, 'w', encoding='utf-8') as f:
-            f.write(f"WSTG Scanner v{VERSION} - Reporte de Escaneo\n")
-            f.write(f"Objetivo : {TARGET_URL}\n")
-            f.write(f"Fecha    : {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
-            f.write(f"Modo auth: {'Sí' if AUTHENTICATED else 'No'}\n")
+            f.write(f"OWASP Scanner v{VERSION} - Scan Report\n")
+            f.write(f"Target : {TARGET_URL}\n")
+            f.write(f"Date    : {time.strftime('%Y-%m-%d %H:%M:%S')}\n")
+            f.write(f"Mode auth: {'Yes' if AUTHENTICATED else 'No'}\n")
             f.write("=" * 60 + "\n\n")
 
             f.write("[RESUMEN]\n")
@@ -2993,7 +2992,7 @@ def save_report(output_file=None):
             general = report_data["scan_data"].get("general", {})
             f.write("[INFORMACIÓN GENERAL]\n")
             f.write(f"- Status: {general.get('status_code', 'N/A')}\n")
-            f.write(f"- Servidor: {general.get('server', 'N/A')}\n")
+            f.write(f"- Server: {general.get('server', 'N/A')}\n")
             techs = general.get('technologies', [])
             if techs:
                 if isinstance(techs[0], dict):
@@ -3002,8 +3001,8 @@ def save_report(output_file=None):
                     tech_str = ', '.join(str(t) for t in techs)
             else:
                 tech_str = 'N/A'
-            f.write(f"- Tecnologías: {tech_str}\n")
-            f.write(f"- Métodos HTTP: {', '.join(report_data['scan_data'].get('http_methods', [])) or 'N/A'}\n")
+            f.write(f"- Technologies: {tech_str}\n")
+            f.write(f"- Methods HTTP: {', '.join(report_data['scan_data'].get('http_methods', [])) or 'N/A'}\n")
             f.write(f"- robots/sitemap: {', '.join(report_data['scan_data'].get('robots_paths', [])) or 'N/A'}\n\n")
 
             nmap_data = report_data['scan_data'].get('nmap') or {}
@@ -3024,7 +3023,7 @@ def save_report(output_file=None):
                         + "\n"
                     )
             else:
-                f.write("- Sin puertos visibles\n")
+                f.write("- No puertos visibles\n")
             f.write("\n")
 
             nse_results = nmap_data.get('nse_results') or []
@@ -3039,11 +3038,11 @@ def save_report(output_file=None):
                         f"{item.get('script_id')}: {item.get('output', '').splitlines()[0] if item.get('output') else ''}\n"
                     )
             else:
-                f.write("- Sin resultados NSE\n")
+                f.write("- No results NSE\n")
             f.write("\n")
 
             f.write("[ENUMERACIÓN]\n")
-            f.write(f"- Usuarios: {', '.join(report_data['scan_data'].get('users', [])) or 'N/A'}\n")
+            f.write(f"- Users: {', '.join(report_data['scan_data'].get('users', [])) or 'N/A'}\n")
             f.write(f"- Emails: {', '.join(report_data['scan_data'].get('emails', [])) or 'N/A'}\n\n")
 
             wordpress_data = report_data['scan_data'].get('wordpress') or {}
@@ -3051,13 +3050,13 @@ def save_report(output_file=None):
             if wordpress_data:
                 wp_version = wordpress_data.get('version') or {}
                 wp_theme = wordpress_data.get('main_theme') or {}
-                f.write(f"- Detectado: {'Si' if wordpress_data.get('detected') else 'No confirmado'}\n")
+                f.write(f"- Detected: {'Yes' if wordpress_data.get('detected') else 'Not confirmed'}\n")
                 f.write(f"- Version: {wp_version.get('number') or 'N/A'} ({wp_version.get('status') or 'estado desconocido'})\n")
-                f.write(f"- Tema principal: {wp_theme.get('name') or 'N/A'}\n")
+                f.write(f"- Theme principal: {wp_theme.get('name') or 'N/A'}\n")
                 f.write(f"- Plugins detectados: {len(wordpress_data.get('plugins') or [])}\n")
-                f.write(f"- Usuarios WPScan: {', '.join(u.get('username','') for u in wordpress_data.get('users', []) if isinstance(u, dict)) or 'N/A'}\n")
+                f.write(f"- Users WPScan: {', '.join(u.get('username','') for u in wordpress_data.get('users', []) if isinstance(u, dict)) or 'N/A'}\n")
                 wp_vulns = wordpress_data.get('vulnerabilities') or []
-                f.write(f"- Vulnerabilidades: {len(wp_vulns)}\n")
+                f.write(f"- Vulnerabilities: {len(wp_vulns)}\n")
                 for vuln in wp_vulns:
                     f.write(
                         f"  * [{vuln.get('component_type')}] {vuln.get('component')}: "
@@ -3067,7 +3066,7 @@ def save_report(output_file=None):
                     )
                 wp_creds = wordpress_data.get('credentials') or []
                 if wp_creds:
-                    f.write("- Credenciales WPScan:\n")
+                    f.write("- Credentials WPScan:\n")
                     for cred in wp_creds:
                         f.write(f"  * {cred.get('username')}:{cred.get('password')}\n")
             else:
@@ -3114,14 +3113,14 @@ def save_report(output_file=None):
 
             src_code_data = report_data['scan_data'].get('source_code_analysis') or {}
             src_code_findings = src_code_data.get('findings') or []
-            f.write("[ANÁLISIS DE CÓDIGO FUENTE]\n")
+            f.write("[OSURCE CODE ANALYSIS]\n")
             f.write(f"- Páginas analizadas: {src_code_data.get('pages_analyzed', 0)}\n")
             f.write(f"- Recursos JS/JSON analizados: {src_code_data.get('assets_analyzed', 0)}\n")
-            f.write(f"- Hallazgos: {len(src_code_findings)}\n")
+            f.write(f"- Findings: {len(src_code_findings)}\n")
             sev_stats = src_code_data.get('summary') or {}
             if sev_stats:
                 f.write(
-                    f"- Severidad: CRITICAL={sev_stats.get('critical',0)} "
+                    f"- Severity: CRITICAL={sev_stats.get('critical',0)} "
                     f"HIGH={sev_stats.get('high',0)} "
                     f"MEDIUM={sev_stats.get('medium',0)} "
                     f"LOW={sev_stats.get('low',0)}\n"
@@ -3148,20 +3147,20 @@ def save_report(output_file=None):
                 kerberoast_hashes = (ad_imp.get('kerberoast') or {}).get('hashes') or []
                 ad_creds = ((ad_nxc.get('bruteforce') or {}).get('credentials') or [])
                 f.write(f"- DC: {ad_data.get('target') or 'N/A'}\n")
-                f.write(f"- Dominio: {ad_data.get('domain') or 'N/A'}\n")
+                f.write(f"- Domain: {ad_data.get('domain') or 'N/A'}\n")
                 f.write(f"- Base DN: {ad_data.get('base_dn') or 'N/A'}\n")
-                f.write(f"- Modo: {ad_data.get('auth_mode') or 'N/A'}\n")
-                f.write(f"- Kerbrute usuarios validos: {len((ad_data.get('kerbrute') or {}).get('valid_users') or [])}\n")
-                f.write(f"- LDAP usuarios: {len(ad_ldap.get('users') or [])}\n")
-                f.write(f"- LDAP grupos: {len(ad_ldap.get('groups') or [])}\n")
-                f.write(f"- LDAP equipos: {len(ad_ldap.get('computers') or [])}\n")
+                f.write(f"- Mode: {ad_data.get('auth_mode') or 'N/A'}\n")
+                f.write(f"- Kerbrute users validos: {len((ad_data.get('kerbrute') or {}).get('valid_users') or [])}\n")
+                f.write(f"- LDAP users: {len(ad_ldap.get('users') or [])}\n")
+                f.write(f"- LDAP groups: {len(ad_ldap.get('groups') or [])}\n")
+                f.write(f"- LDAP computers: {len(ad_ldap.get('computers') or [])}\n")
                 f.write(f"- AS-REP roastable: {len(asrep_hashes)}\n")
                 for h in asrep_hashes:
                     f.write(f"  * {h.get('username') or '-'} {h.get('hash') or ''}\n")
                 f.write(f"- Kerberoastable SPNs: {len(kerberoast_hashes)}\n")
                 for h in kerberoast_hashes:
                     f.write(f"  * {h.get('username') or '-'} {h.get('hash') or ''}\n")
-                f.write(f"- Credenciales NXC: {len(ad_creds)}\n")
+                f.write(f"- Credentials NXC: {len(ad_creds)}\n")
                 for cred in ad_creds:
                     f.write(f"  * {cred.get('username')}:{cred.get('password')}\n")
             else:
@@ -3197,18 +3196,18 @@ def save_report(output_file=None):
                 for finding in FINDINGS:
                     f.write(_finding_text(finding) + "\n")
             else:
-                f.write("Sin hallazgos registrados.\n")
+                f.write("No hallazgos registrados.\n")
 
             nuclei_summary = report_data["scan_data"].get("nuclei_summary", {})
             nuclei_findings_list = report_data["scan_data"].get("nuclei_findings", []) or []
             sev_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'info': 4, 'unknown': 5}
             if nuclei_summary:
-                f.write("\n[NUCLEI] Resumen de vulnerabilidades:\n")
+                f.write("\n[NUCLEI] Summary de vulnerabilidades:\n")
                 for sev in sorted(nuclei_summary.keys(), key=lambda s: sev_order.get(s, 99)):
                     tids = nuclei_summary[sev]
                     f.write(f"- {sev.upper()}: {len(tids)} hallazgos ({', '.join(tids)})\n")
             if nuclei_findings_list:
-                f.write("\n[NUCLEI] Detalle de hallazgos:\n")
+                f.write("\n[NUCLEI] Detail de hallazgos:\n")
                 sorted_findings = sorted(
                     nuclei_findings_list,
                     key=lambda x: (sev_order.get((x.get('severity') or 'unknown'), 99),
@@ -3252,7 +3251,7 @@ def save_report(output_file=None):
     if saved:
         base_path = os.path.splitext(txt_file)[0]
         exts = ",".join(fmt.lower() for fmt, _ in saved)
-        print_good(f"Reportes guardados en {base_path}.{{{exts}}}")
+        print_good(f"Reports saved en {base_path}.{{{exts}}}")
     for fmt, err in errors:
         print_error(f"No se pudo generar el reporte {fmt}: {err}")
     if not saved:
@@ -3265,7 +3264,7 @@ def normalize_url(url):
 
 def _throttle_hook(response, *args, **kwargs):
     """Aplica REQUEST_DELAY a TODA peticion de la sesion (no solo a los modulos
-    con hilos). Fuente unica de verdad para --delay."""
+    con hilos). Source unica de verdad para --delay."""
     if REQUEST_DELAY > 0:
         time.sleep(REQUEST_DELAY)
     return response
@@ -3450,7 +3449,7 @@ def _looks_authenticated_response(response, login_url, username=""):
                        "dashboard", "welcome", "bienvenido", "my account", "mi cuenta", "profile")
     if any(marker in body for marker in success_markers):
         return True
-    # Si sigue mostrando un formulario de login, no estamos autenticados.
+    # Yes sigue mostrando un formulario de login, no estamos autenticados.
     if _response_has_login_form(response):
         return False
     if username and username.lower() in body:
@@ -3590,17 +3589,17 @@ def setup_authentication():
         cookie_string = input("> ").strip()
         if cookie_string:
             _apply_cookie_string_to_session(temp_session, cookie_string, TARGET_URL)
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Cabecera Authorization opcional (ej: Bearer ey...; vacio para omitir):")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Header Authorization opcional (ej: Bearer ey...; vacio para omitir):")
         authorization = input("> ").strip()
         if authorization:
             temp_session.headers["Authorization"] = authorization
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Cabeceras extra opcionales Nombre: valor (linea vacia para terminar):")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Headers extra opcionales Name: valor (linea vacia para terminar):")
         while True:
             extra = input("> ").strip()
             if not extra:
                 break
             if ":" not in extra:
-                print_warning("Formato invalido. Usa Nombre: valor")
+                print_warning("Formato invalido. Usa Name: valor")
                 continue
             name, value = extra.split(":", 1)
             if name.strip() and value.strip():
@@ -3623,11 +3622,11 @@ def setup_authentication():
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} URL de login (dejar vacío si es la misma que la objetivo):")
     login_url = input("> ").strip()
     login_url = normalize_url(login_url) if login_url else TARGET_URL
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Usuario o email:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User o email:")
     identifier = input("> ").strip()
     is_email = "@" in identifier
     print_info(f"Identificador detectado como {'email' if is_email else 'usuario'}.")
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Contraseña:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Password:")
     password = getpass.getpass("> ")
 
     def _finish_fail():
@@ -3640,13 +3639,13 @@ def setup_authentication():
     # 1. Basic Auth (solo si el servidor lo solicita).
     status, session, resp = _attempt_basic_auth(login_url, identifier, password, user_agent)
     if status == "valid":
-        print_good("Credenciales válidas (Basic Auth).")
+        print_good("Credentials válidas (Basic Auth).")
         AUTH_SESSION = session
         AUTHENTICATED = True
         _record_auth_context("basic-auth", login_url, identifier, session, response=resp)
         return
     if status == "invalid":
-        print_error(f"Credenciales inválidas en Basic Auth (HTTP {resp.status_code}).")
+        print_error(f"Credentials inválidas en Basic Auth (HTTP {resp.status_code}).")
         _finish_fail()
         return
 
@@ -3658,13 +3657,13 @@ def setup_authentication():
             print_warning("El formulario respondió como válido, pero la sesión no persiste (posible CSRF/redirección).")
             _finish_fail()
             return
-        print_good("Credenciales válidas. Sesión autenticada verificada.")
+        print_good("Credentials válidas. Sesión autenticada verificada.")
         AUTH_SESSION = session
         AUTHENTICATED = True
         _record_auth_context("form-login", form_url, identifier, session, response=resp)
         return
     if status == "invalid":
-        print_error("Credenciales inválidas: el formulario rechazó usuario/contraseña.")
+        print_error("Credentials inválidas: el formulario rechazó usuario/contraseña.")
     else:
         print_warning("No se detectó formulario HTML de login (posible SPA / OAuth2).")
         # 3. Intentar login headless con Playwright.
@@ -3743,7 +3742,7 @@ def gather_info(target, session):
             info['technologies'] = list(set(tech))
             info['technologies_source'] = 'headers'
             if info['technologies']:
-                print_info(f"Tecnologías (fallback): {', '.join(info['technologies'])}")
+                print_info(f"Technologies (fallback): {', '.join(info['technologies'])}")
 
         return info
     except Exception as e:
@@ -3768,7 +3767,7 @@ def check_robots_sitemap(target, session):
                                 if len(parts) > 1:
                                     path = parts[1].strip()
                                     if path and path != '/':
-                                        print_info(f"  Ruta en robots.txt: {path}")
+                                        print_info(f"  Path en robots.txt: {path}")
             except:
                 pass
         return paths
@@ -3782,10 +3781,10 @@ def check_http_methods(target, session):
         resp = session.options(target, timeout=DEFAULT_TIMEOUT)
         if 'Allow' in resp.headers:
             allowed = [m.strip() for m in resp.headers['Allow'].split(',')]
-            print_info(f"Métodos HTTP permitidos: {', '.join(allowed)}")
+            print_info(f"Methods HTTP permitidos: {', '.join(allowed)}")
         trace_resp = session.request('TRACE', target, timeout=DEFAULT_TIMEOUT)
         if trace_resp.status_code == 200:
-            print_vuln("Método TRACE habilitado (Cross-Site Tracing)")
+            print_vuln("Method TRACE habilitado (Cross-Yeste Tracing)")
             allowed.append('TRACE')
         return allowed
     except Exception as e:
@@ -3803,7 +3802,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
     results = []
     try:
         if not base_domain:
-            print_error("Dominio base vacío. No se puede hacer fuzzing de subdominios.")
+            print_error("Domain base vacío. No se puede hacer fuzzing de subdominios.")
             return results
 
         if wordlist is None and os.path.isfile(SECLISTS_DNS):
@@ -3894,7 +3893,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                             500: Fore.RED, 503: Fore.RED,
                         }
                         if not hits:
-                            print(f"\n  {Fore.YELLOW}Sin subdominios encontrados (todo filtrado por baseline).{Style.RESET_ALL}\n")
+                            print(f"\n  {Fore.YELLOW}No subdominios encontrados (todo filtrado por baseline).{Style.RESET_ALL}\n")
                         else:
                             table_rows = []
                             for hit in sorted(hits, key=lambda x: (x.get('status', 0), x.get('input', {}).get('FUZZ', ''))):
@@ -3966,7 +3965,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                     pass
             return results
 
-        # Método interno (sin ffuf)
+        # Method interno (sin ffuf)
         print_warning("ffuf no disponible, usando método interno (más lento).")
         try:
             with open(wordlist, 'r', encoding='utf-8', errors='ignore') as f:
@@ -4029,10 +4028,10 @@ def _resolve_authenticated_status(url, session, status, size):
     """En fuzzing autenticado, resuelve los hits 3xx siguiendo la redireccion con
     la sesion y devuelve (status_final, size_final, nota).
 
-    - Si la redireccion rebota a una pagina de login (param next= o ruta de auth,
+    - Yes la redireccion rebota a una pagina de login (param next= o ruta de auth,
       o el destino sigue mostrando un formulario de login) el endpoint esta
       protegido: se conserva el 3xx y se anota.
-    - Si resuelve a contenido real, se devuelve el estado final (p.ej. 200) para
+    - Yes resuelve a contenido real, se devuelve el estado final (p.ej. 200) para
       no reportar un 302 enganoso cuando el recurso si es accesible autenticado."""
     if status not in (301, 302, 303, 307, 308):
         return status, size, None
@@ -4112,7 +4111,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
             results = []
             process = None
             try:
-                # Sin piping: ffuf escribe directamente al terminal → su barra de
+                # No piping: ffuf escribe directamente al terminal → su barra de
                 # progreso funciona correctamente (necesita TTY para actualizarse).
                 process = subprocess.Popen(ffuf_cmd)
                 process.wait()
@@ -4132,7 +4131,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                         }
 
                         if not hits:
-                            print(f"\n  {Fore.YELLOW}Sin resultados (todos filtrados por auto-calibración){Style.RESET_ALL}\n")
+                            print(f"\n  {Fore.YELLOW}No results (todos filtrados por auto-calibración){Style.RESET_ALL}\n")
                         else:
                             if AUTHENTICATED:
                                 print_info("Sesion autenticada: resolviendo redirecciones de los hits 3xx...")
@@ -4366,7 +4365,7 @@ def extract_forms_and_params(target, session):
                 'inputs': inputs,
             })
 
-        print_info(f"Formularios encontrados: {len(forms)}")
+        print_info(f"Forms encontrados: {len(forms)}")
         print_info(f"Parámetros únicos en enlaces: {len(params)}")
         return forms, list(params)
     except Exception as e:
@@ -4511,11 +4510,11 @@ def check_info_disclosure(resp_text):
             print_warning(f"Emails expuestos: {', '.join(set(emails))}")
         internal_paths = re.findall(r'(?:C:\\|/home/|/var/www/|/etc/)[^\s\'"<>]+', resp_text, re.I)
         if internal_paths:
-            print_warning(f"Rutas internas expuestas: {set(internal_paths)}")
+            print_warning(f"Paths internas expuestas: {set(internal_paths)}")
         comments = re.findall(r'<!--(.*?)-->', resp_text, re.DOTALL)
         suspicious = [c for c in comments if re.search(r'todo|fixme|debug|password|key|token', c, re.I)]
         if suspicious:
-            print_warning("Información sensible en comentarios HTML")
+            print_warning("Information sensible en comentarios HTML")
     except Exception as e:
         print_error(f"Error en info disclosure: {e}")
 
@@ -4603,7 +4602,7 @@ def discover_api_endpoints(target, session):
     INTERESTING = {200, 201, 202, 204, 301, 302, 307, 308, 401, 403, 405, 500}
 
     def _probe(endpoint, depth_label=""):
-        """Prueba un endpoint con GET. Devuelve dict si es interesante, None si no."""
+        """Prueba un endpoint con GET. Devuelve dict si es interesting, None si no."""
         url = urljoin(target, endpoint)
         if url in seen_urls:
             return None
@@ -4634,13 +4633,13 @@ def discover_api_endpoints(target, session):
         elif st == 500:
             print_error(f"{prefix}[500] {url}  (error interno — posible parámetro no manejado)")
 
-        # Si es Swagger/OpenAPI/API docs, parsear y registrar rutas
+        # Yes es Swagger/OpenAPI/API docs, parsear y registrar rutas
         if st == 200 and any(x in endpoint for x in ('swagger', 'openapi', 'api-docs')):
             try:
                 doc = resp.json()
                 paths = list(doc.get('paths', {}).keys())
                 if paths:
-                    print_info(f"  Rutas documentadas ({len(paths)}): {', '.join(paths[:12])}")
+                    print_info(f"  Paths documentadas ({len(paths)}): {', '.join(paths[:12])}")
                     FINDINGS.append({
                         "name": "Documentacion OpenAPI/Swagger expuesta",
                         "detail": f"{url} expone {len(paths)} rutas de API (OWASP API9).",
@@ -4685,7 +4684,7 @@ def discover_api_endpoints(target, session):
         prefixes_to_fuzz = [p for p in prefixes_to_fuzz if not (p in seen_pref or seen_pref.add(p))]
 
         print_info(
-            f"Fuzzing recursivo: {len(API_RESOURCES)} recursos × "
+            f"Fuzzing recursivo: {len(API_REOSURCES)} recursos × "
             f"{len(prefixes_to_fuzz)} prefijos ({', '.join(prefixes_to_fuzz[:8])}"
             f"{', ...' if len(prefixes_to_fuzz) > 8 else ''})"
         )
@@ -4693,7 +4692,7 @@ def discover_api_endpoints(target, session):
         fuzz_endpoints = []
         seen_fuzz = set()
         for prefix in prefixes_to_fuzz:
-            for resource in API_RESOURCES:
+            for resource in API_REOSURCES:
                 endpoint = f"{prefix.rstrip('/')}/{resource}"
                 if endpoint in seen_fuzz:
                     continue
@@ -4746,7 +4745,7 @@ def test_api_auth_bypass(found_endpoints, session):
         unauth_session = get_session()
         restricted = [item for item in found_endpoints if item['status'] in (401, 403)]
         if not restricted:
-            print_info("Sin endpoints restringidos encontrados para probar bypass.")
+            print_info("No endpoints restringidos encontrados para probar bypass.")
             return
 
         def _looks_like_real_content(resp):
@@ -4760,7 +4759,7 @@ def test_api_auth_bypass(found_endpoints, session):
         for item in restricted:
             url = item['url']
             path = urlparse(url).path or '/'
-            # Cabeceras cuyo valor debe apuntar al PATH del propio endpoint restringido
+            # Headers cuyo valor debe apuntar al PATH del propio endpoint restringido
             bypass_headers_list = [
                 {'X-Original-URL': path},
                 {'X-Rewrite-URL': path},
@@ -4835,7 +4834,7 @@ def test_api_idor(found_endpoints, session):
                     continue
                 if base_len <= 50:
                     continue
-                # Sonda de control con un id inexistente. Si devuelve 200 con
+                # Sonda de control con un id inexistente. Yes devuelve 200 con
                 # tamano casi identico al base, el endpoint NO discrimina por id
                 # (devuelve siempre el mismo shell/SPA) -> cualquier 200 seria
                 # falso positivo, se salta el endpoint.
@@ -4863,7 +4862,7 @@ def test_api_idor(found_endpoints, session):
                     if resp.status_code != 200 or len(resp.content) <= 50:
                         continue
                     alt_len = len(resp.content)
-                    # Si el control respondio 200 (representacion de "no existe"),
+                    # Yes el control respondio 200 (representacion de "no existe"),
                     # exigir que el objeto alterno difiera de esa representacion.
                     if control_200 and _ratio(alt_len, control_len) < 0.15:
                         continue
@@ -4875,7 +4874,7 @@ def test_api_idor(found_endpoints, session):
                     FINDINGS.append({"name": "IDOR / BOLA", "detail": detail, "severity": "high"})
                     hits += 1
         if hits == 0:
-            print_info("Sin evidencias claras de IDOR en los endpoints encontrados.")
+            print_info("No evidencias claras de IDOR en los endpoints encontrados.")
     except Exception as e:
         print_error(f"Error en test IDOR: {e}")
 
@@ -4911,7 +4910,7 @@ def test_api_mass_assignment(found_endpoints, session):
                    and any(x in item['endpoint'] for x in
                            ('user', 'profile', 'account', 'register', 'update', 'me', 'signup'))]
         if not targets:
-            print_info("Sin endpoints candidatos a Mass Assignment.")
+            print_info("No endpoints candidatos a Mass Assignment.")
             return
         method_map = [('POST', 'post'), ('PUT', 'put'), ('PATCH', 'patch')]
         for item in targets:
@@ -4980,7 +4979,7 @@ def test_graphql(target, session):
                     print_vuln(f"GraphQL Introspección habilitada: {gql_url}")
                     types = [t['name'] for t in data['data']['__schema']['types']
                              if not t['name'].startswith('__')]
-                    print_info(f"  Tipos expuestos ({len(types)}): {', '.join(types[:15])}")
+                    print_info(f"  Types expuestos ({len(types)}): {', '.join(types[:15])}")
                     FINDINGS.append({
                         "name": "GraphQL introspeccion habilitada",
                         "detail": f"{gql_url} expone el schema completo via introspeccion "
@@ -5010,7 +5009,7 @@ def test_graphql(target, session):
             except Exception:
                 pass
         if not found_any:
-            print_info("Sin endpoints GraphQL detectados o activos.")
+            print_info("No endpoints GraphQL detectados o activos.")
     except Exception as e:
         print_error(f"Error en test GraphQL: {e}")
 
@@ -5050,7 +5049,7 @@ def test_api_verbose_errors(found_endpoints, session):
                 except Exception:
                     pass
         if hits == 0:
-            print_info("Sin errores verbose detectados en los endpoints probados.")
+            print_info("No errores verbose detectados en los endpoints probados.")
     except Exception as e:
         print_error(f"Error en test verbose errors: {e}")
 
@@ -5146,13 +5145,13 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
         print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Introduce la URL real del login (dejar vacío para autodetección):")
         login_url = input("> ").strip()
         print_info("El mensaje de error de login mejora MUCHO la precisión (evita falsos positivos).")
-        print_info("Si lo dejas vacío, se intentará autodetectar enviando credenciales imposibles.")
+        print_info("Yes lo dejas vacío, se intentará autodetectar enviando credenciales imposibles.")
         print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Mensaje de error exacto de login fallido (vacío = autodetectar):")
         error_msg = input("> ").strip()
         # Flag para endurecer la heurística cuando no haya error_msg ni candidatos autodetectados
         strict_heuristic = False
 
-        # Si no se especifica, autodetectar como antes
+        # Yes no se especifica, autodetectar como antes
         login_forms_map = {}
         urls_to_check = [login_url] if login_url else [target] + [urljoin(target, path) for path in LOGIN_PATHS]
 
@@ -5235,8 +5234,8 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             manual = input("¿Deseas introducir los datos manualmente? (s/n): ").strip().lower()
             if manual == 's':
                 login_url2 = input("URL completa del formulario de login: ").strip()
-                user_field = input("Nombre del campo de usuario: ").strip()
-                pass_field = input("Nombre del campo de contraseña: ").strip()
+                user_field = input("Name del campo de usuario: ").strip()
+                pass_field = input("Name del campo de contraseña: ").strip()
                 if login_url2 and user_field and pass_field:
                     login_forms.append({
                         'url': normalize_url(login_url2),
@@ -5315,7 +5314,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 choice = input("> ").strip().lower()
                 if choice == 'n':
                     strict_heuristic = True
-                    print_warning("Sin mensaje de error: se aplicará heurística estricta (menos falsos positivos).")
+                    print_warning("No mensaje de error: se aplicará heurística estricta (menos falsos positivos).")
                 else:
                     try:
                         idx = int(choice) - 1 if choice else 0
@@ -5338,7 +5337,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
         elif passlist:
             print_warning(f"No se pudo leer {passlist}, usando lista por defecto.")
         else:
-            # Si no se proporcionó wordlist, intentar usar la de SecLists
+            # Yes no se proporcionó wordlist, intentar usar la de SecLists
             if os.path.exists(SECLISTS_PASSWORDS):
                 print_info(f"Usando wordlist de contraseñas por defecto: {SECLISTS_PASSWORDS}")
                 with open(SECLISTS_PASSWORDS, 'r') as f:
@@ -5443,7 +5442,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             else:
                 return result_data
 
-        # --- Método interno clásico ---
+        # --- Method interno clásico ---
         print_info(f"Iniciando bruteforce con {len(usernames)} usuarios y {len(passwords)} contraseñas (total {total_combinations} combinaciones)...")
         found_credentials = set()
 
@@ -5530,7 +5529,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             size_outlier = fail_max > 0 and (final_len < fail_min or final_len > fail_max)
             path_left_login = final_path != baseline_path and not _is_login_path(final_path)
 
-            # Modo estricto (sin error_msg): exige ≥2 señales positivas distintas
+            # Mode estricto (sin error_msg): exige ≥2 señales positivas distintas
             # o al menos una señal "fuerte" (keyword de éxito + cambio de path/status).
             if strict_heuristic:
                 strong = has_success_kw and (status_changed or path_left_login or redirect_off_login)
@@ -5604,7 +5603,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
         prev_creds = {(c["username"], c["password"]) for c in result_data.get("credentials", [])}
         all_creds = prev_creds | found_credentials
         if all_creds:
-            print_good(f"Bruteforce completado. Credenciales únicas encontradas: {len(all_creds)}")
+            print_good(f"Bruteforce completado. Credentials únicas encontradas: {len(all_creds)}")
             rows = [
                 [f"{Fore.MAGENTA}{u}{Style.RESET_ALL}", f"{Fore.MAGENTA}{p}{Style.RESET_ALL}"]
                 for u, p in sorted(all_creds)
@@ -5612,7 +5611,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             print_table(
                 headers=["USUARIO", "CONTRASEÑA"],
                 rows=rows,
-                title="Credenciales válidas:",
+                title="Credentials válidas:",
             )
             # Registrar también en FINDINGS
             for u, p in sorted(all_creds):
@@ -6246,7 +6245,7 @@ def run_wpscan_bruteforce(target, session, wpscan_path, users, passlist, api_tok
         rows = [[f"{Fore.MAGENTA}{c['username']}{Style.RESET_ALL}",
                  f"{Fore.MAGENTA}{c['password']}{Style.RESET_ALL}"]
                 for c in result["credentials"]]
-        print_table(headers=["USUARIO", "CONTRASEÑA"], rows=rows, title="Credenciales WordPress válidas:")
+        print_table(headers=["USUARIO", "CONTRASEÑA"], rows=rows, title="Credentials WordPress válidas:")
     else:
         print_info("WPScan no reportó credenciales válidas.")
     return result
@@ -6291,18 +6290,18 @@ def print_wpscan_detailed_summary(scan):
     print_phase("RESUMEN WORDPRESS / WPSCAN")
     core_rows = [
         ["Target", _wp_summary_value(scan.get("target"), 90)],
-        ["Detectado", "Si" if scan.get("detected") else "No confirmado"],
+        ["Detected", "Yes" if scan.get("detected") else "Not confirmed"],
         ["Version WordPress", _wp_summary_value(version.get("number"))],
-        ["Estado version", _wp_summary_value(version.get("status"))],
+        ["Status version", _wp_summary_value(version.get("status"))],
         ["Version encontrada por", _wp_summary_value(version.get("found_by"), 90)],
-        ["Tema principal", _wp_summary_value(main_theme.get("name"))],
+        ["Theme principal", _wp_summary_value(main_theme.get("name"))],
         ["Plugins encontrados", str(len(plugins))],
-        ["Temas encontrados", str(len(themes) + (1 if main_theme else 0))],
-        ["Usuarios encontrados", str(len(users))],
-        ["Vulnerabilidades", str(len(vulnerabilities))],
-        ["Credenciales validas", str(len(credentials))],
+        ["Themes encontrados", str(len(themes) + (1 if main_theme else 0))],
+        ["Users encontrados", str(len(users))],
+        ["Vulnerabilities", str(len(vulnerabilities))],
+        ["Credentials validas", str(len(credentials))],
     ]
-    print_table(headers=["Campo", "Valor"], rows=core_rows, title="Resumen general WordPress:")
+    print_table(headers=["Field", "Value"], rows=core_rows, title="Summary general WordPress:")
 
     if plugins:
         print_table(
@@ -6331,10 +6330,10 @@ def print_wpscan_detailed_summary(scan):
         theme_items.append(theme)
     if theme_items:
         print_table(
-            headers=["Tema", "Version", "Ultima", "Conf.", "Vulns", "Ubicacion"],
+            headers=["Theme", "Version", "Ultima", "Conf.", "Vulns", "Ubicacion"],
             rows=_wp_component_rows(theme_items),
             alignments=['<', '<', '<', '>', '>', '<'],
-            title=f"Temas WordPress encontrados ({len(theme_items)}):",
+            title=f"Themes WordPress encontrados ({len(theme_items)}):",
         )
     else:
         print_info("WPScan no reporto temas.")
@@ -6350,10 +6349,10 @@ def print_wpscan_detailed_summary(scan):
             for u in users if isinstance(u, dict)
         ]
         print_table(
-            headers=["Usuario", "ID", "Nombre", "Encontrado por"],
+            headers=["User", "ID", "Name", "Encontrado por"],
             rows=user_rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Usuarios WordPress encontrados ({len(user_rows)}):",
+            title=f"Users WordPress encontrados ({len(user_rows)}):",
         )
     else:
         print_info("WPScan no reporto usuarios.")
@@ -6369,10 +6368,10 @@ def print_wpscan_detailed_summary(scan):
             for i in interesting if isinstance(i, dict)
         ]
         print_table(
-            headers=["Tipo", "Detalle", "URL", "Conf."],
+            headers=["Type", "Detail", "URL", "Conf."],
             rows=interesting_rows,
             alignments=['<', '<', '<', '>'],
-            title=f"Hallazgos interesantes WordPress ({len(interesting_rows)}):",
+            title=f"Findings interestings WordPress ({len(interesting_rows)}):",
         )
 
     if vulnerabilities:
@@ -6389,10 +6388,10 @@ def print_wpscan_detailed_summary(scan):
                 _wp_summary_value(refs, 70),
             ])
         print_table(
-            headers=["Tipo", "Componente", "Titulo", "Fixed in", "Referencias"],
+            headers=["Type", "Component", "Title", "Fixed in", "Referencias"],
             rows=vuln_rows,
             alignments=['<', '<', '<', '<', '<'],
-            title=f"Vulnerabilidades WordPress ({len(vuln_rows)}):",
+            title=f"Vulnerabilities WordPress ({len(vuln_rows)}):",
         )
     else:
         print_info("WPScan no reporto vulnerabilidades.")
@@ -6407,10 +6406,10 @@ def print_wpscan_detailed_summary(scan):
             for c in credentials if isinstance(c, dict)
         ]
         print_table(
-            headers=["Usuario", "Password", "Fuente"],
+            headers=["User", "Password", "Source"],
             rows=cred_rows,
             alignments=['<', '<', '<'],
-            title=f"Credenciales WordPress validas ({len(cred_rows)}):",
+            title=f"Credentials WordPress validas ({len(cred_rows)}):",
             border_color=Fore.GREEN,
         )
 
@@ -6553,7 +6552,7 @@ def detect_wordpress_for_full_pentest(target, session):
 def run_wordpress_attacks_if_detected(target, session):
     detection = detect_wordpress_for_full_pentest(target, session)
     if not detection.get("detected"):
-        print_info("Objetivo no identificado como WordPress. Saltando WPScan en pentesting completo.")
+        print_info("Target no identificado como WordPress. Saltando WPScan en pentesting completo.")
         return None
     return run_wordpress_attacks(target, session)
 
@@ -6561,7 +6560,7 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
     existing_users = list(existing_users or [])
     detection = detect_wordpress_for_full_pentest(target, session)
     if not detection.get("detected"):
-        print_info("Objetivo no identificado como WordPress. Se mantiene la enumeracion habitual de usuarios.")
+        print_info("Target no identificado como WordPress. Se mantiene la enumeracion habitual de usuarios.")
         return existing_users
 
     wpscan_path = check_wpscan()
@@ -6600,9 +6599,9 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
         for user in wp_users:
             _append_finding_once(f"[WP:USER] {user}")
         print_table(
-            headers=["Usuario"],
+            headers=["User"],
             rows=[[u] for u in wp_users],
-            title=f"Usuarios WordPress identificados con WPScan ({len(wp_users)}):",
+            title=f"Users WordPress identificados con WPScan ({len(wp_users)}):",
         )
         return merged_users
 
@@ -6610,7 +6609,7 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
     return existing_users
 
 def run_wordpress_attacks(target, session):
-    print_phase("ENUMERACIÓN Y ATAQUES WORDPRESS")
+    print_phase("WORDPRESS ENUMERATION AND ATTACKS")
     wpscan_path = check_wpscan()
     if not wpscan_path:
         if not install_wpscan():
@@ -6649,13 +6648,13 @@ def run_wordpress_attacks(target, session):
     else:
         summary_rows = [
             ["WordPress", version.get("number") or "detectado"],
-            ["Estado version", version.get("status") or "-"],
-            ["Tema principal", main_theme.get("name") or "-"],
+            ["Status version", version.get("status") or "-"],
+            ["Theme principal", main_theme.get("name") or "-"],
             ["Plugins detectados", str(len(plugins))],
-            ["Usuarios", str(len(users))],
-            ["Vulnerabilidades", str(len(vulnerabilities))],
+            ["Users", str(len(users))],
+            ["Vulnerabilities", str(len(vulnerabilities))],
         ]
-        print_table(headers=["Campo", "Valor"], rows=summary_rows, title="Resumen WordPress:")
+        print_table(headers=["Field", "Value"], rows=summary_rows, title="Summary WordPress:")
 
     if version.get("number"):
         _append_finding_once(f"[WP] WordPress {version.get('number')} ({version.get('status') or 'estado desconocido'})")
@@ -6677,7 +6676,7 @@ def run_wordpress_attacks(target, session):
     if users:
         SCAN_DATA["users"] = sorted(set((SCAN_DATA.get("users") or []) + users))
         user_rows = [[u] for u in users]
-        print_table(headers=["Usuario"], rows=user_rows, title="Usuarios WordPress identificados:")
+        print_table(headers=["User"], rows=user_rows, title="Users WordPress identificados:")
 
         try:
             print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Lanzar fuerza bruta con WPScan sobre estos usuarios? [S/n]:")
@@ -6686,7 +6685,7 @@ def run_wordpress_attacks(target, session):
             do_brute = False
         if do_brute:
             passlist = input_path(
-                "Ruta a wordlist de contraseñas (Enter = rockyou/SecLists si existe): "
+                "Path a wordlist de contraseñas (Enter = rockyou/SecLists si existe): "
             ).strip()
             if not passlist:
                 passlist = _default_wordpress_password_wordlist()
@@ -6696,7 +6695,7 @@ def run_wordpress_attacks(target, session):
                 print_warning("No hay wordlist de contraseñas válida. Saltando bruteforce WordPress.")
             else:
                 try:
-                    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Método de ataque [xmlrpc/wp-login] (default xmlrpc):")
+                    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Method de ataque [xmlrpc/wp-login] (default xmlrpc):")
                     mode_in = input("> ").strip().lower()
                 except (KeyboardInterrupt, EOFError):
                     mode_in = ""
@@ -6859,17 +6858,17 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
     if all_params:
         print_info(f"Parámetros únicos encontrados: {len(all_params)} -> {', '.join(list(all_params)[:20])}")
     if forms_found:
-        print_info(f"Formularios detectados durante el spidering: {len(forms_found)}")
+        print_info(f"Forms detectados durante el spidering: {len(forms_found)}")
     return discovered_urls, all_params, forms_found
 
-# ========== ANÁLISIS DE CÓDIGO FUENTE ==========
+# ========== OSURCE CODE ANALYSIS ==========
 # Patrones de búsqueda en el código fuente (HTML, JS, JSON, mapas, CSS).
 # Cada entrada: (severidad, etiqueta, regex compilada, requiere_value_group).
 _SRC_MAX_BYTES = 2 * 1024 * 1024   # cap por archivo (2 MB)
 _SRC_SNIPPET_CHARS = 140
 _SRC_MAX_FINDINGS_PER_FILE = 30
 
-_SOURCE_PATTERNS = [
+_OSURCE_PATTERNS = [
     ("critical", "Clave privada PEM",
      re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----"), False),
     ("critical", "Cadena de conexión BD con credenciales",
@@ -6912,23 +6911,23 @@ _SOURCE_PATTERNS = [
      re.compile(r"//[#@]\s*sourceMappingURL\s*=\s*([^\s\"']+)"), True),
     ("medium", "IP privada hardcoded",
      re.compile(r"\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b"), False),
-    ("low", "Ruta sensible referenciada",
+    ("low", "Path sensible referenciada",
      re.compile(r"[\"'](/(?:admin|adminer|debug|console|h2-console|phpmyadmin|backup|backups|dump|wp-admin|actuator|internal|staging|.git|.env)[A-Za-z0-9_\-/.]*)[\"']"), True),
     ("low", "Email expuesto",
      re.compile(r"\b[A-Za-z0-9_.+\-]+@[A-Za-z0-9\-]+\.[A-Za-z0-9.\-]+\b"), False),
 ]
 
-_SOURCE_ASSET_EXT = ('.js', '.mjs', '.jsx', '.ts', '.tsx', '.json', '.map', '.css', '.txt', '.xml', '.yml', '.yaml', '.env')
-_SOURCE_TEXT_CT = ('text/', 'application/javascript', 'application/json', 'application/xml',
+_OSURCE_ASSET_EXT = ('.js', '.mjs', '.jsx', '.ts', '.tsx', '.json', '.map', '.css', '.txt', '.xml', '.yml', '.yaml', '.env')
+_OSURCE_TEXT_CT = ('text/', 'application/javascript', 'application/json', 'application/xml',
                    'application/x-yaml', 'application/yaml', 'application/octet-stream')
 
 
 def _is_source_text_response(content_type, url):
     ct = (content_type or '').lower()
-    if any(t in ct for t in _SOURCE_TEXT_CT):
+    if any(t in ct for t in _OSURCE_TEXT_CT):
         return True
     path = urlparse(url).path.lower()
-    return path.endswith(_SOURCE_ASSET_EXT)
+    return path.endswith(_OSURCE_ASSET_EXT)
 
 
 def _download_text_capped(session, url, max_bytes=_SRC_MAX_BYTES):
@@ -6982,7 +6981,7 @@ def _extract_linked_assets(html_text, base_url, base_netloc):
                 if parsed.netloc != base_netloc:
                     continue
                 path = parsed.path.lower()
-                if path.endswith(_SOURCE_ASSET_EXT):
+                if path.endswith(_OSURCE_ASSET_EXT):
                     assets.add(urlunparse(parsed._replace(fragment='')))
         except Exception:
             pass
@@ -6990,7 +6989,7 @@ def _extract_linked_assets(html_text, base_url, base_netloc):
         for m in re.finditer(r'(?:src|href)\s*=\s*["\']([^"\']+)["\']', html_text, re.IGNORECASE):
             absu = urljoin(base_url, m.group(1).strip())
             parsed = urlparse(absu)
-            if parsed.netloc == base_netloc and parsed.path.lower().endswith(_SOURCE_ASSET_EXT):
+            if parsed.netloc == base_netloc and parsed.path.lower().endswith(_OSURCE_ASSET_EXT):
                 assets.add(urlunparse(parsed._replace(fragment='')))
     return assets
 
@@ -7001,7 +7000,7 @@ def _scan_text_for_secrets(text, source_url):
     seen = set()
     if not text:
         return findings
-    for severity, label, regex, has_group in _SOURCE_PATTERNS:
+    for severity, label, regex, has_group in _OSURCE_PATTERNS:
         try:
             matches = list(regex.finditer(text))
         except re.error:
@@ -7023,7 +7022,7 @@ def _scan_text_for_secrets(text, source_url):
                            "modal", "tooltip", "dropdown", "breadcrumb",
                            "container", "wrapper", "section start", "section end",
                            "begin block", "end block", "content start", "content end")
-                # Si el comentario contiene alguna keyword UI y NO contiene
+                # Yes el comentario contiene alguna keyword UI y NO contiene
                 # ninguna palabra realmente sensible (password/secret/token/...),
                 # ignorarlo.
                 strong = ("password", "passwd", "secret", "api_key", "api-key",
@@ -7059,7 +7058,7 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
     Args:
         target: URL base (usada para deducir el dominio).
         session: requests.Session activa (autenticada si procede).
-        urls: iterable de URLs (sample del spider). Si None, se usa solo target.
+        urls: iterable de URLs (sample del spider). Yes None, se usa solo target.
         max_urls: máximo de páginas HTML a descargar.
         max_assets: máximo de recursos JS/JSON/MAP a descargar.
 
@@ -7115,7 +7114,7 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
         seen.add(key)
         unique_findings.append(f)
 
-    # Resumen por severidad
+    # Severity summary
     sev_count = {"critical": 0, "high": 0, "medium": 0, "low": 0}
     for f in unique_findings:
         sev_count[f["severity"]] = sev_count.get(f["severity"], 0) + 1
@@ -7163,9 +7162,9 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
                 tipo, url, value,
             ])
         if len(unique_findings) <= 50:
-            title = f"Hallazgos del análisis de código ({len(unique_findings)}):"
+            title = f"Findings del análisis de código ({len(unique_findings)}):"
         else:
-            title = f"Hallazgos del análisis de código (top 50 de {len(unique_findings)}):"
+            title = f"Findings del análisis de código (top 50 de {len(unique_findings)}):"
         print_table(
             headers=["SEVERIDAD", "TIPO", "URL", "VALOR"],
             rows=rows,
@@ -7485,16 +7484,16 @@ def run_active_directory_pentest(target=None):
         print_error("Domain Controller requerido.")
         return None
     suggested_domain = ".".join((dc.split(".")[1:] if "." in dc else []))
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Dominio AD FQDN [{suggested_domain}]:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain AD FQDN [{suggested_domain}]:")
     domain = input("> ").strip() or suggested_domain
     if not domain:
-        print_error("Dominio requerido para Kerberos/LDAP/NXC.")
+        print_error("Domain requerido para Kerberos/LDAP/NXC.")
         return None
     base_dn = _domain_to_base_dn(domain)
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Base DN LDAP [{base_dn}]:")
     base_dn = input("> ").strip() or base_dn
 
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Usuario de dominio para enumerar (vacio = anonimo/guest):")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User de dominio para enumerar (vacio = anonimo/guest):")
     username = input("> ").strip()
     password = ""
     if username:
@@ -7557,7 +7556,7 @@ def run_active_directory_pentest(target=None):
                 _append_finding_once(f"[AD:USER] {user}")
             if valid_users:
                 print_table(
-                    headers=["#", "Usuario válido (Kerbrute)"],
+                    headers=["#", "User válido (Kerbrute)"],
                     rows=[[str(i), _adtrim(u, 60)] for i, u in enumerate(valid_users, 1)],
                     alignments=['>', '<'],
                     title=f"Kerbrute — usuarios válidos ({len(valid_users)}):",
@@ -7591,7 +7590,7 @@ def run_active_directory_pentest(target=None):
                 ldap_users_now = result["ldap"]["users"]
                 if ldap_users_now:
                     print_table(
-                        headers=["Usuario", "Nombre", "UPN"],
+                        headers=["User", "Name", "UPN"],
                         rows=[[_adtrim(u.get("username") or "-", 30),
                                _adtrim(u.get("cn") or "-", 35),
                                _adtrim(u.get("upn") or "-", 45)] for u in ldap_users_now[:30]],
@@ -7603,7 +7602,7 @@ def run_active_directory_pentest(target=None):
                 ldap_groups_now = result["ldap"]["groups"]
                 if ldap_groups_now:
                     print_table(
-                        headers=["Grupo", "Descripción", "Miembros"],
+                        headers=["Group", "Descripción", "Members"],
                         rows=[[_adtrim(g.get("name") or "-", 35),
                                _adtrim(g.get("description") or "-", 45),
                                str(len(g.get("members") or []))] for g in ldap_groups_now[:30]],
@@ -7615,7 +7614,7 @@ def run_active_directory_pentest(target=None):
                 ldap_computers_now = result["ldap"]["computers"]
                 if ldap_computers_now:
                     print_table(
-                        headers=["Equipo", "Sistema operativo", "Versión"],
+                        headers=["Computer", "Yesstema operativo", "Version"],
                         rows=[[_adtrim(c.get("name") or "-", 40),
                                _adtrim(c.get("os") or "-", 35),
                                _adtrim(c.get("os_version") or "-", 18)] for c in ldap_computers_now[:30]],
@@ -7639,7 +7638,7 @@ def run_active_directory_pentest(target=None):
     valid_users_file = _write_ad_user_file(discovered_users, domain, dc)
     if valid_users_file:
         result["artifacts"]["valid_users_file"] = valid_users_file
-        print_good(f"Usuarios validos guardados para roasting: {valid_users_file}")
+        print_good(f"Users validos guardados para roasting: {valid_users_file}")
 
     getnp_path = check_impacket_getnpusers()
     if getnp_path:
@@ -7649,7 +7648,7 @@ def run_active_directory_pentest(target=None):
             usersfile = valid_users_file
             if not usersfile:
                 default_usersfile = ad_user_wordlist or _default_ad_user_wordlist() or ""
-                print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Ruta usersfile para AS-REP [{default_usersfile or 'requerida'}]:")
+                print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Path usersfile para AS-REP [{default_usersfile or 'requerida'}]:")
                 usersfile = input_path("> ").strip() or default_usersfile
             if not usersfile or not os.path.isfile(usersfile):
                 print_warning("AS-REP Roasting requiere un usersfile legible.")
@@ -7680,7 +7679,7 @@ def run_active_directory_pentest(target=None):
                 if hashes:
                     print_good(f"AS-REP Roasting: {len(hashes)} hash(es) capturado(s).")
                     print_table(
-                        headers=["Usuario", "Hash AS-REP"],
+                        headers=["User", "Hash AS-REP"],
                         rows=[[_adtrim(h.get("username") or "-", 28), _adtrim(h.get("hash") or "-", 90)] for h in hashes[:20]],
                         alignments=['<', '<'],
                         title=f"AS-REP Roasting ({len(hashes)}):",
@@ -7729,7 +7728,7 @@ def run_active_directory_pentest(target=None):
                 if hashes:
                     print_good(f"Kerberoasting: {len(hashes)} hash(es) TGS capturado(s).")
                     print_table(
-                        headers=["Usuario/SPN", "Hash TGS"],
+                        headers=["User/SPN", "Hash TGS"],
                         rows=[[_adtrim(h.get("username") or "-", 28), _adtrim(h.get("hash") or "-", 90)] for h in hashes[:20]],
                         alignments=['<', '<'],
                         title=f"Kerberoasting ({len(hashes)}):",
@@ -7760,13 +7759,13 @@ def run_active_directory_pentest(target=None):
         brute = input("> ").strip().lower() == 's'
         if brute:
             default_users = _default_ad_user_wordlist()
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Usuario o ruta de userlist [{username or default_users or 'requerido'}]:")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User o ruta de userlist [{username or default_users or 'requerido'}]:")
             nxc_users = input_path("> ").strip() or username or default_users
             default_pass = _default_ad_password_wordlist()
             print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Password o ruta de passlist [{default_pass or 'requerido'}]:")
             nxc_pass = input_path("> ").strip() or default_pass
             if not nxc_users or not nxc_pass:
-                print_warning("Usuario/userlist y password/passlist son requeridos para nxc bruteforce.")
+                print_warning("User/userlist y password/passlist son requeridos para nxc bruteforce.")
             else:
                 brute_cmd = [
                     nxc_path, "smb", dc, "-d", domain,
@@ -7792,7 +7791,7 @@ def run_active_directory_pentest(target=None):
                     _append_finding_once(f"[AD:CRED] {cred.get('username')}:{cred.get('password')}")
                 if creds:
                     print_table(
-                        headers=["Usuario", "Contraseña"],
+                        headers=["User", "Password"],
                         rows=[[f"{Fore.GREEN}{_adtrim(c.get('username') or '-', 40)}{Style.RESET_ALL}",
                                f"{Fore.GREEN}{_adtrim(c.get('password') or '-', 40)}{Style.RESET_ALL}"] for c in creds],
                         alignments=['<', '<'],
@@ -7810,18 +7809,18 @@ def run_active_directory_pentest(target=None):
     asrep_hashes = result.get("impacket", {}).get("asrep_roast", {}).get("hashes", [])
     kerberoast_hashes = result.get("impacket", {}).get("kerberoast", {}).get("hashes", [])
     print_table(
-        headers=["Fuente", "Total"],
+        headers=["Source", "Total"],
         rows=[
-            ["Kerbrute usuarios validos", str(len(kb_users))],
+            ["Kerbrute users validos", str(len(kb_users))],
             ["AS-REP roastable", str(len(asrep_hashes))],
             ["Kerberoastable SPNs", str(len(kerberoast_hashes))],
-            ["LDAP usuarios", str(len(ldap_users))],
-            ["LDAP grupos", str(len(ldap_groups))],
-            ["LDAP equipos", str(len(ldap_computers))],
-            ["NXC credenciales", str(len(nxc_creds))],
+            ["LDAP users", str(len(ldap_users))],
+            ["LDAP groups", str(len(ldap_groups))],
+            ["LDAP computers", str(len(ldap_computers))],
+            ["NXC credentials", str(len(nxc_creds))],
         ],
         alignments=['<', '>'],
-        title="Resumen Active Directory:",
+        title="Summary Active Directory:",
     )
     SCAN_DATA["active_directory"] = result
     return result
@@ -7866,13 +7865,13 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
                     continue
 
             # Algunos flujos OAuth2 tienen el campo de contraseña en un segundo paso.
-            # Intentamos hacer clic en "Siguiente"/"Next"/"Continue" si no hay campo de password visible.
+            # Intentamos hacer clic en "Yesguiente"/"Next"/"Continue" si no hay campo de password visible.
             try:
                 page.wait_for_selector("input[type='password']", timeout=4000)
             except Exception:
                 for btn_sel in [
                     "button[type='submit']", "input[type='submit']",
-                    "button:has-text('Next')", "button:has-text('Siguiente')",
+                    "button:has-text('Next')", "button:has-text('Yesguiente')",
                     "button:has-text('Continue')", "button:has-text('Continuar')",
                     "[data-testid='next-button']",
                 ]:
@@ -7893,7 +7892,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
             submitted = False
             for btn_sel in [
                 "button[type='submit']", "input[type='submit']",
-                "button:has-text('Login')", "button:has-text('Sign in')",
+                "button:has-text('Login')", "button:has-text('Yesgn in')",
                 "button:has-text('Iniciar sesión')", "button:has-text('Connexion')",
                 "[data-testid='login-button']", "[data-testid='submit']",
             ]:
@@ -8115,7 +8114,7 @@ def test_ssrf(target, session, collaborator_url=None):
             if collaborator_url:
                 _send_probe(session, url, param, collaborator_url, method)
 
-    # Cabeceras con IPs internas (oraculo determinista).
+    # Headers con IPs internas (oraculo determinista).
     print_info("Probando SSRF via cabeceras HTTP...")
     for header in SSRF_HEADERS:
         for payload, markers in SSRF_PROBES[1:]:
@@ -8134,7 +8133,7 @@ def test_ssrf(target, session, collaborator_url=None):
                 FINDINGS.append({"name": "SSRF (header)", "detail": msg, "severity": "critical"})
 
     if not results:
-        print_info("Sin indicios de SSRF en los vectores probados.")
+        print_info("No indicios de SSRF en los vectores probados.")
     return results
 
 
@@ -8202,7 +8201,7 @@ XXE_CONTENT_TYPES = [
     "application/soap+xml",
 ]
 
-# Nombres de campo habituales donde inyectar la entidad. Muchos backends solo
+# Names de campo habituales donde inyectar la entidad. Muchos backends solo
 # reflejan campos concretos (name, message, ...), por lo que un payload
 # <root><data> generico no muestra el contenido; se inyecta en varios a la vez.
 XXE_FIELD_NAMES = [
@@ -8279,7 +8278,7 @@ def test_xxe(target, session, found_endpoints=None):
     """XXE: descubre endpoints que aceptan XML (incluidos los derivados como
     /xxe/api) y prueba lectura de ficheros locales con oraculo determinista."""
     results = []
-    # Nombres de campo descubiertos en formularios, para inyectar donde se reflejen.
+    # Names de campo descubiertos en formularios, para inyectar donde se reflejen.
     form_fields = []
     for f in ((SCAN_DATA.get("spider") or {}).get("sample_forms") or []):
         form_fields.extend(f.get("inputs") or [])
@@ -8318,7 +8317,7 @@ def test_xxe(target, session, found_endpoints=None):
                     hit_eps.add(endpoint_url)
                     break
     if not results:
-        print_info("Sin indicios de XXE en los endpoints probados.")
+        print_info("No indicios de XXE en los endpoints probados.")
     return results
 
 
@@ -8366,7 +8365,7 @@ def test_crlf(target, session):
                 pass
 
     if not results:
-        print_info("Sin indicios de CRLF en los vectores probados.")
+        print_info("No indicios de CRLF en los vectores probados.")
     return results
 
 
@@ -8451,19 +8450,19 @@ def test_request_smuggling(target, session):
                 print_info("CL.TE: servidor devolvio 400 — posible deteccion del conflicto (revisar manualmente).")
                 results.append({"type": "clte-400", "note": "posible smuggling, verificar con smuggler.py"})
             else:
-                print_info("Sin respuesta anomala en prueba manual CL.TE.")
+                print_info("No respuesta anomala en prueba manual CL.TE.")
         except Exception as e:
             print_warning(f"No se pudo hacer prueba manual de smuggling: {e}")
         print_info("Para analisis completo: pip install requests && git clone https://github.com/defparam/smuggler")
 
     if not results:
-        print_info("Sin indicios de HTTP Request Smuggling confirmados.")
+        print_info("No indicios de HTTP Request Smuggling confirmados.")
     return results
 
 
-# ========== CACHE POISONING ==========
+# ========== CACHE POIOSNING ==========
 
-CACHE_POISON_HEADERS = [
+CACHE_POIOSN_HEADERS = [
     ("X-Forwarded-Host", "evil-canary-{rand}.com"),
     ("X-Host", "evil-canary-{rand}.com"),
     ("X-Forwarded-Scheme", "http"),
@@ -8480,7 +8479,7 @@ def test_cache_poisoning(target, session):
     import random, string
     rand_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
 
-    for header_tpl, value_tpl in CACHE_POISON_HEADERS:
+    for header_tpl, value_tpl in CACHE_POIOSN_HEADERS:
         value = value_tpl.replace("{rand}", rand_id)
         try:
             # Primera peticion: inyectamos la cabecera.
@@ -8507,7 +8506,7 @@ def test_cache_poisoning(target, session):
         except requests.RequestException:
             pass
 
-    # Cabecera X-Cache / Age para comprobar si el objetivo usa cache.
+    # Header X-Cache / Age para comprobar si el objetivo usa cache.
     try:
         resp = session.get(target, timeout=DEFAULT_TIMEOUT)
         cache_headers = {k.lower(): v for k, v in resp.headers.items()}
@@ -8519,7 +8518,7 @@ def test_cache_poisoning(target, session):
         pass
 
     if not results:
-        print_info("Sin indicios de Cache Poisoning en los vectores probados.")
+        print_info("No indicios de Cache Poisoning en los vectores probados.")
     return results
 
 
@@ -8550,7 +8549,7 @@ def _jwt_test_alg_none(target, session, token, header_name="Authorization", pref
     try:
         r1 = session.get(target, timeout=DEFAULT_TIMEOUT)
         r2 = session.get(target, headers=test_headers, timeout=DEFAULT_TIMEOUT)
-        # Si la respuesta con alg:none tiene el mismo contenido que la autenticada, es vulnerable.
+        # Yes la respuesta con alg:none tiene el mismo contenido que la autenticada, es vulnerable.
         if r2.status_code == r1.status_code and r2.status_code not in (401, 403):
             return True
     except Exception:
@@ -8636,7 +8635,7 @@ def test_jwt_tokens(target, session):
                 pass
 
         if not jwt_candidates:
-            print_info("Sin JWT detectados en cabeceras, cookies, cuerpo ni endpoints de API.")
+            print_info("No JWT detectados en cabeceras, cookies, cuerpo ni endpoints de API.")
             return
 
         for jwt in jwt_candidates:
@@ -8693,7 +8692,7 @@ def test_jwt_tokens(target, session):
                     else:
                         print_info("  Secreto no encontrado en wordlist reducida (revisar manualmente con hashcat).")
 
-                # Campos de privilegio expuestos.
+                # Fields de privilegio expuestos.
                 sensitive_keys = {"admin", "role", "is_admin", "permission", "privilege", "scope", "group", "groups"}
                 exposed = [k for k in payload_data if k.lower() in sensitive_keys]
                 if exposed:
@@ -8787,10 +8786,10 @@ def test_api_rate_limiting(target, session):
                 FINDINGS.append({"name": "Rate limiting (IP ban 403)", "detail": msg, "severity": "info"})
                 return
 
-            # Sin proteccion.
-            msg = f"Sin rate limiting detectado en {test_url}: {len(statuses)} peticiones sin bloqueo"
+            # No proteccion.
+            msg = f"No rate limiting detectado en {test_url}: {len(statuses)} peticiones sin bloqueo"
             print_vuln(msg)
-            FINDINGS.append({"name": "Sin rate limiting", "detail": msg, "severity": "medium"})
+            FINDINGS.append({"name": "No rate limiting", "detail": msg, "severity": "medium"})
             return
 
         except Exception as e:
@@ -8815,7 +8814,7 @@ def run_advanced_security_tests(target, session):
     ssti_hits = []
     ssti_seen = set()
     get_points, post_points, ssti_endpoints = _collect_injection_points(target)
-    # Nombres de parametro habituales para plantillas (fuzz ligero, 2 sondas).
+    # Names de parametro habituales para plantillas (fuzz ligero, 2 sondas).
     SSTI_PARAM_NAMES = ["template", "tpl", "render", "preview", "name", "q",
                         "search", "message", "input", "content", "page", "view"]
     light_probes = SSTI_PROBES[:2]
@@ -8869,51 +8868,51 @@ def run_advanced_security_tests(target, session):
             vector = r.get("param") or r.get("header") or "-"
             payload = (r.get("payload") or r.get("value") or "")[:60]
             rows.append([t, vector, payload, str(r.get("status", "-"))])
-        print_table(["Tipo", "Vector", "Payload/Valor", "HTTP"],
-                    rows, title="SSRF — Hallazgos",
+        print_table(["Type", "Vector", "Payload/Value", "HTTP"],
+                    rows, title="SSRF — Findings",
                     border_color=Fore.RED)
 
     if adv.get("ssti"):
         rows = [[r.get("url", "-")[:60], r.get("param", "-"),
                  r.get("engine", "-")] for r in adv["ssti"]]
-        print_table(["URL", "Parametro", "Engine"],
-                    rows, title="SSTI — Hallazgos",
+        print_table(["URL", "Parameter", "Engine"],
+                    rows, title="SSTI — Findings",
                     border_color=Fore.RED)
 
     if adv.get("xxe"):
         rows = [[r.get("url", "-")[:60], r.get("content_type", "-"),
                  r.get("note", "confirmado")] for r in adv["xxe"]]
-        print_table(["URL", "Content-Type", "Estado"],
-                    rows, title="XXE — Hallazgos",
+        print_table(["URL", "Content-Type", "Status"],
+                    rows, title="XXE — Findings",
                     border_color=Fore.RED)
 
     if adv.get("crlf"):
         rows = [[r.get("vector", "-"), r.get("param") or r.get("url", "-")[:50],
                  r.get("payload", "-")[:40]] for r in adv["crlf"]]
         print_table(["Vector", "URL/Param", "Payload"],
-                    rows, title="CRLF Injection — Hallazgos",
+                    rows, title="CRLF Injection — Findings",
                     border_color=Fore.YELLOW)
 
     if adv.get("smuggling"):
         rows = [[r.get("tool") or r.get("type", "-"),
                  r.get("note") or r.get("output_snippet", "-")[:60]] for r in adv["smuggling"]]
-        print_table(["Herramienta/Tipo", "Detalle"],
-                    rows, title="HTTP Request Smuggling — Hallazgos",
+        print_table(["Tool/Type", "Detail"],
+                    rows, title="HTTP Request Smuggling — Findings",
                     border_color=Fore.RED)
 
     if adv.get("cache_poisoning"):
         rows = [[r.get("header", "-"), r.get("value", "-")[:40],
                  "CONFIRMADO" if r.get("confirmed") else "REFLECTED"] for r in adv["cache_poisoning"]]
-        print_table(["Cabecera", "Valor inyectado", "Estado"],
-                    rows, title="Cache Poisoning — Hallazgos",
+        print_table(["Header", "Injected value", "Status"],
+                    rows, title="Cache Poisoning — Findings",
                     border_color=Fore.YELLOW)
 
     # Tabla resumen global.
     module_names = ["ssrf", "ssti", "xxe", "crlf", "smuggling", "cache_poisoning"]
     summary_rows = [[name.upper(), str(len(adv.get(name) or []))] for name in module_names]
     total = sum(len(adv.get(n) or []) for n in module_names)
-    print_table(["Modulo", "Hallazgos"], summary_rows,
-                title="Pruebas Avanzadas — Resumen",
+    print_table(["Module", "Findings"], summary_rows,
+                title="Advanced Tests — Summary",
                 footer=f"  Total hallazgos: {total}",
                 border_color=Fore.CYAN)
     print_good(f"Pruebas avanzadas completadas. {total} hallazgos registrados.")
@@ -8951,40 +8950,40 @@ def show_menu(targets=None):
         print(BANNER)
         print(DESCRIPTION)
         print(DEVELOPER + "\n")
-    auth_status = (f"{Fore.GREEN}[Autenticado]{Style.RESET_ALL}" if AUTHENTICATED
-                   else f"{Fore.YELLOW}[Sin autenticación]{Style.RESET_ALL}")
+    auth_status = (f"{Fore.GREEN}[Authenticated]{Style.RESET_ALL}" if AUTHENTICATED
+                   else f"{Fore.YELLOW}[Unauthenticated]{Style.RESET_ALL}")
     print("=" * 52)
-    print(f"  WSTG SCANNER v{VERSION}  {auth_status}")
+    print(f"  OWASP SCANNER v{VERSION}  {auth_status}")
     print("=" * 52)
     if targets and len(targets) > 1:
-        print(f"{Fore.CYAN}  Modo multi-objetivo: cada opción se ejecuta en los "
-              f"{len(targets)} objetivos{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}  Multi-target mode: each option runs against all "
+              f"{len(targets)} targets{Style.RESET_ALL}")
         for i, t in enumerate(targets, 1):
             print(f"    {i}. {t}")
         print("=" * 52)
-    print(" 1. Configurar autenticación (login / headless SPA / OAuth2)")
-    print(" 2. Información general y enumeración")
-    print(" 3. Escaneo de puertos con Nmap (-sV + NSE dirigido)")
-    print(" 4. Análisis de vulnerabilidades con Nuclei")
-    print(" 5. Fuzzing de subdominios (vhost) con ffuf")
-    print(" 6. Fuzzing de directorios (usa ffuf si está instalado)")
-    print(" 7. Spidering / Mapeo completo del sitio")
-    print(" 8. Análisis de código fuente (credenciales/secretos en HTML y JS)")
-    print(" 9. Pruebas de inyección (SQLi, XSS, Path Traversal, Command Injection)")
-    print("10. Pruebas avanzadas (SSRF / SSTI / XXE / CRLF / Smuggling / Cache)")
-    print("11. Pruebas de API (descubrimiento, IDOR, mass assignment, JWT, Rate limit)")
-    print("12. Enumeración de usuarios/emails y fuerza bruta de contraseñas")
-    print("13. Enumeración y ataques WordPress (WPScan)")
-    print("14. Pentesting Active Directory (Kerbrute/LDAP/NXC)")
-    print("15. PENTESTING COMPLETO (ejecuta todas las pruebas anteriores)")
+    print(" 1. Configure authentication (login / headless SPA / OAuth2)")
+    print(" 2. General information and enumeration")
+    print(" 3. Port scanning with Nmap (-sV + targeted NSE)")
+    print(" 4. Vulnerability analysis with Nuclei")
+    print(" 5. Subdomain fuzzing (vhost) with ffuf")
+    print(" 6. Directory fuzzing (uses ffuf when installed)")
+    print(" 7. Spidering / complete site mapping")
+    print(" 8. Source-code analysis (credentials/secrets in HTML and JS)")
+    print(" 9. Injection tests (SQLi, XSS, Path Traversal, Command Injection)")
+    print("10. Advanced tests (SSRF / SSTI / XXE / CRLF / Smuggling / Cache)")
+    print("11. API tests (discovery, IDOR, mass assignment, JWT, rate limit)")
+    print("12. User/email enumeration and password brute force")
+    print("13. WordPress enumeration and attacks (WPScan)")
+    print("14. Active Directory pentesting (Kerbrute/LDAP/NXC)")
+    print("15. FULL PENTEST (runs all previous tests)")
     if _has_scan_data():
-        print("16. Mostrar resumen en Markdown")
-        print("17. Mostrar tablas de resultados (formato visual)")
-    print("18. Salir")
+        print("16. Show Markdown summary")
+        print("17. Show result tables (visual format)")
+    print("18. Exit")
     print("="*50)
 
 def run_information_gathering(target, session):
-    print_phase("RECOLECTANDO INFORMACIÓN GENERAL")
+    print_phase("GATHERING GENERAL INFORMATION")
     info = safe_execute(gather_info, target, session)
     if info:
         SCAN_DATA["general"] = {
@@ -8995,7 +8994,7 @@ def run_information_gathering(target, session):
             "headers": info.get("headers", {}),
             "cookies": [c.name for c in info.get("cookies", [])],
         }
-        print_info(f"Servidor: {info['server']}")
+        print_info(f"Server: {info['server']}")
         robots_paths = safe_execute(check_robots_sitemap, target, session) or []
         http_methods = safe_execute(check_http_methods, target, session) or []
         SCAN_DATA["robots_paths"] = robots_paths
@@ -9013,24 +9012,24 @@ def run_vhost_fuzzing(target, session):
     print_phase("FUZZING DE SUBDOMINIOS (VHOST)")
     parsed = urlparse(target)
     host = parsed.hostname or ""
-    # Si el target es una IP, hace falta dominio base manual; si es FQDN, sugerirlo
+    # Yes el target es una IP, hace falta dominio base manual; si es FQDN, sugerirlo
     is_ip = bool(re.match(r'^\d{1,3}(\.\d{1,3}){3}$', host))
     if is_ip:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Dominio base (ej: planning.htb) — obligatorio cuando el target es IP:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain base (ej: planning.htb) — obligatorio cuando el target es IP:")
         base_domain = input("> ").strip()
     else:
         default = host
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Dominio base [{default}]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain base [{default}]:")
         base_in = input("> ").strip()
         base_domain = base_in or default
     if not base_domain:
-        print_error("Dominio base requerido. Saltando vhost fuzzing.")
+        print_error("Domain base requerido. Saltando vhost fuzzing.")
         return
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Usar wordlist por defecto (SecLists DNS/namelist.txt)? [S/n]:")
     use_default = input("> ").strip().lower()
     wordlist = None
     if use_default == 'n':
-        custom_wl = input_path("Ruta a wordlist personalizada: ").strip()
+        custom_wl = input_path("Path a wordlist personalizada: ").strip()
         if custom_wl:
             wordlist = custom_wl
     if check_ffuf():
@@ -9075,7 +9074,7 @@ def run_directory_fuzzing(target, session):
     use_default = input("> ").strip().lower()
     wordlist = None
     if use_default == 'n':
-        custom_wl = input_path("Ruta a wordlist personalizada: ").strip()
+        custom_wl = input_path("Path a wordlist personalizada: ").strip()
         if custom_wl:
             wordlist = custom_wl
         else:
@@ -9090,7 +9089,7 @@ def run_directory_fuzzing(target, session):
     SCAN_DATA["directory_hits"] = hits
 
 def run_injection_tests(target, session):
-    print_phase("PRUEBAS DE INYECCIÓN AVANZADAS")
+    print_phase("ADVANCED INJECTION TESTS")
     try:
         forms, url_params = safe_execute(extract_forms_and_params, target, session)
         SCAN_DATA["injection"] = {
@@ -9149,7 +9148,7 @@ def run_injection_tests(target, session):
         return
 
 def run_api_tests(target, session):
-    print_phase("PRUEBAS DE API (OWASP API Top 10)")
+    print_phase("API TESTS (OWASP API Top 10)")
     print_info("[1/7] Descubrimiento de endpoints...")
     found = safe_execute(discover_api_endpoints, target, session) or []
     SCAN_DATA["api_endpoints"] = found
@@ -9173,13 +9172,13 @@ def run_api_tests(target, session):
     print_good("Pruebas de API completadas.")
 
 def run_user_enum_bruteforce(target, session):
-    print_phase("ENUMERACIÓN DE USUARIOS Y BRUTEFORCE")
+    print_phase("USER ENUMERATION AND BRUTE FORCE")
     users, emails = safe_execute(enumerate_users_from_endpoints, target, session) or ([], [])
     users = sorted(set(users or []))
     SCAN_DATA["users"] = users
     SCAN_DATA["emails"] = sorted(set(emails or []))
     if users:
-        print_good(f"Usuarios encontrados: {', '.join(users)}")
+        print_good(f"Users encontrados: {', '.join(users)}")
     if emails:
         print_good(f"Emails encontrados: {', '.join(emails)}")
     safe_execute(test_user_enumeration_form, target, session)
@@ -9190,7 +9189,7 @@ def run_user_enum_bruteforce(target, session):
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Desea realizar fuerza bruta de contraseñas? (s/n):")
     want_brute = input("> ").strip().lower()
     if want_brute in ('', 's'):
-        passlist = input_path("Ruta a wordlist de contraseñas (dejar vacío para usar por defecto de SecLists): ").strip()
+        passlist = input_path("Path a wordlist de contraseñas (dejar vacío para usar por defecto de SecLists): ").strip()
         if not users:
             print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Introduce usuarios separados por comas:")
             users_input = input("> ").strip()
@@ -9232,7 +9231,7 @@ def run_spider(target, session):
         print_info(f"Parámetros únicos encontrados: {len(params)}")
     save = input("¿Guardar lista de URLs en un archivo? (s/n): ").strip().lower()
     if save == 's':
-        filename = input("Nombre del archivo (default: spider_output.txt): ").strip()
+        filename = input("Name del archivo (default: spider_output.txt): ").strip()
         if not filename:
             filename = "spider_output.txt"
         with open(filename, 'w') as f:
@@ -9244,10 +9243,10 @@ def run_spider(target, session):
 def run_source_code_analysis(target, session, urls=None):
     """Analiza el código fuente de las páginas accesibles en busca de credenciales y scripts expuestos.
 
-    Si no se proporciona `urls`, intenta reutilizar las URLs muestreadas en SCAN_DATA["spider"];
+    Yes no se proporciona `urls`, intenta reutilizar las URLs muestreadas en SCAN_DATA["spider"];
     si tampoco existen, ofrece ejecutar un spider rápido o analizar solo el target.
     """
-    print_phase("ANÁLISIS DE CÓDIGO FUENTE")
+    print_phase("OSURCE CODE ANALYSIS")
     if urls is None:
         sample = (SCAN_DATA.get("spider") or {}).get("sample_urls") or []
         if sample:
@@ -9346,29 +9345,29 @@ def print_final_summary(target):
     kerberoast_hashes = (ad_imp.get("kerberoast") or {}).get("hashes") or []
     ad_creds = (ad_nxc.get("bruteforce") or {}).get("credentials") or []
 
-    # 1. Resumen ejecutivo
+    # 1. Summary ejecutivo
     overview_rows = [
-        ["Objetivo", _trim(target, 90)],
+        ["Target", _trim(target, 90)],
         ["Status HTTP", str(general.get("status_code", "-"))],
-        ["Servidor", _trim(general.get("server", "-"), 90)],
-        ["Tecnologías", _trim(_join_safe(general.get("technologies", [])) or "-", 90)],
-        ["Hallazgos (FINDINGS)", str(len(FINDINGS))],
-        ["Puertos abiertos (nmap)", str(len(nmap_ports))],
-        ["Resultados NSE dirigidos", str(len(nmap_nse))],
-        ["Vulnerabilidades Nuclei", str(len(nuclei_findings))],
+        ["Server", _trim(general.get("server", "-"), 90)],
+        ["Technologies", _trim(_join_safe(general.get("technologies", [])) or "-", 90)],
+        ["Findings (FINDINGS)", str(len(FINDINGS))],
+        ["Open ports (nmap)", str(len(nmap_ports))],
+        ["Resultados Targeted NSEs", str(len(nmap_nse))],
+        ["Vulnerabilities Nuclei", str(len(nuclei_findings))],
         ["URLs spider", str(spider.get("total_urls", 0))],
         ["Subdominios (vhosts)", str(len(vhosts))],
-        ["Directorios encontrados", str(len(dir_hits))],
+        ["Directories encontrados", str(len(dir_hits))],
         ["Endpoints API", str(len(api_endpoints))],
-        ["Usuarios", str(len(users))],
+        ["Users", str(len(users))],
         ["Emails", str(len(emails))],
-        ["Credenciales válidas", str(len(creds))],
+        ["Credentials válidas", str(len(creds))],
         ["WordPress vulnerabilidades", str(len(wordpress.get("vulnerabilities") or []))],
-        ["Usuarios AD (LDAP)", str(len(ad_ldap.get("users") or []))],
+        ["Users AD (LDAP)", str(len(ad_ldap.get("users") or []))],
         ["AS-REP roastable", str(len(asrep_hashes))],
         ["Kerberoastable SPNs", str(len(kerberoast_hashes))],
-        ["Credenciales AD (NXC)", str(len(ad_creds))],
-        ["Hallazgos en código fuente", str(len(src_findings))],
+        ["Credentials AD (NXC)", str(len(ad_creds))],
+        ["Findings en código fuente", str(len(src_findings))],
         ["SSRF hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("ssrf") or []))],
         ["SSTI hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("ssti") or []))],
         ["XXE hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("xxe") or []))],
@@ -9377,10 +9376,10 @@ def print_final_summary(target):
         ["Cache Poisoning hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("cache_poisoning") or []))],
     ]
     print_table(
-        headers=["Campo", "Valor"],
+        headers=["Field", "Value"],
         rows=overview_rows,
         alignments=['<', '<'],
-        title="Resumen ejecutivo:",
+        title="Summary ejecutivo:",
     )
 
     # 2. Headers de seguridad
@@ -9397,10 +9396,10 @@ def print_final_summary(target):
         mark = f"{Fore.GREEN}OK{Style.RESET_ALL}" if present else f"{Fore.RED}AUSENTE{Style.RESET_ALL}"
         sec_rows.append([h, mark, _trim(v, 80)])
     print_table(
-        headers=["Header", "Estado", "Valor"],
+        headers=["Header", "Status", "Value"],
         rows=sec_rows,
         alignments=['<', '<', '<'],
-        title="Cabeceras de seguridad:",
+        title="Headers de seguridad:",
     )
 
     # 3. Cookies
@@ -9419,13 +9418,13 @@ def print_final_summary(target):
     if http_methods:
         misc_rows.append(["HTTP Methods permitidos", _trim(_join_safe(http_methods), 90)])
     if robots_paths:
-        misc_rows.append([f"Rutas de robots.txt/sitemap ({len(robots_paths)})", _trim(_join_safe(robots_paths[:15]), 90)])
+        misc_rows.append([f"Paths de robots.txt/sitemap ({len(robots_paths)})", _trim(_join_safe(robots_paths[:15]), 90)])
     if misc_rows:
         print_table(
-            headers=["Categoría", "Valor"],
+            headers=["Category", "Value"],
             rows=misc_rows,
             alignments=['<', '<'],
-            title="Información HTTP adicional:",
+            title="Information HTTP adicional:",
         )
 
     # 4b. Nmap (puertos abiertos)
@@ -9443,10 +9442,10 @@ def print_final_summary(target):
                 _trim(version_str, 60),
             ])
         print_table(
-            headers=["Puerto", "Estado", "Servicio", "Versión"],
+            headers=["Port", "Status", "Service", "Version"],
             rows=port_rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Puertos abiertos (nmap) {_count_label(len(nmap_ports), len(port_rows))}:",
+            title=f"Open ports (nmap) {_count_label(len(nmap_ports), len(port_rows))}:",
         )
     if nmap_nse:
         nse_rows = []
@@ -9460,10 +9459,10 @@ def print_final_summary(target):
                 _trim(output, 85),
             ])
         print_table(
-            headers=["Puerto", "Servicio", "Script", "Salida"],
+            headers=["Port", "Service", "Script", "Output"],
             rows=nse_rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Resultados NSE dirigidos {_count_label(len(nmap_nse), len(nse_rows))}:",
+            title=f"Resultados Targeted NSEs {_count_label(len(nmap_nse), len(nse_rows))}:",
         )
 
     # 5. Spider
@@ -9471,10 +9470,10 @@ def print_final_summary(target):
         spider_rows = [
             ["URLs totales", str(spider.get("total_urls", 0))],
             ["Parámetros únicos", str(spider.get("total_params", 0))],
-            ["Formularios", str(spider.get("total_forms", 0))],
+            ["Forms", str(spider.get("total_forms", 0))],
         ]
         print_table(
-            headers=["Métrica", "Valor"],
+            headers=["Metric", "Value"],
             rows=spider_rows,
             alignments=['<', '>'],
             title="Spidering:",
@@ -9495,14 +9494,14 @@ def print_final_summary(target):
         code_overview = [
             ["Páginas analizadas", str(src_code.get("pages_analyzed", 0))],
             ["Recursos JS/JSON analizados", str(src_code.get("assets_analyzed", 0))],
-            ["Hallazgos totales", str(len(src_findings))],
+            ["Findings totales", str(len(src_findings))],
             [f"{Fore.MAGENTA}Critical{Style.RESET_ALL}", str(sev_stats.get("critical", 0))],
             [f"{Fore.RED}High{Style.RESET_ALL}", str(sev_stats.get("high", 0))],
             [f"{Fore.YELLOW}Medium{Style.RESET_ALL}", str(sev_stats.get("medium", 0))],
             [f"{Fore.CYAN}Low{Style.RESET_ALL}", str(sev_stats.get("low", 0))],
         ]
         print_table(
-            headers=["Métrica", "Valor"],
+            headers=["Metric", "Value"],
             rows=code_overview,
             alignments=['<', '>'],
             title="Análisis de código fuente:",
@@ -9523,10 +9522,10 @@ def print_final_summary(target):
                     _trim(f.get("url", "-"), 60),
                 ])
             print_table(
-                headers=["Severidad", "Tipo", "Valor detectado", "URL"],
+                headers=["Severity", "Type", "Value detectado", "URL"],
                 rows=code_rows,
                 alignments=['<', '<', '<', '<'],
-                title=f"Hallazgos en código fuente {_count_label(len(sorted_src), len(code_rows))}:",
+                title=f"Findings en código fuente {_count_label(len(sorted_src), len(code_rows))}:",
             )
 
     # 6a. Subdominios (vhosts)
@@ -9539,13 +9538,13 @@ def print_final_summary(target):
             sc = Fore.GREEN if status.startswith("2") else (Fore.YELLOW if status.startswith("3") else Fore.RED if status.startswith("4") else Fore.WHITE)
             vh_rows.append([f"{sc}{status}{Style.RESET_ALL}", fqdn, size])
         print_table(
-            headers=["Status", "VHost", "Tamaño"],
+            headers=["Status", "VHost", "Size"],
             rows=vh_rows,
             alignments=['<', '<', '>'],
             title=f"Subdominios encontrados {_count_label(len(vhosts), len(vh_rows))}:",
         )
 
-    # 6b. Directorios
+    # 6b. Directories
     if dir_hits:
         dir_rows = []
         for h in dir_hits[:30]:
@@ -9555,10 +9554,10 @@ def print_final_summary(target):
             sc = Fore.GREEN if status.startswith("2") else (Fore.YELLOW if status.startswith("3") else Fore.RED if status.startswith("4") else Fore.WHITE)
             dir_rows.append([f"{sc}{status}{Style.RESET_ALL}", url, size])
         print_table(
-            headers=["Status", "URL", "Tamaño"],
+            headers=["Status", "URL", "Size"],
             rows=dir_rows,
             alignments=['<', '<', '>'],
-            title=f"Directorios encontrados {_count_label(len(dir_hits), len(dir_rows))}:",
+            title=f"Directories encontrados {_count_label(len(dir_hits), len(dir_rows))}:",
         )
 
     # 6c. WordPress / WPScan
@@ -9568,16 +9567,16 @@ def print_final_summary(target):
         wp_users = wordpress.get("users") or []
         wp_vulns = wordpress.get("vulnerabilities") or []
         wp_rows = [
-            ["Detectado", "Si" if wordpress.get("detected") else "No confirmado"],
+            ["Detected", "Yes" if wordpress.get("detected") else "Not confirmed"],
             ["Version", wp_version.get("number") or "-"],
-            ["Estado", wp_version.get("status") or "-"],
-            ["Tema principal", wp_theme.get("name") or "-"],
-            ["Usuarios", str(len(wp_users))],
-            ["Vulnerabilidades", str(len(wp_vulns))],
-            ["Credenciales", str(len(wordpress.get("credentials") or []))],
+            ["Status", wp_version.get("status") or "-"],
+            ["Theme principal", wp_theme.get("name") or "-"],
+            ["Users", str(len(wp_users))],
+            ["Vulnerabilities", str(len(wp_vulns))],
+            ["Credentials", str(len(wordpress.get("credentials") or []))],
         ]
         print_table(
-            headers=["Campo", "Valor"],
+            headers=["Field", "Value"],
             rows=wp_rows,
             alignments=['<', '<'],
             title="WordPress / WPScan:",
@@ -9592,10 +9591,10 @@ def print_final_summary(target):
                     _trim(v.get("fixed_in", "-"), 20),
                 ])
             print_table(
-                headers=["Tipo", "Componente", "Titulo", "Fixed in"],
+                headers=["Type", "Component", "Title", "Fixed in"],
                 rows=vuln_rows,
                 alignments=['<', '<', '<', '<'],
-                title=f"Vulnerabilidades WordPress {_count_label(len(wp_vulns), len(vuln_rows))}:",
+                title=f"Vulnerabilities WordPress {_count_label(len(wp_vulns), len(vuln_rows))}:",
             )
 
     # 7. API endpoints
@@ -9613,30 +9612,30 @@ def print_final_summary(target):
             title=f"Endpoints API descubiertos {_count_label(len(api_endpoints), len(api_rows))}:",
         )
 
-    # 8. Usuarios y emails
+    # 8. Users and emails
     if users or emails:
         ue_rows = []
         if users:
-            ue_rows.append(["Usuarios", _trim(_join_safe(users), 100)])
+            ue_rows.append(["Users", _trim(_join_safe(users), 100)])
         if emails:
             ue_rows.append(["Emails", _trim(_join_safe(emails), 100)])
         print_table(
-            headers=["Categoría", "Valores"],
+            headers=["Category", "Values"],
             rows=ue_rows,
             alignments=['<', '<'],
-            title="Usuarios y emails descubiertos:",
+            title="Users and emails descubiertos:",
         )
 
     # 9. Inyección
     if injection.get("executed"):
         inj_rows = [
-            ["Formularios detectados", str(injection.get("forms_found", 0))],
+            ["Forms detectados", str(injection.get("forms_found", 0))],
             ["Parámetros GET detectados", str(injection.get("url_params_found", 0))],
             ["Parámetros GET probados", str(len(injection.get("tested_get_params", [])))],
-            ["Inputs de formulario probados", str(len(injection.get("tested_form_inputs", [])))],
+            ["Tested form inputs", str(len(injection.get("tested_form_inputs", [])))],
         ]
         print_table(
-            headers=["Métrica", "Valor"],
+            headers=["Metric", "Value"],
             rows=inj_rows,
             alignments=['<', '>'],
             title="Pruebas de inyección:",
@@ -9652,25 +9651,25 @@ def print_final_summary(target):
             color = Fore.RED if hits else Fore.WHITE
             adv_sum_rows.append([mod.upper(), f"{color}{len(hits)}{Style.RESET_ALL}"])
         print_table(
-            headers=["Modulo", "Hallazgos"],
+            headers=["Module", "Findings"],
             rows=adv_sum_rows,
             alignments=['<', '>'],
-            title="Pruebas Avanzadas de Seguridad:",
+            title="Advanced Tests de Seguridad:",
         )
-        # Detalles solo si hay hallazgos.
+        # Details solo si hay hallazgos.
         for mod, headers_detail, row_fn in [
-            ("ssrf", ["Tipo", "Vector", "Payload/Valor", "HTTP"],
+            ("ssrf", ["Type", "Vector", "Payload/Value", "HTTP"],
              lambda r: [r.get("type","ssrf"), r.get("param") or r.get("header") or "-",
                         _trim(r.get("payload") or r.get("value") or "", 50), str(r.get("status","-"))]),
-            ("ssti", ["URL", "Parametro", "Engine"],
+            ("ssti", ["URL", "Parameter", "Engine"],
              lambda r: [_trim(r.get("url",""), 60), r.get("param","-"), r.get("engine","-")]),
-            ("xxe", ["URL", "Content-Type", "Estado"],
+            ("xxe", ["URL", "Content-Type", "Status"],
              lambda r: [_trim(r.get("url",""), 60), r.get("content_type","-"), r.get("note","confirmado")]),
             ("crlf", ["Vector", "URL/Param", "Payload"],
              lambda r: [r.get("vector","-"), _trim(r.get("param") or r.get("url") or "",50), _trim(r.get("payload",""),40)]),
-            ("smuggling", ["Herramienta/Tipo", "Detalle"],
+            ("smuggling", ["Tool/Type", "Detail"],
              lambda r: [r.get("tool") or r.get("type","-"), _trim(r.get("note") or r.get("output_snippet") or "",80)]),
-            ("cache_poisoning", ["Cabecera", "Valor inyectado", "Estado"],
+            ("cache_poisoning", ["Header", "Injected value", "Status"],
              lambda r: [r.get("header","-"), _trim(r.get("value",""),40), "CONFIRMADO" if r.get("confirmed") else "REFLECTED"]),
         ]:
             hits = adv_sum.get(mod) or []
@@ -9678,11 +9677,11 @@ def print_final_summary(target):
                 print_table(
                     headers=headers_detail,
                     rows=[row_fn(r) for r in hits],
-                    title=f"{mod.upper()} — Detalle ({len(hits)}):",
+                    title=f"{mod.upper()} — Detail ({len(hits)}):",
                     border_color=Fore.RED if mod in ("ssrf","ssti","xxe","smuggling") else Fore.YELLOW,
                 )
 
-    # 10. Credenciales válidas
+    # 10. Credentials válidas
     if creds:
         cred_rows = []
         for c in creds:
@@ -9690,10 +9689,10 @@ def print_final_summary(target):
             pwd = c.get("password") if isinstance(c, dict) else "-"
             cred_rows.append([f"{Fore.GREEN}{user}{Style.RESET_ALL}", f"{Fore.GREEN}{pwd}{Style.RESET_ALL}"])
         print_table(
-            headers=["Usuario", "Contraseña"],
+            headers=["User", "Password"],
             rows=cred_rows,
             alignments=['<', '<'],
-            title="Credenciales válidas encontradas:",
+            title="Credentials válidas encontradas:",
             border_color=Fore.GREEN,
         )
 
@@ -9701,32 +9700,32 @@ def print_final_summary(target):
     if active_directory:
         ad_rows = [
             ["DC", _trim(active_directory.get("target") or "-", 60)],
-            ["Dominio", _trim(active_directory.get("domain") or "-", 60)],
-            ["Modo", active_directory.get("auth_mode") or "-"],
-            ["Kerbrute usuarios", str(len((active_directory.get("kerbrute") or {}).get("valid_users") or []))],
-            ["LDAP usuarios", str(len(ad_ldap.get("users") or []))],
-            ["LDAP grupos", str(len(ad_ldap.get("groups") or []))],
-            ["LDAP equipos", str(len(ad_ldap.get("computers") or []))],
+            ["Domain", _trim(active_directory.get("domain") or "-", 60)],
+            ["Mode", active_directory.get("auth_mode") or "-"],
+            ["Kerbrute users", str(len((active_directory.get("kerbrute") or {}).get("valid_users") or []))],
+            ["LDAP users", str(len(ad_ldap.get("users") or []))],
+            ["LDAP groups", str(len(ad_ldap.get("groups") or []))],
+            ["LDAP computers", str(len(ad_ldap.get("computers") or []))],
             ["AS-REP roastable", str(len(asrep_hashes))],
             ["Kerberoastable SPNs", str(len(kerberoast_hashes))],
-            ["Credenciales NXC", str(len(ad_creds))],
+            ["Credentials NXC", str(len(ad_creds))],
         ]
         print_table(
-            headers=["Campo", "Valor"],
+            headers=["Field", "Value"],
             rows=ad_rows,
             alignments=['<', '<'],
             title="Active Directory:",
         )
         if asrep_hashes:
             print_table(
-                headers=["Usuario", "Hash"],
+                headers=["User", "Hash"],
                 rows=[[_trim(h.get("username") or "-", 28), _trim(h.get("hash") or "-", 110)] for h in asrep_hashes[:20]],
                 alignments=['<', '<'],
                 title=f"AS-REP Roasting {_count_label(len(asrep_hashes), min(len(asrep_hashes), 20))}:",
             )
         if kerberoast_hashes:
             print_table(
-                headers=["Usuario/SPN", "Hash"],
+                headers=["User/SPN", "Hash"],
                 rows=[[_trim(h.get("username") or "-", 28), _trim(h.get("hash") or "-", 110)] for h in kerberoast_hashes[:20]],
                 alignments=['<', '<'],
                 title=f"Kerberoasting {_count_label(len(kerberoast_hashes), min(len(kerberoast_hashes), 20))}:",
@@ -9745,10 +9744,10 @@ def print_final_summary(target):
                 _trim(unique_str, 100),
             ])
         print_table(
-            headers=["Severidad", "Cantidad", "Templates únicos"],
+            headers=["Severity", "Cantidad", "Templates únicos"],
             rows=sum_rows,
             alignments=['<', '>', '<'],
-            title="Vulnerabilidades por severidad (Nuclei):",
+            title="Vulnerabilities por severidad (Nuclei):",
         )
 
     relevant_nuclei = [n for n in nuclei_findings if n.get('severity') in ('critical', 'high', 'medium', 'low')]
@@ -9764,13 +9763,13 @@ def print_final_summary(target):
                 _trim(n.get('url', '-'), 60),
             ])
         print_table(
-            headers=["Severidad", "Template", "Nombre", "URL"],
+            headers=["Severity", "Template", "Name", "URL"],
             rows=rel_rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Hallazgos Nuclei relevantes {_count_label(len(relevant_nuclei), len(rel_rows))}:",
+            title=f"Findings Nuclei relevantes {_count_label(len(relevant_nuclei), len(rel_rows))}:",
         )
 
-    # 12. Hallazgos clasificados (FINDINGS)
+    # 12. Findings clasificados (FINDINGS)
     if FINDINGS:
         cats = {}
         for f in FINDINGS:
@@ -9782,10 +9781,10 @@ def print_final_summary(target):
         for cat in sorted(cats.keys()):
             cat_rows.append([cat, str(len(cats[cat]))])
         print_table(
-            headers=["Categoría", "Cantidad"],
+            headers=["Category", "Cantidad"],
             rows=cat_rows,
             alignments=['<', '>'],
-            title=f"Hallazgos clasificados (total: {len(FINDINGS)}):",
+            title=f"Findings clasificados (total: {len(FINDINGS)}):",
         )
         find_rows = []
         for f in FINDINGS[:40]:
@@ -9801,10 +9800,10 @@ def print_final_summary(target):
             )
             find_rows.append([f"{color}{cat}{Style.RESET_ALL}", _trim(msg, 110)])
         print_table(
-            headers=["Categoría", "Detalle"],
+            headers=["Category", "Detail"],
             rows=find_rows,
             alignments=['<', '<'],
-            title=f"Detalle de hallazgos {_count_label(len(FINDINGS), len(find_rows))}:",
+            title=f"Detail de hallazgos {_count_label(len(FINDINGS), len(find_rows))}:",
         )
 
     print()
@@ -9859,7 +9858,7 @@ def _read_target_file(path):
     return out
 
 def _collect_targets(args):
-    """Reune objetivos de -u (repetible / separado por comas) y -L/--list (ficheros).
+    """Reune targets de -u (repetible / separado por comas) y -L/--list (ficheros).
     Normaliza y deduplica conservando el orden."""
     raw = []
     for u in (args.url or []):
@@ -9875,10 +9874,10 @@ def _collect_targets(args):
     return targets
 
 def _prompt_target_selection():
-    """Sin argumentos: pregunta objetivo unico o lista. Devuelve (targets, batch)."""
-    print("\nSelecciona el tipo de objetivo:")
-    print("  1. URL única")
-    print("  2. Lista de objetivos (varias URLs o un fichero)")
+    """No argumentos: pregunta objetivo unico o lista. Devuelve (targets, batch)."""
+    print("\nSelect target type:")
+    print("  1. Single URL")
+    print("  2. Lista de targets (varias URLs o un fichero)")
     try:
         choice = input("Opción [1]: ").strip() or "1"
     except (KeyboardInterrupt, EOFError):
@@ -9886,14 +9885,14 @@ def _prompt_target_selection():
 
     if choice != "2":
         try:
-            url = input("Introduce la URL objetivo: ").strip()
+            url = input("Enter target URL: ").strip()
         except (KeyboardInterrupt, EOFError):
             sys.exit(0)
         return ([normalize_url(url)] if url else []), False
 
-    print("Introduce URLs separadas por coma o espacio, o la ruta a un fichero (.txt):")
+    print("Enter URLs separated by commas/spaces, or a .txt file path:")
     try:
-        raw = input("Objetivos: ").strip()
+        raw = input("Targets: ").strip()
     except (KeyboardInterrupt, EOFError):
         sys.exit(0)
 
@@ -9911,12 +9910,12 @@ def _prompt_target_selection():
             seen.add(norm)
             targets.append(norm)
     if not targets:
-        print_error("No se introdujeron objetivos válidos.")
+        print_error("No se introdujeron targets válidos.")
         sys.exit(1)
 
     try:
         batch = input(
-            f"{len(targets)} objetivos cargados. ¿Modo batch "
+            f"{len(targets)} targets cargados. ¿Mode batch "
             f"(pentest completo automático por objetivo)? [s/N]: "
         ).strip().lower() == 's'
     except (KeyboardInterrupt, EOFError):
@@ -9924,7 +9923,7 @@ def _prompt_target_selection():
     return targets, batch
 
 def _reset_scan_state():
-    """Estado limpio para empezar un objetivo desde cero."""
+    """Status limpio para empezar un objetivo desde cero."""
     global SCAN_DATA, AUTHENTICATED, AUTH_SESSION
     FINDINGS.clear()
     SCAN_DATA = _fresh_scan_data()
@@ -9973,9 +9972,9 @@ def _dispatch_scan_option(option, target, session):
     if option == '1':
         setup_authentication()
         if AUTHENTICATED:
-            print_good("Sesión autenticada activa para futuras pruebas.")
+            print_good("Authenticated session active for future tests.")
             return AUTH_SESSION
-        print_warning("No se pudo autenticar. Continuando sin autenticación.")
+        print_warning("Authentication failed. Continuing unauthenticated.")
         return session
     handlers = {
         '2': lambda: run_information_gathering(target, session),
@@ -10004,17 +10003,17 @@ def _print_batch_summary(summary):
         return
     rows = [[(t[:60]), str(n), st] for (t, n, st) in summary]
     print_table(
-        headers=["Objetivo", "Hallazgos", "Estado"],
+        headers=["Target", "Findings", "Status"],
         rows=rows,
         alignments=['<', '>', '<'],
-        title=f"Resumen batch ({len(summary)} objetivos):",
+        title=f"Batch summary ({len(summary)} targets):",
         border_color=Fore.CYAN,
     )
 
 def run_batch_targets(targets):
-    """No interactivo: pentest completo por objetivo, reporte por objetivo y resumen final."""
+    """No interactivo: full pentest per target, reporte por objetivo y resumen final."""
     global TARGET_URL
-    print_phase(f"MODO BATCH: {len(targets)} objetivos (pentest completo por objetivo)")
+    print_phase(f"BATCH MODE: {len(targets)} targets (full pentest per target)")
     summary = []
     for i, t in enumerate(targets, 1):
         print_phase(f"[{i}/{len(targets)}] {t}")
@@ -10026,7 +10025,7 @@ def run_batch_targets(targets):
             run_full_pentest(t, session, interactive_ad=False)
         except KeyboardInterrupt:
             status = "interrumpido"
-            print_warning(f"Objetivo {t} interrumpido.")
+            print_warning(f"Target {t} interrumpido.")
             try:
                 if input("¿Continuar con el siguiente objetivo? [S/n]: ").strip().lower() == 'n':
                     summary.append((t, len(FINDINGS), status))
@@ -10047,7 +10046,7 @@ def run_batch_targets(targets):
     print("\n" + Fore.GREEN + "Happy Hacking :)" + Style.RESET_ALL)
 
 def run_multi_interactive(targets):
-    """Menú interactivo: cada opción seleccionada se ejecuta en TODOS los objetivos,
+    """Menú interactivo: cada opción seleccionada se ejecuta en TODOS los targets,
     manteniendo el estado (SCAN_DATA/FINDINGS) por objetivo entre módulos."""
     global TARGET_URL
     states, sessions = {}, {}
@@ -10066,7 +10065,7 @@ def run_multi_interactive(targets):
                     save_report(OUTPUT_FILE)
                     saved += 1
                 except Exception as e:
-                    print_error(f"Reporte {t}: {e}")
+                    print_error(f"Report {t}: {e}")
         return saved
 
     def _exit_multi():
@@ -10075,12 +10074,12 @@ def run_multi_interactive(targets):
             auto = OUTPUT_FILE is not None
             if not auto:
                 try:
-                    auto = input("\n¿Guardar un reporte por objetivo? [S/n]: ").strip().lower() != 'n'
+                    auto = input("\nSave one report per target? [Y/n]: ").strip().lower() != 'n'
                 except (KeyboardInterrupt, EOFError):
                     auto = False
             if auto:
                 n = _save_all()
-                print_good(f"Reportes guardados: {n}")
+                print_good(f"Reports saved: {n}")
         print("\n" + Fore.GREEN + "Happy Hacking :)" + Style.RESET_ALL)
         sys.exit(0)
 
@@ -10091,11 +10090,11 @@ def run_multi_interactive(targets):
     while True:
         try:
             show_menu(targets=targets)
-            option = input("Selecciona una opción (se aplica a TODOS los objetivos): ").strip()
+            option = input("Select an option (se aplica a TODOS los targets): ").strip()
         except (KeyboardInterrupt, EOFError):
             try:
                 print()
-                if input("\n¿Salir del programa? [S/n]: ").strip().lower() != 'n':
+                if input("\nExit the program? [Y/n]: ").strip().lower() != 'n':
                     _exit_multi()
             except (KeyboardInterrupt, EOFError):
                 _exit_multi()
@@ -10109,7 +10108,7 @@ def run_multi_interactive(targets):
                     _restore_state(states[t])
                     print_phase(f"{'MARKDOWN' if option == '16' else 'RESUMEN'}: {t}")
                     if not _has_scan_data():
-                        print_warning("Sin datos para este objetivo todavía.")
+                        print_warning("No data para este objetivo todavía.")
                     elif option == '16':
                         _print_markdown_block(t)
                     else:
@@ -10124,11 +10123,11 @@ def run_multi_interactive(targets):
                         sessions[t] = sess
                     states[t] = _snapshot_state()
             else:
-                print_error("Opción no válida. Intenta de nuevo.")
+                print_error("Invalid option. Try again.")
         except KeyboardInterrupt:
             try:
                 print()
-                if input("\n¿Salir del programa? [S/n]: ").strip().lower() != 'n':
+                if input("\nExit the program? [Y/n]: ").strip().lower() != 'n':
                     _exit_multi()
             except (KeyboardInterrupt, EOFError):
                 _exit_multi()
@@ -10137,7 +10136,7 @@ def run_multi_interactive(targets):
             print_error(f"Error inesperado: {e}")
 
         try:
-            input("\nPresiona Enter para continuar...")
+            input("\nPress Enter to continue...")
         except (KeyboardInterrupt, EOFError):
             _exit_multi()
 
@@ -10145,34 +10144,34 @@ def main():
     global TARGET_URL, AUTHENTICATED, AUTH_SESSION, THREADS, DEFAULT_TIMEOUT, REQUEST_DELAY, OUTPUT_FILE, VERIFY_TLS
 
     parser = argparse.ArgumentParser(
-        description=f"WSTG Scanner v{VERSION} - OWASP Web Security Testing Scanner",
+        description=f"OWASP Scanner v{VERSION} - Web Security Testing Toolkit",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=("Ejemplos:\n"
-                "  python3 wstg-scan.py -u https://example.com -o report.txt\n"
-                "  python3 wstg-scan.py -u a.com,b.com -u c.com   (multi-objetivo interactivo)\n"
-                "  python3 wstg-scan.py -L targets.txt --batch     (pentest completo por objetivo)")
+        epilog=("Examples:\n"
+                "  python3 owasp-scanner.py -u https://example.com -o report.txt\n"
+                "  python3 owasp-scanner.py -u a.com,b.com -u c.com   (interactive multi-target mode)\n"
+                "  python3 owasp-scanner.py -L targets.txt --batch     (full pentest per target)")
     )
     parser.add_argument('--url', '-u', action='append', metavar='URL',
-                        help='URL objetivo. Repetible y admite varias separadas por comas. '
-                             'Omitir para modo interactivo.')
+                        help='Target URL. Repeatable and accepts comma-separated values. '
+                             'Omit for interactive mode.')
     parser.add_argument('--list', '-L', action='append', metavar='FILE',
-                        help='Fichero con una URL por línea (admite # comentarios). Repetible.')
+                        help='File with one URL per line (supports # comments). Repeatable.')
     parser.add_argument('--batch', action='store_true',
-                        help='No interactivo: ejecuta el pentest completo en cada objetivo y '
-                             'guarda un reporte por objetivo. Requiere -u/-L.')
+                        help='Non-interactive mode: runs the full pentest for each target and '
+                             'saves one report per target. Requires -u/-L.')
     parser.add_argument('--output', '-o', metavar='FILE',
-                        help='Archivo de salida para el reporte (ej: report.txt)')
+                        help='Output file or report base path (for example: report.txt)')
     parser.add_argument('--threads', '-t', type=int, default=THREADS, metavar='N',
-                        help=f'Número de hilos (default: {THREADS})')
+                        help=f'Number of threads (default: {THREADS})')
     parser.add_argument('--timeout', type=int, default=DEFAULT_TIMEOUT, metavar='S',
-                        help=f'Timeout por request en segundos (default: {DEFAULT_TIMEOUT})')
+                        help=f'Request timeout in seconds (default: {DEFAULT_TIMEOUT})')
     parser.add_argument('--delay', '-d', type=float, default=0.0, metavar='S',
-                        help='Delay entre requests en segundos para evasión (default: 0)')
+                        help='Delay between requests in seconds (default: 0)')
     parser.add_argument('--insecure', '-k', action='store_true',
-                        help='Desactivar verificación de certificados TLS (uso en labs / entornos de prueba)')
+                        help='Disable TLS certificate verification for labs and test environments')
     parser.add_argument('--no-color', action='store_true',
-                        help='Desactivar colores en la salida')
-    parser.add_argument('--version', '-V', action='version', version=f'WSTG Scanner v{VERSION}')
+                        help='Disable colored output')
+    parser.add_argument('--version', '-V', action='version', version=f'OWASP Scanner v{VERSION}')
     args = parser.parse_args()
 
     THREADS = args.threads
@@ -10196,37 +10195,37 @@ def main():
         print(DEVELOPER + "\n")
 
     if not VERIFY_TLS:
-        print_warning("Verificación TLS desactivada (--insecure). Solo para entornos de prueba.")
+        print_warning("TLS verification disabled (--insecure). Use only in test environments.")
 
     targets = _collect_targets(args)
     batch = args.batch
 
-    # Sin objetivos por CLI: selector interactivo (único o lista).
+    # No targets por CLI: selector interactivo (único o lista).
     if not targets and not batch:
         targets, batch = _prompt_target_selection()
 
-    # Modo batch: requiere objetivos y no es interactivo.
+    # Mode batch: requiere targets y no es interactivo.
     if batch:
         if not targets:
-            print_error("El modo --batch requiere al menos un objetivo (-u/-L).")
+            print_error("--batch requires at least one target (-u/-L).")
             sys.exit(1)
         run_batch_targets(targets)
         return
 
-    # Varios objetivos: menú interactivo aplicado a todos.
+    # Varios targets: menú interactivo aplicado a todos.
     if len(targets) > 1:
-        print_info(f"{len(targets)} objetivos cargados. Cada opción se ejecutará en todos.")
+        print_info(f"{len(targets)} targets cargados. Cada opción se ejecutará en todos.")
         run_multi_interactive(targets)
         return
 
     # Un solo objetivo (o ninguno: se pide por consola).
     if targets:
         TARGET_URL = targets[0]
-        print_info(f"Objetivo: {TARGET_URL}")
+        print_info(f"Target: {TARGET_URL}")
     else:
-        TARGET_URL = input("Introduce la URL objetivo: ").strip()
+        TARGET_URL = input("Enter target URL: ").strip()
         TARGET_URL = normalize_url(TARGET_URL)
-        print_info(f"Objetivo: {TARGET_URL}")
+        print_info(f"Target: {TARGET_URL}")
 
     session = get_session()
 
@@ -10239,7 +10238,7 @@ def main():
             if not auto_save:
                 try:
                     auto_save = input(
-                        f"\n¿Guardar reporte del escaneo ({len(FINDINGS)} hallazgos)? [S/n]: "
+                        f"\nSave scan report ({len(FINDINGS)} hallazgos)? [S/n]: "
                     ).strip().lower() != 'n'
                 except (KeyboardInterrupt, EOFError):
                     auto_save = False
@@ -10252,11 +10251,11 @@ def main():
         try:
             show_menu()
             # Ya está en el menú principal
-            option = input("Selecciona una opción: ").strip()
+            option = input("Select an option: ").strip()
         except (KeyboardInterrupt, EOFError):
             try:
                 print()
-                confirm = input("\n¿Salir del programa? [S/n]: ").strip().lower()
+                confirm = input("\nExit the program? [Y/n]: ").strip().lower()
             except (KeyboardInterrupt, EOFError):
                 confirm = 's'
             if confirm != 'n':
@@ -10268,9 +10267,9 @@ def main():
                 setup_authentication()
                 if AUTHENTICATED:
                     session = AUTH_SESSION
-                    print_good("Sesión autenticada activa para futuras pruebas.")
+                    print_good("Authenticated session active for future tests.")
                 else:
-                    print_warning("No se pudo autenticar. Continuando sin autenticación.")
+                    print_warning("Authentication failed. Continuing unauthenticated.")
             elif option == '2':
                 run_information_gathering(TARGET_URL, session)
             elif option == '3':
@@ -10301,7 +10300,7 @@ def main():
                 run_full_pentest(TARGET_URL, session)
             elif option == '16':
                 if not _has_scan_data():
-                    print_warning("Aún no hay datos. Ejecuta primero algún módulo o el pentesting completo.")
+                    print_warning("No data yet. Run a module or the full pentest first.")
                 else:
                     report_data = {
                         "tool": VERSION,
@@ -10320,17 +10319,17 @@ def main():
                     print_good("Fin del markdown. Copia el bloque anterior.")
             elif option == '17':
                 if not _has_scan_data():
-                    print_warning("Aún no hay datos. Ejecuta primero algún módulo o el pentesting completo.")
+                    print_warning("No data yet. Run a module or the full pentest first.")
                 else:
                     print_final_summary(TARGET_URL)
             elif option == '18':
                 _exit_gracefully()
             else:
-                print_error("Opción no válida. Intenta de nuevo.")
+                print_error("Invalid option. Try again.")
         except KeyboardInterrupt:
             try:
                 print()
-                confirm = input("\n¿Salir del programa? [S/n]: ").strip().lower()
+                confirm = input("\nExit the program? [Y/n]: ").strip().lower()
             except (KeyboardInterrupt, EOFError):
                 confirm = 's'
             if confirm != 'n':
@@ -10340,7 +10339,7 @@ def main():
             print_error(f"Error inesperado: {e}")
 
         try:
-            input("\nPresiona Enter para continuar...")
+            input("\nPress Enter to continue...")
         except (KeyboardInterrupt, EOFError):
             _exit_gracefully()
 
