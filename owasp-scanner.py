@@ -80,7 +80,7 @@ try:
     HAS_BS4 = True
 except ImportError:
     HAS_BS4 = False
-    print("[!] BeautifulSoup4 no instalado. Usando parsing básico.")
+    print("[!] BeautifulSoup4 is not installed. Using basic parsing.")
 
 try:
     from colorama import init, Fore, Style
@@ -133,22 +133,22 @@ DESCRIPTION = "OWASP Scanner - Web Security Testing Toolkit"
 DEVELOPER = "developed by Elilan Baskaran"
 VERSION = "1.4.2"
 
-# ========== CONFIGURACIÓN ==========
+# ========== CONFIGURATION ==========
 DEFAULT_TIMEOUT = 10
 MAX_REDIRECTS = 10
 THREADS = 5
-HTTP_RETRIES = 2          # Reintentos ante errores de red transitorios (no de estado HTTP)
-HTTP_POOL_SIZE = 50       # Conexiones por host reutilizables (dimensionado para modulos con hilos)
+HTTP_RETRIES = 2          # Retries for transient network errors (not HTTP status responses)
+HTTP_POOL_SIZE = 50       # Reusable connections per host (sized for threaded modules)
 AUTHENTICATED = False
 AUTH_SESSION = None
 TARGET_URL = ""
-REQUEST_DELAY = 0.0  # Delay entre requests (segundos)
-OUTPUT_FILE = None   # Path del archivo de reporte
-VERIFY_TLS = True    # Verificación TLS (desactivable con --insecure)
-FINDINGS = []        # Findings acumulados para el reporte
+REQUEST_DELAY = 0.0  # Delay between requests (seconds)
+OUTPUT_FILE = None   # Report output path
+VERIFY_TLS = True    # TLS verification (can be disabled with --insecure)
+FINDINGS = []        # Accumulated findings for the report
 
 def _fresh_scan_data():
-    """Estructura vacia de SCAN_DATA. Usada al inicio y al cambiar de objetivo."""
+    """Empty SCAN_DATA structure. Used at startup and when switching targets."""
     return {
         "general": {},
         "authentication": {},
@@ -222,17 +222,17 @@ COMMAND_INJECT = [
 OPEN_REDIRECT = ["https://evil.com", "//evil.com", "/redirect?url=https://evil.com"]
 
 API_ENDPOINTS = [
-    # Raíces de API
+    # API roots
     "/api", "/api/v1", "/api/v2", "/api/v3",
     "/v1", "/v2", "/v3", "/rest", "/rest/v1",
-    # Recursos comunes
+    # Common resources
     "/api/users", "/api/user", "/api/accounts", "/api/account",
     "/api/admin", "/api/me", "/api/profile", "/api/whoami",
     "/api/config", "/api/settings", "/api/flags", "/api/data",
     "/api/keys", "/api/tokens", "/api/secrets", "/api/credentials",
     "/api/debug", "/api/test", "/api/internal",
     "/rest/users", "/rest/user", "/rest/admin", "/rest/profile",
-    # Documentación OpenAPI / Swagger
+    # OpenAPI / Swagger documentation
     "/swagger", "/swagger-ui.html", "/swagger-ui/", "/swagger.json", "/swagger.yaml",
     "/openapi.json", "/openapi.yaml",
     "/api-docs", "/v2/api-docs", "/v3/api-docs",
@@ -243,7 +243,7 @@ API_ENDPOINTS = [
     "/actuator", "/actuator/env", "/actuator/health", "/actuator/mappings",
     "/actuator/beans", "/actuator/httptrace", "/actuator/loggers",
     "/health", "/metrics", "/info", "/status", "/ping",
-    # Paths de autenticación
+    # Authentication paths
     "/api/auth", "/api/login", "/api/token", "/api/refresh",
     "/api/register", "/api/signup",
     # Paths sensibles
@@ -271,7 +271,7 @@ LOGIN_PATHS = [
     "/user/login", "/account/login", "/admin/login", "/wp-login.php"
 ]
 
-# Prefijos típicos de API que sirven de base para fuzzing recursivo
+# Typical API prefixes used as a base for recursive fuzzing
 API_BASE_PREFIXES = [
     "/api", "/api/v1", "/api/v2", "/api/v3",
     "/v1", "/v2", "/v3",
@@ -279,15 +279,15 @@ API_BASE_PREFIXES = [
     "/services", "/services/api",
 ]
 
-# Recursos REST típicos. Se prueban bajo cada prefijo de API activo
-# (p. ej. /api/v1/users, /api/v1/transfer, etc.)
+# Typical REST resources. Tested under each active API prefix
+# (for example /api/v1/users, /api/v1/transfer, etc.)
 API_REOSURCES = [
-    # Identidad / cuentas
+    # Identity / accounts
     "users", "user", "accounts", "account", "me", "profile", "whoami",
     "auth", "login", "logout", "register", "signup", "signin",
     "token", "tokens", "refresh", "session", "sessions",
     "password", "reset-password", "forgot-password", "2fa", "mfa", "otp",
-    # Admin / configuración
+    # Admin / configuration
     "admin", "config", "settings", "flags", "feature-flags",
     "permissions", "roles", "groups", "privileges",
     "audit", "audit-log", "logs", "events",
@@ -297,9 +297,9 @@ API_REOSURCES = [
     "subscriptions", "plans", "billing", "cart", "checkout",
     "notes", "messages", "chats", "comments", "posts", "articles",
     "files", "uploads", "documents", "attachments", "media", "images",
-    # Búsqueda / metadatos
+    # Search / metadata
     "search", "filter", "query", "tags", "categories",
-    # Operacional / oculto
+    # Operational / hidden
     "stats", "metrics", "health", "status", "version", "info",
     "debug", "test", "internal", "private", "hidden",
     "keys", "secrets", "credentials", "api-keys",
@@ -322,28 +322,28 @@ def check_wpscan():
     return shutil.which("wpscan")
 
 def install_wpscan():
-    """Ofrece instalar WPScan con gem si no esta disponible."""
-    print_warning("WPScan no esta instalado o no esta en PATH.")
+    """Offers to install WPScan with gem when unavailable."""
+    print_warning("WPScan is not installed or is not in PATH.")
     if os.name == 'nt':
-        print_info("Instalalo manualmente con Ruby/Gem o ejecuta el scanner desde Kali/WSL: gem install wpscan")
+        print_info("Install it manually with Ruby/Gem or run the scanner from Kali/WSL: gem install wpscan")
         return False
     try:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Instalar WPScan automaticamente con sudo gem install wpscan? [s/N]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Install WPScan automatically with sudo gem install wpscan? [y/N]:")
         resp = input("> ").strip().lower()
     except (KeyboardInterrupt, EOFError):
         return False
-    if resp != 's':
+    if resp not in ('y', 's'):
         return False
     try:
-        print_info("Ejecutando: sudo gem install wpscan")
+        print_info("Running: sudo gem install wpscan")
         subprocess.run(["sudo", "gem", "install", "wpscan"], check=True)
         if check_wpscan():
-            print_good("WPScan instalado correctamente.")
+            print_good("WPScan installed successfully.")
             return True
-        print_error("La instalacion parece haber fallado.")
+        print_error("The installation appears to have failed.")
         return False
     except Exception as e:
-        print_error(f"No se pudo instalar WPScan: {e}")
+        print_error(f"Could not install WPScan: {e}")
         return False
 
 def _wait_for_interrupted_child(process, name="proceso", grace_seconds=5):
@@ -366,7 +366,7 @@ def _wait_for_interrupted_child(process, name="proceso", grace_seconds=5):
             pass
 
     if process.poll() is None:
-        print_warning(f"{name} no terminó tras Ctrl+C; terminando proceso.")
+        print_warning(f"{name} did not exit after Ctrl+C; terminating process.")
         try:
             process.terminate()
             return process.wait(timeout=2)
@@ -396,33 +396,33 @@ def check_whatweb():
     return shutil.which("whatweb") is not None
 
 def install_whatweb():
-    """Ofrece instalar WhatWeb via apt si no está disponible."""
-    print_warning("WhatWeb no está instalado.")
+    """Offer to install WhatWeb via apt if it is unavailable."""
+    print_warning("WhatWeb is not installed.")
     try:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Instalar WhatWeb automáticamente? (requiere sudo) [s/N]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Install WhatWeb automatically? (requires sudo) [y/N]:")
         resp = input("> ").strip().lower()
     except (KeyboardInterrupt, EOFError):
         return False
-    if resp != 's':
+    if resp not in ('y', 's'):
         return False
     try:
-        print_info("Ejecutando: sudo apt-get install -y whatweb")
+        print_info("Running: sudo apt-get install -y whatweb")
         ret = subprocess.run(
             ["sudo", "apt-get", "install", "-y", "whatweb"],
             check=True
         )
         if check_whatweb():
-            print_good("WhatWeb instalado correctamente.")
+            print_good("WhatWeb installed successfully.")
             return True
         else:
-            print_error("La instalación parece haber fallado.")
+            print_error("The installation appears to have failed.")
             return False
     except Exception as e:
-        print_error(f"No se pudo instalar WhatWeb: {e}")
+        print_error(f"Could not install WhatWeb: {e}")
         return False
 
 def run_whatweb(target, session=None):
-    """Ejecuta WhatWeb y formatea su salida."""
+    """Runs WhatWeb and formats its output."""
     if not check_whatweb():
         if not install_whatweb():
             return None
@@ -450,31 +450,31 @@ def run_whatweb(target, session=None):
         cmd = _append_whatweb_session_options(cmd, session)
         cmd.append(target)
         if session and _external_http_headers_from_session(session):
-            print_info("WhatWeb usara cabeceras/cookies de la sesion autenticada.")
+            print_info("WhatWeb will use headers/cookies from the authenticated session.")
         result = subprocess.run(
             cmd, capture_output=True, text=True, timeout=30
         )
         raw = result.stdout.strip()
         if not raw:
-            print_warning("WhatWeb no devolvió resultados.")
+            print_warning("WhatWeb returned no results.")
             return []
 
         # WhatWeb brief format: URL [STATUS] Plugin1[val], Plugin2[val], ...
         technologies = []
         SEP = "─" * 60
         print(f"\n{Fore.CYAN}{SEP}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}  WHATWEB — Detección de tecnologías{Style.RESET_ALL}")
+        print(f"{Fore.CYAN}  WHATWEB - Technology detection{Style.RESET_ALL}")
         print(f"{Fore.CYAN}{SEP}{Style.RESET_ALL}")
 
         for line in raw.splitlines():
             line = line.strip()
             if not line:
                 continue
-            # Extraer plugins de la línea
-            # Formato: http://host [200 OK] Plugin1, Plugin2[value], ...
+            # Extract plugins from the line
+            # Format: http://host [200 OK] Plugin1, Plugin2[value], ...
             bracket_match = re.match(r'^(https?://\S+)\s+\[([^\]]+)\]\s*(.*)', line)
             if not bracket_match:
-                # Línea sin parsear → mostrar cruda
+                # Unparsed line -> show raw output
                 print(f"  {line}")
                 continue
 
@@ -482,7 +482,7 @@ def run_whatweb(target, session=None):
             status_part = bracket_match.group(2)
             plugins_raw = bracket_match.group(3)
 
-            # Color del código HTTP
+            # HTTP status color
             http_code = status_part.split()[0] if status_part else ''
             if http_code.startswith('2'):
                 sc = Fore.GREEN
@@ -551,48 +551,48 @@ def run_whatweb(target, session=None):
         return unique_techs
 
     except subprocess.TimeoutExpired:
-        print_error("WhatWeb tardó demasiado (timeout 30s).")
+        print_error("WhatWeb took too long (30s timeout).")
         return None
     except Exception as e:
-        print_error(f"Error ejecutando WhatWeb: {e}")
+        print_error(f"Error running WhatWeb: {e}")
         return None
 
 def check_nmap():
     return shutil.which("nmap")
 
 def install_nmap():
-    """Ofrece instalar nmap vía apt si no está disponible."""
-    print_warning("nmap no está instalado.")
+    """Offer to install nmap via apt if it is unavailable."""
+    print_warning("nmap is not installed.")
     try:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Instalar nmap automáticamente? (requiere sudo) [s/N]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Install nmap automatically? (requires sudo) [y/N]:")
         resp = input("> ").strip().lower()
     except (KeyboardInterrupt, EOFError):
         return False
-    if resp != 's':
+    if resp not in ('y', 's'):
         return False
     try:
-        print_info("Ejecutando: sudo apt-get install -y nmap")
+        print_info("Running: sudo apt-get install -y nmap")
         subprocess.run(["sudo", "apt-get", "install", "-y", "nmap"], check=True)
         if check_nmap():
-            print_good("nmap instalado correctamente.")
+            print_good("nmap installed successfully.")
             return True
-        print_error("La instalación parece haber fallado.")
+        print_error("The installation appears to have failed.")
         return False
     except Exception as e:
-        print_error(f"No se pudo instalar nmap: {e}")
+        print_error(f"Could not install nmap: {e}")
         return False
 
 def run_nmap_scan(target):
-    """Ejecuta `nmap -sV` sobre el host del target y guarda los puertos en SCAN_DATA["nmap"].
+    """Run `nmap -sV` against the target host and store ports in SCAN_DATA["nmap"].
 
-    Parsea el XML de salida (-oX -) para una extracción robusta de puerto, estado,
-    servicio, producto y versión. Muestra tabla visual al terminar.
+    Parse XML output (-oX -) for robust extraction of port, state,
+    service, product, and version. Shows a table when finished.
     """
-    print_phase("ESCANEO DE PUERTOS (NMAP)")
+    print_phase("PORT SCAN (NMAP)")
     nmap_path = check_nmap()
     if not nmap_path:
         if not install_nmap():
-            print_warning("Saltando escaneo de puertos.")
+            print_warning("Skipping port scan.")
             return None
         nmap_path = check_nmap()
         if not nmap_path:
@@ -600,7 +600,7 @@ def run_nmap_scan(target):
 
     host = urlparse(target).hostname or target
     if not host:
-        print_error("No se pudo extraer el host del target.")
+        print_error("Could not extraer el host del target.")
         return None
 
     print_info(f"Ejecutando: nmap -sV {host}")
@@ -612,18 +612,18 @@ def run_nmap_scan(target):
             capture_output=True, text=True, timeout=1800
         )
     except subprocess.TimeoutExpired:
-        print_error("nmap excedió el timeout de 600s.")
+        print_error("nmap exceeded the 600s timeout.")
         return None
     except KeyboardInterrupt:
-        print_warning("Escaneo de puertos interrumpido por el usuario.")
+        print_warning("Port scan interrupted by the user.")
         return None
     except Exception as e:
-        print_error(f"Error ejecutando nmap: {e}")
+        print_error(f"Error running nmap: {e}")
         return None
 
     xml_out = proc.stdout or ""
     if proc.returncode not in (0, 1) or not xml_out.strip().startswith("<?xml"):
-        # Mostrar el stderr / stdout para diagnóstico
+        # Show stderr / stdout for diagnostics
         if proc.stderr:
             print_error(proc.stderr.strip().splitlines()[-1] if proc.stderr.strip() else f"nmap rc={proc.returncode}")
         else:
@@ -687,13 +687,13 @@ def run_nmap_scan(target):
                 version_str,
             ])
         print_table(
-            headers=["PUERTO", "ESTADO", "SERVICIO", "VERSIÓN"],
+            headers=["PORT", "STATE", "SERVICE", "VERSION"],
             rows=rows,
             alignments=['<', '<', '<', '<'],
             title=f"Open ports ({len(ports)}):",
         )
-        # Registrar en FINDINGS los puertos abiertos para que aparezcan
-        # también en las secciones de hallazgos clasificados.
+        # Registrar en FINDINGS los puertos abiertos para que appearsn
+        # also in the classified findings sections.
         for p in ports:
             label = p.get("service", "") or "?"
             version_str = " ".join(
@@ -704,7 +704,7 @@ def run_nmap_scan(target):
                 f"{label}" + (f" ({version_str})" if version_str else "")
             )
     else:
-        print_info("nmap no encontró puertos abiertos visibles.")
+        print_info("nmap found no visible open ports.")
 
     SCAN_DATA["nmap"] = {
         "host": host_info["address"],
@@ -834,13 +834,13 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=2400)
     except subprocess.TimeoutExpired:
-        print_error("nmap NSE excedio el timeout de 2400s.")
+        print_error("nmap NSE exceeded the 2400s timeout.")
         return {"executed": True, "command": visible_cmd, "error": "timeout", "results": []}
     except KeyboardInterrupt:
-        print_warning("Escaneo NSE interrumpido por el usuario.")
+        print_warning("NSE scan interrupted by the user.")
         return {"executed": True, "command": visible_cmd, "error": "interrupted", "results": []}
     except Exception as e:
-        print_error(f"Error ejecutando nmap NSE: {e}")
+        print_error(f"Error running nmap NSE: {e}")
         return {"executed": True, "command": visible_cmd, "error": str(e), "results": []}
 
     xml_out = proc.stdout or ""
@@ -905,7 +905,7 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
             title=f"Resultados Targeted NSEs ({len(results)} scripts con salida):",
         )
         if len(results) > 40:
-            print_info(f"... y {len(results) - 40} resultados NSE mas en el reporte.")
+            print_info(f"... and {len(results) - 40} more NSE results in the report.")
     else:
         print_info("El escaneo Targeted NSE no devolvio salidas relevantes.")
 
@@ -918,12 +918,12 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
     }
 
 def run_nmap_scan(target, session=None):
-    """Ejecuta nmap -sV y luego Targeted NSE a los puertos encontrados."""
-    print_phase("ESCANEO DE PUERTOS (NMAP)")
+    """Run nmap -sV and then targeted NSE against discovered ports."""
+    print_phase("PORT SCAN (NMAP)")
     nmap_path = check_nmap()
     if not nmap_path:
         if not install_nmap():
-            print_warning("Saltando escaneo de puertos.")
+            print_warning("Skipping port scan.")
             return None
         nmap_path = check_nmap()
         if not nmap_path:
@@ -931,7 +931,7 @@ def run_nmap_scan(target, session=None):
 
     host = urlparse(target).hostname or target
     if not host:
-        print_error("No se pudo extraer el host del target.")
+        print_error("Could not extraer el host del target.")
         return None
 
     print_info(f"Ejecutando: nmap -sV {host}")
@@ -942,13 +942,13 @@ def run_nmap_scan(target, session=None):
             capture_output=True, text=True, timeout=1800
         )
     except subprocess.TimeoutExpired:
-        print_error("nmap excedio el timeout de 1800s.")
+        print_error("nmap exceeded the 1800s timeout.")
         return None
     except KeyboardInterrupt:
-        print_warning("Escaneo de puertos interrumpido por el usuario.")
+        print_warning("Port scan interrupted by the user.")
         return None
     except Exception as e:
-        print_error(f"Error ejecutando nmap: {e}")
+        print_error(f"Error running nmap: {e}")
         return None
 
     xml_out = proc.stdout or ""
@@ -982,7 +982,7 @@ def run_nmap_scan(target, session=None):
                 version_str,
             ])
         print_table(
-            headers=["PUERTO", "ESTADO", "SERVICIO", "VERSION"],
+            headers=["PORT", "STATE", "SERVICE", "VERSION"],
             rows=rows,
             alignments=['<', '<', '<', '<'],
             title=f"Open ports ({len(ports)}):",
@@ -1021,34 +1021,34 @@ def check_nuclei():
     return shutil.which("nuclei")
 
 def install_nuclei():
-    """Ofrece instalar Nuclei via apt si no está disponible."""
-    print_warning("Nuclei no está instalado.")
+    """Offer to install Nuclei via apt if it is unavailable."""
+    print_warning("Nuclei is not installed.")
     try:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Instalar Nuclei automáticamente? (requiere sudo) [s/N]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Install Nuclei automatically? (requires sudo) [y/N]:")
         resp = input("> ").strip().lower()
     except (KeyboardInterrupt, EOFError):
         return False
-    if resp != 's':
+    if resp not in ('y', 's'):
         return False
     try:
         print_info("Ejecutando: sudo apt-get install -y nuclei")
         subprocess.run(["sudo", "apt-get", "install", "-y", "nuclei"], check=True)
         if check_nuclei():
-            print_good("Nuclei instalado correctamente.")
+            print_good("Nuclei installed successfully.")
             return True
-        print_error("La instalación parece haber fallado.")
+        print_error("The installation appears to have failed.")
         return False
     except Exception as e:
-        print_error(f"No se pudo instalar Nuclei: {e}")
+        print_error(f"Could not install Nuclei: {e}")
         return False
 
 def run_nuclei_scan(target, session=None):
-    """Ejecuta Nuclei sobre el objetivo y acumula resultados en SCAN_DATA."""
-    print_phase("ANÁLISIS DE VULNERABILIDADES")
+    """Runs Nuclei against the target and stores results in SCAN_DATA."""
+    print_phase("VULNERABILITY ANALYSIS")
     nuclei_path = check_nuclei()
     if not nuclei_path:
         if not install_nuclei():
-            print_warning("Saltando análisis Nuclei.")
+            print_warning("Skipping Nuclei analysis.")
             return None
         nuclei_path = check_nuclei()
         if not nuclei_path:
@@ -1061,14 +1061,14 @@ def run_nuclei_scan(target, session=None):
     try:
         with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as tmp_json:
             json_path = tmp_json.name
-        # Usamos -jsonl-export (jsonlines, una línea JSON por hallazgo) para robustez.
+        # Use -jsonl-export (JSON Lines, one JSON object per finding) for robustness.
         cmd = [nuclei_path, "-u", target, "-jsonl-export", json_path]
         cmd = _append_nuclei_session_headers(cmd, session)
         if session and _external_http_headers_from_session(session):
-            print_info("Nuclei usara cabeceras/cookies de la sesion autenticada.")
+            print_info("Nuclei will use headers/cookies from the authenticated session.")
         # IMPORTANTE: stdout en modo binario para evitar UnicodeDecodeError con
-        # banners/símbolos no-UTF8 que emite Nuclei. Decodificamos tolerante.
-        # Filtramos líneas ruidosas del backend Interactsh (bytes corruptos en stderr).
+        # non-UTF-8 banners/symbols emitted by Nuclei. Decode tolerantly.
+        # Filter noisy Interactsh backend lines (corrupt bytes in stderr).
         NOISE_PATTERNS = (
             b"Could not unmarshal interaction data",
         )
@@ -1084,7 +1084,7 @@ def run_nuclei_scan(target, session=None):
         _stream(process)
         process.wait()
 
-        # Yes la versión de Nuclei no soporta -jsonl-export, reintentar con -json-export
+        # If this Nuclei version does not support -jsonl-export, retry with -json-export
         if (not os.path.isfile(json_path) or os.path.getsize(json_path) == 0):
             try:
                 cmd_alt = [nuclei_path, "-u", target, "-json-export", json_path]
@@ -1095,8 +1095,8 @@ def run_nuclei_scan(target, session=None):
             except Exception:
                 pass
 
-        # Leer el JSON/JSONL generado de forma robusta (una entrada JSON por línea
-        # o un array JSON completo según versión)
+        # Read generated JSON/JSONL robustly (one JSON object per line
+        # or a full JSON array depending on the version)
         if os.path.isfile(json_path) and os.path.getsize(json_path) > 0:
             with open(json_path, "rb") as f:
                 content = f.read().decode("utf-8", errors="ignore").strip()
@@ -1110,7 +1110,7 @@ def run_nuclei_scan(target, session=None):
                                 findings.append(data)
                 except Exception:
                     pass
-            # Caso 2: JSONL (una entrada por línea)
+            # Case 2: JSONL (one entry per line)
             if not findings:
                 for line in content.splitlines():
                     line = line.strip()
@@ -1125,10 +1125,10 @@ def run_nuclei_scan(target, session=None):
     except KeyboardInterrupt:
         if process:
             process.terminate()
-        print_warning("Nuclei interrumpido por el usuario.")
+        print_warning("Nuclei interrupted by the user.")
         return []
     except Exception as e:
-        print_error(f"Error ejecutando Nuclei: {e}")
+        print_error(f"Error running Nuclei: {e}")
         return []
     finally:
         if json_path:
@@ -1137,7 +1137,7 @@ def run_nuclei_scan(target, session=None):
             except Exception:
                 pass
 
-    # Normalizar hallazgos a un formato estable para reportes
+    # Normalize findings to a stable report format
     def _extract(item):
         info = item.get('info') if isinstance(item.get('info'), dict) else {}
         return {
@@ -1158,7 +1158,7 @@ def run_nuclei_scan(target, session=None):
     }
 
     # Deduplicar por (template_id, url, severity) — Nuclei puede emitir el mismo
-    # hallazgo varias veces (p. ej. headers de seguridad faltantes, uno por header).
+    # finding multiple times (for example, missing security headers, one per header).
     normalized = []
     seen_dedup = set()
     for it in findings:
@@ -1175,9 +1175,9 @@ def run_nuclei_scan(target, session=None):
     for n in normalized:
         summary.setdefault(n['severity'], []).append(n['template_id'])
 
-    print_info(f"Total vulnerabilidades detectadas por Nuclei: {len(normalized)}")
+    print_info(f"Total vulnerabilities detected by Nuclei: {len(normalized)}")
     if normalized:
-        # Tabla resumen por severidad
+        # Summary table by severity
         sum_rows = []
         for sev in sorted(summary.keys(), key=lambda s: SEV_ORDER.get(s, 99)):
             unique_str = ', '.join(sorted(set(summary[sev])))
@@ -1189,13 +1189,13 @@ def run_nuclei_scan(target, session=None):
                 display,
             ])
         print_table(
-            headers=["Severity", "Cantidad", "Templates únicos"],
+            headers=["Severity", "Count", "Unique templates"],
             rows=sum_rows,
             alignments=['<', '>', '<'],
-            title="Summary de vulnerabilidades por severidad:",
+            title="Vulnerability summary by severity:",
         )
 
-        # Tabla de hallazgos relevantes (críticos/altos/medios/bajos)
+        # Relevant findings table (critical/high/medium/low)
         relevant = [n for n in normalized if n['severity'] in ('critical', 'high', 'medium', 'low')]
         if relevant:
             rel_rows = []
@@ -1214,9 +1214,9 @@ def run_nuclei_scan(target, session=None):
                 title="Findings relevantes:",
             )
             if len(relevant) > 50:
-                print(f"  ... y {len(relevant) - 50} hallazgos relevantes más (ver reporte)")
+                print(f"  ... and {len(relevant) - 50} more relevant findings (see report)")
 
-        # Persistir cada hallazgo en FINDINGS para que aparezca en TXT/HTML
+        # Persistir cada hallazgo en FINDINGS para que appears en TXT/HTML
         for n in normalized:
             FINDINGS.append(
                 f"[NUCLEI:{n['severity'].upper()}] {n['template_id']}"
@@ -1224,9 +1224,9 @@ def run_nuclei_scan(target, session=None):
                 + (f" @ {n['url']}" if n['url'] else "")
             )
     else:
-        print("\nNo se detectaron vulnerabilidades con Nuclei.")
+        print("\nNo vulnerabilities detected with Nuclei.")
 
-    # Acumular en SCAN_DATA: detalle + resumen
+    # Store details and summary in SCAN_DATA
     if 'nuclei_findings' not in SCAN_DATA or not isinstance(SCAN_DATA['nuclei_findings'], list):
         SCAN_DATA['nuclei_findings'] = []
     SCAN_DATA['nuclei_findings'].extend(normalized)
@@ -1259,12 +1259,12 @@ def print_vuln(msg):
     print(f"{Fore.MAGENTA}[VULN]{Style.RESET_ALL} {msg}")
 
 def print_phase(title):
-    """Imprime una cabecera de fase: [INFO] ======= TITLE ======= con espacio arriba y abajo."""
+    """Print a phase header: [INFO] ======= TITLE ======= with spacing above and below."""
     print()
     print(f"{Fore.CYAN}[INFO]{Style.RESET_ALL} ======= {title} =======")
     print()
 
-# Regex para descontar códigos ANSI al medir ancho visible
+# Regex to ignore ANSI codes when measuring visible width
 _ANSI_RE = re.compile(r'\x1b\[[0-9;]*[A-Za-z]')
 _BOX_DRAWING_FALLBACK = str.maketrans({
     chr(0x2500): "-",
@@ -1293,7 +1293,7 @@ def _visible_len(s):
     return len(_ANSI_RE.sub('', str(s)))
 
 def _pad_cell(cell, width, align='<'):
-    """Pad una celda al ancho dado, ignorando códigos ANSI para el cálculo."""
+    """Pad una celda al ancho dado, ignoring ANSI codes for calculation."""
     cell_str = str(cell)
     pad = width - _visible_len(cell_str)
     if pad <= 0:
@@ -1306,10 +1306,10 @@ def _pad_cell(cell, width, align='<'):
     return ' ' * left + cell_str + ' ' * (pad - left)
 
 def print_table(headers, rows, alignments=None, title=None, border_color=None, footer=None):
-    """Imprime una tabla box-drawing con anchos dinámicos.
+    """Print a box-drawing table with dynamic widths.
 
     headers: list[str]
-    rows: list[list[str]] (las celdas pueden contener códigos ANSI)
+    rows: list[list[str]] (cells may contain ANSI codes)
     alignments: list[str] con '<', '>' o '^' por columna (default '<')
     title: cadena opcional encima de la tabla
     footer: cadena opcional debajo de la tabla
@@ -1348,7 +1348,7 @@ def print_table(headers, rows, alignments=None, title=None, border_color=None, f
         _safe_print_line(footer)
 
 def _safe_filename_from_url(target_url):
-    """Genera un nombre de archivo estable en base a la URL objetivo."""
+    """Generate a stable filename from the target URL."""
     parsed = urlparse(target_url or "")
     host = (parsed.netloc or parsed.path or "target").strip().lower()
     path = parsed.path.strip('/') if parsed.netloc else ""
@@ -1360,10 +1360,10 @@ def _default_report_txt_name(target_url):
     return f"{_safe_filename_from_url(target_url)}.txt"
 
 def _normalize_output_paths(output_file, target_url):
-    """Devuelve rutas estables para TXT/JSON/HTML/MD. Yesempre sobrescribe por objetivo."""
-    # Carpeta base de reportes
+    """Return stable paths for TXT/JSON/HTML/MD. Always overwrite per target."""
+    # Base reports folder
     reports_dir = os.path.join(os.getcwd(), "reports")
-    # Name de subcarpeta por host/url
+    # Subfolder name by host/url
     host_dir = _safe_filename_from_url(target_url)
     out_dir = os.path.join(reports_dir, host_dir)
     os.makedirs(out_dir, exist_ok=True)
@@ -1398,8 +1398,8 @@ _FINDING_SEV_CAT = {"critical": "VULN", "high": "VULN", "medium": "VULN",
 
 def _finding_text(finding):
     """Normaliza un hallazgo (dict {name,detail,severity} o str legado '[CAT] msg')
-    a la cadena canonica '[CAT] nombre: detalle'. Evita el crash en reportes TXT y
-    en el resumen final cuando el hallazgo es un dict."""
+    to the canonical string '[CAT] name: detail'. Avoids crashes in TXT reports and
+    in the final summary when the finding is a dict."""
     if isinstance(finding, dict):
         cat = _FINDING_SEV_CAT.get((finding.get("severity") or "").lower(), "API")
         name = finding.get("name") or "Hallazgo"
@@ -1408,7 +1408,7 @@ def _finding_text(finding):
     return str(finding)
 
 def _build_html_report(report_data):
-    """Genera un reporte HTML tipo dashboard SaaS con todos los datos recopilados."""
+    """Generate a SaaS-style HTML dashboard report with all collected data."""
     scan_data = report_data.get("scan_data", {}) or {}
     findings = report_data.get("findings", []) or []
     general = scan_data.get("general", {}) or {}
@@ -1514,7 +1514,7 @@ def _build_html_report(report_data):
     kerberoast_hashes = (ad_imp.get("kerberoast") or {}).get("hashes", []) or []
     ad_creds = ((ad_nxc.get("bruteforce") or {}).get("credentials", []) or [])
 
-    # Conteo de severidad combinado (Nuclei + codigo fuente) para el resumen visual
+    # Combined severity count (Nuclei + source code) for the visual summary
     _sev_known = {"critical", "high", "medium", "low", "info"}
     sev_counts = {"critical": 0, "high": 0, "medium": 0, "low": 0, "info": 0}
     for n in nuclei_findings:
@@ -1539,7 +1539,7 @@ def _build_html_report(report_data):
         risk_label, risk_tone = "CLEAN", "good"
 
     kpis = [
-        ("Findings", len(findings), "bad" if findings else "neutral", "warning-octagon", "hallazgos"),
+        ("Findings", len(findings), "bad" if findings else "neutral", "warning-octagon", "findings"),
         ("Ports", len(nmap_ports), "info", "network", "nmap"),
         ("NSE", len(nmap_nse), "warn" if nmap_nse else "neutral", "scan", "nmap"),
         ("Nuclei", len(nuclei_findings), "bad" if nuclei_findings else "neutral", "bug-beetle", "nuclei"),
@@ -1547,13 +1547,13 @@ def _build_html_report(report_data):
         ("Endpoints API", len(api_endpoints), "info", "brackets-curly", "api"),
         ("Directories", len(directories), "info", "folders", "directorios"),
         ("Users", len(users), "neutral", "users-three", "info"),
-        ("Credentials", len(creds), "bad" if creds else "neutral", "key", "credenciales"),
-        ("AD usuarios", len(ad_ldap.get("users") or []), "info", "tree-structure", "ad"),
+        ("Credentials", len(creds), "bad" if creds else "neutral", "key", "credentials"),
+        ("AD users", len(ad_ldap.get("users") or []), "info", "tree-structure", "ad"),
         ("AS-REP", len(asrep_hashes), "bad" if asrep_hashes else "neutral", "fingerprint", "ad"),
         ("Kerberoast", len(kerberoast_hashes), "bad" if kerberoast_hashes else "neutral", "fire", "ad"),
         ("Adv. Security", adv_total, "bad" if adv_total else "neutral", "shield-warning", "advanced"),
     ]
-    # Ordenar el resumen por criticidad: critico/alto -> medio -> info -> ok
+    # Sort the summary by criticality: critical/high -> medium -> info -> ok
     tone_rank = {"bad": 0, "warn": 1, "info": 2, "good": 3, "neutral": 4}
     kpis_shown = sorted((k for k in kpis if k[1]), key=lambda k: tone_rank.get(k[2], 9))
     kpi_html = "<div class='kpis'>" + "".join(
@@ -1605,7 +1605,7 @@ def _build_html_report(report_data):
         return re.sub(r"[^a-z0-9]", "", str(s).lower())
 
     def users_emails_block(users, emails):
-        # Correlaciona email <-> usuario por la parte local del correo
+        # Correlaciona email <-> user por la parte local del correo
         pairs, matched_u, matched_e = [], set(), set()
         for u in users:
             un = _norm_ident(u)
@@ -1623,13 +1623,13 @@ def _build_html_report(report_data):
     info_content = (
         "<div class='grid two'>"
         + "<div class='panel'><h3>WhatWeb / Technologies</h3>"
-        + table(["Technology", "Detail", "Source"], tech_rows, "No se detectaron tecnologias.")
+        + table(["Technology", "Detail", "Source"], tech_rows, "No technologies detected.")
         + "</div>"
         + "<div class='panel'><h3>Users and emails</h3>"
         + users_emails_block(users, emails)
         + "</div></div>"
         + "<div class='panel'><h3>HTTP Headers</h3>"
-        + table(["Header", "Value"], header_rows, "No cabeceras registradas.")
+        + table(["Header", "Value"], header_rows, "No headers recorded.")
         + "</div>"
         + "<div class='panel'><h3>Cookies</h3>"
         + table(["Cookie"], cookie_rows, "No cookies registradas.")
@@ -1668,7 +1668,7 @@ def _build_html_report(report_data):
         msg = m.group(2) if m else text
         grouped.setdefault(key, []).append(msg)
     finding_rows = [[cat, len(items), "<br>".join(esc(i) for i in items)] for cat, items in sorted(grouped.items())]
-    findings_content = "<div class='panel'>" + table(["Category", "Total", "Detail"], finding_rows, "No hallazgos.", raw_cols={2}) + "</div>"
+    findings_content = "<div class='panel'>" + table(["Category", "Total", "Detail"], finding_rows, "No findings.", raw_cols={2}) + "</div>"
 
     nuclei_summary_rows = [[sev.upper(), status_badge(sev.upper()), len(tids), ", ".join(sorted(set(map(str, tids))))] for sev, tids in sorted(nuclei_summary.items(), key=lambda x: sev_rank.get(x[0], 99))]
     _nuclei_sorted = sorted(nuclei_findings, key=lambda x: (sev_rank.get((x.get("severity") or "unknown"), 99), x.get("template_id", "")))
@@ -1682,9 +1682,9 @@ def _build_html_report(report_data):
     nuclei_row_attrs = [{"data-sev": (n.get("severity") or "info").lower()} for n in _nuclei_sorted]
     nuclei_content = (
         "<div class='panel'><h3>Severity summary</h3>"
-        + table(["Severity", "Status", "Total", "Templates"], nuclei_summary_rows, "No resumen Nuclei.", raw_cols={1})
+        + table(["Severity", "Status", "Total", "Templates"], nuclei_summary_rows, "No Nuclei summary.", raw_cols={1})
         + "</div><div class='panel'><h3>Findings</h3>"
-        + table(["Severity", "Template", "Name", "URL", "Tags"], nuclei_rows, "No hallazgos Nuclei.", raw_cols={0}, row_attrs=nuclei_row_attrs)
+        + table(["Severity", "Template", "Name", "URL", "Tags"], nuclei_rows, "No Nuclei findings.", raw_cols={0}, row_attrs=nuclei_row_attrs)
         + "</div>"
     )
 
@@ -1703,7 +1703,7 @@ def _build_html_report(report_data):
     dir_content = "<div class='panel'>" + table(
         ["Status", "URL", "Size"],
         [[status_badge(h.get("status", "-")), h.get("url", "-"), h.get("size", "-")] for h in directories if isinstance(h, dict)],
-        "No directorios.",
+        "No directories.",
         raw_cols={0},
     ) + "</div>"
 
@@ -1722,8 +1722,8 @@ def _build_html_report(report_data):
     wp_vuln_rows = [[v.get("component_type", "-"), v.get("component", "-"), v.get("title", "-"), v.get("fixed_in", "-")] for v in (wordpress.get("vulnerabilities") or []) if isinstance(v, dict)]
     wp_content = (
         "<div class='panel'><h3>Summary</h3>" + table(["Field", "Value"], wp_rows, "WordPress not run.") + "</div>"
-        + "<div class='panel'><h3>Users</h3>" + table(["User", "Name", "Source"], wp_user_rows, "No usuarios WordPress.") + "</div>"
-        + "<div class='panel'><h3>Vulnerabilities</h3>" + table(["Type", "Component", "Title", "Fixed in"], wp_vuln_rows, "No vulnerabilidades WordPress.") + "</div>"
+        + "<div class='panel'><h3>Users</h3>" + table(["User", "Name", "Source"], wp_user_rows, "No WordPress users.") + "</div>"
+        + "<div class='panel'><h3>Vulnerabilities</h3>" + table(["Type", "Component", "Title", "Fixed in"], wp_vuln_rows, "No WordPress vulnerabilities.") + "</div>"
     )
 
     spider_content = (
@@ -1761,7 +1761,7 @@ def _build_html_report(report_data):
             ["Low", (src_code.get("summary") or {}).get("low", 0)],
         ])
         + "</div><div class='panel'><h3>Detail</h3>"
-        + table(["Severity", "Type", "Value", "URL", "Context"], src_rows, "No hallazgos en codigo fuente.", raw_cols={0}, row_attrs=src_row_attrs)
+        + table(["Severity", "Type", "Value", "URL", "Context"], src_rows, "No source-code findings.", raw_cols={0}, row_attrs=src_row_attrs)
         + "</div>"
     )
 
@@ -1783,9 +1783,9 @@ def _build_html_report(report_data):
     ad_content = (
         "<div class='panel'><h3>Summary AD</h3>" + table(["Field", "Value"], ad_summary, "AD module not run.") + "</div>"
         + "<div class='panel'><h3>Kerbrute users validos</h3>"
-        + table(["User"], [[u] for u in ((active_directory.get("kerbrute") or {}).get("valid_users") or [])], "No usuarios Kerbrute.")
+        + table(["User"], [[u] for u in ((active_directory.get("kerbrute") or {}).get("valid_users") or [])], "No Kerbrute users.")
         + "</div><div class='panel'><h3>LDAP users</h3>"
-        + table(["User", "UPN", "CN", "Groups"], [[u.get("username", "-"), u.get("upn", "-"), u.get("cn", "-"), ", ".join(u.get("memberOf") or [])] for u in (ad_ldap.get("users") or [])], "No usuarios LDAP.")
+        + table(["User", "UPN", "CN", "Groups"], [[u.get("username", "-"), u.get("upn", "-"), u.get("cn", "-"), ", ".join(u.get("memberOf") or [])] for u in (ad_ldap.get("users") or [])], "No LDAP users.")
         + "</div><div class='panel'><h3>LDAP groups</h3>"
         + table(["Group", "Description", "Members"], [[g.get("name", "-"), g.get("description", "-"), len(g.get("members") or [])] for g in (ad_ldap.get("groups") or [])], "No grupos LDAP.")
         + "</div><div class='panel'><h3>LDAP computers</h3>"
@@ -1795,12 +1795,12 @@ def _build_html_report(report_data):
         + "</div><div class='panel'><h3>Kerberoasting</h3>"
         + table(["User/SPN", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in kerberoast_hashes], "No hashes Kerberoast.")
         + "</div><div class='panel'><h3>NXC credentials</h3>"
-        + table(["User", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds], "No credenciales NXC.")
+        + table(["User", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds], "No NXC credentials.")
         + "</div>"
     )
     ad_raw = active_directory.get("raw_commands") or []
     if ad_raw:
-        ad_content += "<div class='panel'><h3>Outputs de herramientas AD</h3>" + "".join(
+        ad_content += "<div class='panel'><h3>AD tool outputs</h3>" + "".join(
             f"<details><summary>{esc(cmd.get('label', 'command'))}</summary><p class='muted'><code>{esc(cmd.get('command', '-'))}</code></p><pre>{esc(cmd.get('output', '') or '-')}</pre></details>"
             for cmd in ad_raw
         ) + "</div>"
@@ -1808,10 +1808,10 @@ def _build_html_report(report_data):
     creds_content = "<div class='panel'>" + table(
         ["User", "Password"],
         [[c.get("username", "-"), c.get("password", "-")] for c in creds if isinstance(c, dict)],
-        "No credenciales web validas.",
+        "No valid web credentials.",
     ) + "</div>"
 
-    # Superficie de exposicion: robots.txt, metodos HTTP, pruebas de inyeccion
+    # Exposure surface: robots.txt, HTTP methods, injection tests
     inj_get = injection.get("tested_get_params") or []
     inj_forms = injection.get("tested_form_inputs") or []
     inj_form_rows = [[
@@ -1824,7 +1824,7 @@ def _build_html_report(report_data):
         + "<div class='panel'><h3>robots.txt paths</h3>"
         + table(["Path"], [[p] for p in robots_paths], "No rutas en robots.txt.")
         + "</div><div class='panel'><h3>Methods HTTP permitidos</h3>"
-        + (compact_list(sorted(http_methods)) if http_methods else "<span class='muted'>No metodos detectados (OPTIONS).</span>")
+        + (compact_list(sorted(http_methods)) if http_methods else "<span class='muted'>No methods detected (OPTIONS).</span>")
         + "</div></div>"
         + "<div class='panel'><h3>Injection tests</h3>"
         + "<h4>Parameters GET probados</h4>" + (compact_list(inj_get) if inj_get else "<span class='muted'>No parametros GET probados.</span>")
@@ -1852,25 +1852,25 @@ def _build_html_report(report_data):
     ]
     adv_content = (
         "<div class='panel'><h3>Summary</h3>"
-        + table(["Module", "Findings"], adv_summary_rows, "No pruebas avanzadas ejecutadas.")
+        + table(["Module", "Findings"], adv_summary_rows, "No advanced tests run.")
         + "</div>"
         + "<div class='panel'><h3>SSRF</h3>"
-        + table(["Type", "Vector", "Payload/Value", "HTTP"], adv_ssrf_rows, "No hallazgos SSRF.")
+        + table(["Type", "Vector", "Payload/Value", "HTTP"], adv_ssrf_rows, "No SSRF findings.")
         + "</div>"
         + "<div class='panel'><h3>SSTI</h3>"
-        + table(["URL", "Parameter", "Engine"], adv_ssti_rows, "No hallazgos SSTI.")
+        + table(["URL", "Parameter", "Engine"], adv_ssti_rows, "No SSTI findings.")
         + "</div>"
         + "<div class='panel'><h3>XXE</h3>"
-        + table(["URL", "Content-Type", "Status"], adv_xxe_rows, "No hallazgos XXE.")
+        + table(["URL", "Content-Type", "Status"], adv_xxe_rows, "No XXE findings.")
         + "</div>"
         + "<div class='panel'><h3>CRLF Injection</h3>"
-        + table(["Vector", "URL/Param", "Payload"], adv_crlf_rows, "No hallazgos CRLF.")
+        + table(["Vector", "URL/Param", "Payload"], adv_crlf_rows, "No CRLF findings.")
         + "</div>"
         + "<div class='panel'><h3>HTTP Request Smuggling</h3>"
-        + table(["Tool/Type", "Detail"], adv_smuggling_rows, "No hallazgos Smuggling.")
+        + table(["Tool/Type", "Detail"], adv_smuggling_rows, "No smuggling findings.")
         + "</div>"
         + "<div class='panel'><h3>Cache Poisoning</h3>"
-        + table(["Header", "Injected value", "Status"], adv_cache_rows, "No hallazgos Cache Poisoning.")
+        + table(["Header", "Injected value", "Status"], adv_cache_rows, "No cache poisoning findings.")
         + "</div>"
     )
 
@@ -1882,51 +1882,51 @@ def _build_html_report(report_data):
         + "</pre></div>"
     )
 
-    # Presencia: solo se muestran las secciones con informacion recopilada.
+    # Presencia: solo se muestran las secciones con informacion collected.
     present = {
-        "resumen": True,
+        "summary": True,
         "info": bool(technologies or users or emails or general.get("headers") or general.get("cookies") or general.get("server")),
         "nmap": bool(nmap_ports or nmap_nse),
-        "hallazgos": bool(findings),
+        "findings": bool(findings),
         "nuclei": bool(nuclei_findings or nuclei_summary),
         "api": bool(api_endpoints),
         "vhosts": bool(vhosts),
         "directorios": bool(directories),
-        "exposicion": bool(robots_paths or http_methods or inj_get or inj_forms),
+        "exposure": bool(robots_paths or http_methods or inj_get or inj_forms),
         "advanced": bool(adv_sec),
         "wordpress": bool(wordpress),
         "spider": bool(spider.get("total_urls") or spider.get("sample_urls")),
-        "codigo": bool(src_code.get("pages_analyzed") or src_findings),
+        "source": bool(src_code.get("pages_analyzed") or src_findings),
         "ad": bool(active_directory),
-        "credenciales": bool(creds),
+        "credentials": bool(creds),
         "raw": bool(scan_data or stats),
     }
     all_sections = [
-        ("resumen", "Summary", overview_content, None),
+        ("summary", "Summary", overview_content, None),
         ("info", "General Information", info_content, len(technologies)),
-        ("nmap", "Nmap y NSE", nmap_content, len(nmap_ports)),
-        ("hallazgos", "Findings", findings_content, len(findings)),
+        ("nmap", "Nmap and NSE", nmap_content, len(nmap_ports)),
+        ("findings", "Findings", findings_content, len(findings)),
         ("nuclei", "Nuclei", nuclei_content, len(nuclei_findings)),
         ("api", "API", api_content, len(api_endpoints)),
         ("vhosts", "VHosts", vhost_content, len(vhosts)),
         ("directorios", "Directories", dir_content, len(directories)),
-        ("exposicion", "Exposed Surface", exposure_content, len(robots_paths) + len(http_methods)),
+        ("exposure", "Exposed Surface", exposure_content, len(robots_paths) + len(http_methods)),
         ("advanced", "Advanced Tests", adv_content, adv_total),
         ("wordpress", "WordPress", wp_content, len(wordpress.get("vulnerabilities") or [])),
         ("spider", "Spidering", spider_content, spider.get("total_urls", 0)),
-        ("codigo", "Codigo Source", source_content, len(src_findings)),
+        ("source", "Source Code", source_content, len(src_findings)),
         ("ad", "Active Directory", ad_content, len(ad_ldap.get("users") or [])),
-        ("credenciales", "Web Credentials", creds_content, len(creds)),
+        ("credentials", "Web Credentials", creds_content, len(creds)),
         ("raw", "Complete Data", raw_content, None),
     ]
     sections = [s for s in all_sections if present.get(s[0])]
 
     SEC_ICON = {
-        "resumen": "gauge", "info": "info", "nmap": "network", "hallazgos": "warning-octagon",
+        "summary": "gauge", "info": "info", "nmap": "network", "findings": "warning-octagon",
         "nuclei": "bug-beetle", "api": "brackets-curly", "vhosts": "globe-hemisphere-west",
-        "directorios": "folders", "exposicion": "eye", "advanced": "shield-warning", "wordpress": "wordpress-logo",
-        "spider": "share-network", "codigo": "code", "ad": "tree-structure",
-        "credenciales": "key", "raw": "database",
+        "directorios": "folders", "exposure": "eye", "advanced": "shield-warning", "wordpress": "wordpress-logo",
+        "spider": "share-network", "source": "code", "ad": "tree-structure",
+        "credentials": "key", "raw": "database",
     }
     # Phosphor no incluye el logo de WordPress: se inyecta el SVG oficial.
     WP_PATH = ("M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zM1.211 12c0-1.564.336-3.049.935-4.39"
@@ -1986,7 +1986,7 @@ def _build_html_report(report_data):
     sec_chips = "".join(
         f"<button class='fchip' data-filter-sec='{sid}'>{sec_icon_html(sid, 'nicon')} {esc(title)}</button>"
         for sid, title, _, count in sections
-        if sid not in ("resumen", "raw")
+        if sid not in ("summary", "raw")
     )
     filter_html = (
         "<div class='filter-bar' id='filterBar'>"
@@ -2006,7 +2006,7 @@ def _build_html_report(report_data):
         + "</div>"
     ) if (sev_chips or sec_chips) else ""
 
-    # Donut de severidad (conic-gradient) calculado en servidor
+    # Donut de severity (conic-gradient) calculado en servidor
     sev_palette = [
         ("critical", "var(--c-crit)"), ("high", "var(--c-high)"), ("medium", "var(--c-med)"),
         ("low", "var(--c-low)"), ("info", "var(--c-info)"),
@@ -2234,7 +2234,7 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
 @media (prefers-reduced-motion:reduce){ *{ animation:none !important; transition:none !important; } }
 @media print{
   @page{ margin:12mm 10mm; }
-  /* Forzar paleta clara en PDF: maxima legibilidad y ahorro de tinta */
+  /* Force a light PDF palette for maximum readability and lower ink use */
   :root,[data-theme="dark"]{
     --bg:#ffffff; --surface:#ffffff; --surface-2:#f3f5f9; --glass:#ffffff; --text:#16202e; --muted:#54606e;
     --line:#cfd6e2; --ink:#0b1220; --accent:#0a8f6c; --accent-2:#2358d8; --glow:transparent; --shadow:transparent;
@@ -2246,7 +2246,7 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
   .layout,.layout.collapsed{ display:block !important; grid-template-columns:1fr !important; }
   .main{ padding:0 14mm !important; max-width:none !important; }
   .hero{ margin-top:4px; }
-  /* Evitar cortes feos entre paginas */
+  /* Avoid awkward page breaks */
   .panel,.metric,details,.table-wrap,.riskcard,.donut,.kpis,img{ break-inside:avoid; page-break-inside:avoid; }
   tr{ break-inside:avoid; page-break-inside:avoid; }
   thead{ display:table-header-group; } th{ position:static !important; }
@@ -2330,7 +2330,7 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
   },{rootMargin:"-12% 0px -80% 0px"});
   document.querySelectorAll("section.section").forEach(function(s){ obs.observe(s); });
   links.forEach(function(a){ a.addEventListener("click",function(){ if(window.innerWidth<=980) sb.classList.remove("open"); }); });
-  // Filtros: texto, severidad, seccion
+  // Filtros: texto, severity, seccion
   var activeSev="all", activeSec="all";
   function applyRowFilters(){
     var qv=document.getElementById("q"); var v=qv?qv.value.trim().toLowerCase():"";
@@ -2343,7 +2343,7 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
   }
   function applySecFilter(){
     document.querySelectorAll("section.section").forEach(function(s){
-      if(activeSec==="all"||s.id==="resumen"){ s.style.display=""; return; }
+      if(activeSec==="all"||s.id==="summary"){ s.style.display=""; return; }
       s.style.display=(s.id===activeSec)?"":"none";
     });
   }
@@ -2382,13 +2382,13 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
 def _md_escape_cell(value):
     """Escapa el contenido de una celda de tabla markdown."""
     text = str(value) if value is not None else ""
-    # No saltos de línea ni pipes literales
+    # No line breaks or literal pipes
     text = text.replace('\r', ' ').replace('\n', '<br>')
     text = text.replace('|', '\\|')
     return text or "-"
 
 def _md_table(headers, rows):
-    """Genera una tabla markdown estándar (con escape de pipes y saltos)."""
+    """Generate a standard Markdown table (escaping pipes and line breaks)."""
     if not headers:
         return ""
     header_line = "| " + " | ".join(_md_escape_cell(h) for h in headers) + " |"
@@ -2400,7 +2400,7 @@ def _md_table(headers, rows):
     return "\n".join(lines)
 
 def _build_markdown_report(report_data):
-    """Construye el resumen completo del pentest en markdown (compatible GitBook/GitHub)."""
+    """Build the complete pentest summary in Markdown (GitBook/GitHub compatible)."""
     scan_data = report_data.get("scan_data", {}) or {}
     findings = report_data.get("findings", []) or []
     target = report_data.get("target", "")
@@ -2456,7 +2456,7 @@ def _build_markdown_report(report_data):
     parts.append(f"- **Tool:** OWASP Scanner v{report_data.get('tool', '')}")
     parts.append("")
 
-    # 1. Summary ejecutivo
+    # 1. Executive summary
     parts.append("## Executive Summary")
     parts.append("")
     techs = general.get("technologies", []) or []
@@ -2471,17 +2471,17 @@ def _build_markdown_report(report_data):
         ["Vulnerabilities Nuclei", str(len(nuclei_findings_list))],
         ["URLs spider", str(spider.get("total_urls", 0))],
         ["Subdominios (vhosts)", str(len(vhosts))],
-        ["Directories encontrados", str(len(dir_hits))],
+        ["Directories found", str(len(dir_hits))],
         ["Endpoints API", str(len(api_endpoints))],
         ["Users", str(len(users))],
         ["Emails", str(len(emails))],
-        ["Credentials válidas", str(len(creds))],
-        ["WordPress vulnerabilidades", str(len(wordpress.get("vulnerabilities") or []))],
+        ["Valid credentials", str(len(creds))],
+        ["WordPress vulnerabilities", str(len(wordpress.get("vulnerabilities") or []))],
         ["Users AD (LDAP)", str(len(ad_ldap.get("users") or []))],
         ["AS-REP roastable", str(len(asrep_hashes))],
         ["Kerberoastable SPNs", str(len(kerberoast_hashes))],
         ["Credentials AD (NXC)", str(len(ad_creds))],
-        ["Findings en código fuente", str(len(src_findings))],
+        ["Source-code findings", str(len(src_findings))],
     ]
     parts.append(_md_table(["Field", "Value"], overview_rows))
     parts.append("")
@@ -2506,7 +2506,7 @@ def _build_markdown_report(report_data):
     # 3. Cookies
     cookies = general.get("cookies") or []
     if cookies:
-        parts.append("## Cookies detectadas")
+        parts.append("## Cookies detected")
         parts.append("")
         parts.append(_md_table(["Cookie"], [[c] for c in cookies]))
         parts.append("")
@@ -2567,28 +2567,28 @@ def _build_markdown_report(report_data):
         parts.append("## Spidering")
         parts.append("")
         spider_rows = [
-            ["URLs totales", str(spider.get("total_urls", 0))],
-            ["Parámetros únicos", str(spider.get("total_params", 0))],
+            ["Total URLs", str(spider.get("total_urls", 0))],
+            ["Unique parameters", str(spider.get("total_params", 0))],
             ["Forms", str(spider.get("total_forms", 0))],
         ]
         parts.append(_md_table(["Metric", "Value"], spider_rows))
         parts.append("")
         sample_urls = spider.get("sample_urls") or []
         if sample_urls:
-            parts.append(f"### URLs descubiertas ({len(sample_urls)})")
+            parts.append(f"### URLs discovered ({len(sample_urls)})")
             parts.append("")
             parts.append(_md_table(["URL"], [[u] for u in sample_urls]))
             parts.append("")
 
-    # 5b. Análisis de código fuente
+    # 5b. Source-code analysis
     if src_code:
         sev_stats = src_code.get("summary") or {}
-        parts.append("## Análisis de código fuente")
+        parts.append("## Source-code analysis")
         parts.append("")
         code_overview = [
-            ["Páginas analizadas", str(src_code.get("pages_analyzed", 0))],
-            ["Recursos JS/JSON analizados", str(src_code.get("assets_analyzed", 0))],
-            ["Findings totales", str(len(src_findings))],
+            ["Pages analyzed", str(src_code.get("pages_analyzed", 0))],
+            ["Assets JS/JSON analizados", str(src_code.get("assets_analyzed", 0))],
+            ["Total findings", str(len(src_findings))],
             ["Critical", str(sev_stats.get("critical", 0))],
             ["High", str(sev_stats.get("high", 0))],
             ["Medium", str(sev_stats.get("medium", 0))],
@@ -2601,7 +2601,7 @@ def _build_markdown_report(report_data):
                 src_findings,
                 key=lambda x: SEV_ORDER.get(x.get("severity", "low"), 9),
             )
-            parts.append(f"### Detail de hallazgos en código fuente ({len(sorted_src)})")
+            parts.append(f"### Source-code finding details ({len(sorted_src)})")
             parts.append("")
             rows = [[
                 (f.get("severity") or "").upper(),
@@ -2609,12 +2609,12 @@ def _build_markdown_report(report_data):
                 str(f.get("value", "-")),
                 str(f.get("url", "-")),
             ] for f in sorted_src]
-            parts.append(_md_table(["Severity", "Type", "Value detectado", "URL"], rows))
+            parts.append(_md_table(["Severity", "Type", "Detected value", "URL"], rows))
             parts.append("")
 
     # 6a. Subdominios (vhosts)
     if vhosts:
-        parts.append(f"## Subdominios (vhosts) encontrados ({len(vhosts)})")
+        parts.append(f"## Subdomains (vhosts) found ({len(vhosts)})")
         parts.append("")
         rows = [[str(v.get("status", "-")),
                  str(v.get("fqdn") or v.get("subdomain", "-")),
@@ -2625,7 +2625,7 @@ def _build_markdown_report(report_data):
 
     # 6b. Directories
     if dir_hits:
-        parts.append(f"## Directories encontrados ({len(dir_hits)})")
+        parts.append(f"## Directories found ({len(dir_hits)})")
         parts.append("")
         rows = [[str(h.get("status", "-")), str(h.get("url", "-")), str(h.get("size", "-"))]
                 for h in dir_hits]
@@ -2645,9 +2645,9 @@ def _build_markdown_report(report_data):
         wp_rows = [
             ["Detected", "Yes" if wordpress.get("detected") else "Not confirmed"],
             ["Version", str(wp_version.get("number") or "-")],
-            ["Status versión", str(wp_version.get("status") or "-")],
-            ["Theme principal", str(wp_theme.get("name") or "-")],
-            ["Plugins detectados", str(len(wp_plugins))],
+            ["Version status", str(wp_version.get("status") or "-")],
+            ["Main theme", str(wp_theme.get("name") or "-")],
+            ["Plugins detecteds", str(len(wp_plugins))],
             ["Users WPScan", str(len(wp_users))],
             ["Vulnerabilities", str(len(wp_vulns))],
             ["Credentials WP", str(len(wp_creds))],
@@ -2668,7 +2668,7 @@ def _build_markdown_report(report_data):
                 v.get("title", "-"),
                 v.get("fixed_in", "-"),
             ] for v in wp_vulns]
-            parts.append(_md_table(["Type", "Component", "Título", "Fixed in"], rows))
+            parts.append(_md_table(["Type", "Component", "Title", "Fixed in"], rows))
             parts.append("")
 
     if active_directory:
@@ -2723,7 +2723,7 @@ def _build_markdown_report(report_data):
             parts.append(_md_table(["Computer", "OS", "Version"], rows))
             parts.append("")
         if ad_creds:
-            parts.append("### Credentials AD validas (NXC)")
+            parts.append("### Valid AD credentials (NXC)")
             parts.append("")
             parts.append(_md_table(["User", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds]))
             parts.append("")
@@ -2775,7 +2775,7 @@ def _build_markdown_report(report_data):
         parts.append(_md_table(["Category", "Values"], ue_rows))
         parts.append("")
 
-    # 9b. Pruebas avanzadas (SSRF/SSTI/XXE/CRLF/Smuggling/Cache)
+    # 9b. Advanced tests (SSRF/SSTI/XXE/CRLF/Smuggling/Cache)
     adv_sec_md = scan_data.get("advanced_security") or {}
     if adv_sec_md:
         adv_md_ssrf = adv_sec_md.get("ssrf") or []
@@ -2837,22 +2837,22 @@ def _build_markdown_report(report_data):
                  for r in adv_md_cache]))
             parts.append("")
 
-    # 9. Inyección
+    # 9. Injection
     if injection.get("executed"):
-        parts.append("## Pruebas de inyección")
+        parts.append("## Injection tests")
         parts.append("")
         inj_rows = [
-            ["Forms detectados", str(injection.get("forms_found", 0))],
-            ["Parámetros GET detectados", str(injection.get("url_params_found", 0))],
-            ["Parámetros GET probados", str(len(injection.get("tested_get_params", [])))],
+            ["Forms detecteds", str(injection.get("forms_found", 0))],
+            ["Detected GET parameters", str(injection.get("url_params_found", 0))],
+            ["Tested GET parameters", str(len(injection.get("tested_get_params", [])))],
             ["Tested form inputs", str(len(injection.get("tested_form_inputs", [])))],
         ]
         parts.append(_md_table(["Metric", "Value"], inj_rows))
         parts.append("")
 
-    # 10. Credentials válidas
+    # 10. Valid credentials
     if creds:
-        parts.append("## Credentials válidas encontradas")
+        parts.append("## Valid credentials found")
         parts.append("")
         rows = []
         for c in creds:
@@ -2864,13 +2864,13 @@ def _build_markdown_report(report_data):
 
     # 11. Nuclei
     if nuclei_summary:
-        parts.append("## Vulnerabilities por severidad (Nuclei)")
+        parts.append("## Vulnerabilities by severity (Nuclei)")
         parts.append("")
         rows = []
         for sev in sorted(nuclei_summary.keys(), key=lambda s: SEV_ORDER.get(s, 99)):
             tids = nuclei_summary[sev]
             rows.append([sev.upper(), str(len(tids)), ", ".join(sorted(set(map(str, tids))))])
-        parts.append(_md_table(["Severity", "Cantidad", "Templates únicos"], rows))
+        parts.append(_md_table(["Severity", "Count", "Unique templates"], rows))
         parts.append("")
 
     relevant_nuclei = [n for n in nuclei_findings_list
@@ -2900,9 +2900,9 @@ def _build_markdown_report(report_data):
         parts.append(f"## Findings clasificados (total: {len(findings)})")
         parts.append("")
         cat_rows = [[cat, str(len(cats[cat]))] for cat in sorted(cats.keys())]
-        parts.append(_md_table(["Category", "Cantidad"], cat_rows))
+        parts.append(_md_table(["Category", "Count"], cat_rows))
         parts.append("")
-        parts.append(f"### Detail de hallazgos ({len(findings)})")
+        parts.append(f"### Finding details ({len(findings)})")
         parts.append("")
         rows = []
         for f in findings:
@@ -2922,7 +2922,7 @@ def _build_markdown_report(report_data):
 
 
 def save_report(output_file=None):
-    """Guarda hallazgos y datos relevantes en TXT, JSON, HTML y MD."""
+    """Save findings and relevant data in TXT, JSON, HTML, and MD."""
     txt_file, json_file, html_file, md_file = _normalize_output_paths(output_file, TARGET_URL)
     scan_stats = {
         "authenticated": AUTHENTICATED,
@@ -2984,13 +2984,13 @@ def save_report(output_file=None):
             f.write(f"Mode auth: {'Yes' if AUTHENTICATED else 'No'}\n")
             f.write("=" * 60 + "\n\n")
 
-            f.write("[RESUMEN]\n")
+            f.write("[SUMMARY]\n")
             for k, v in scan_stats.items():
                 f.write(f"- {k}: {v}\n")
             f.write("\n")
 
             general = report_data["scan_data"].get("general", {})
-            f.write("[INFORMACIÓN GENERAL]\n")
+            f.write("[GENERAL INFORMATION]\n")
             f.write(f"- Status: {general.get('status_code', 'N/A')}\n")
             f.write(f"- Server: {general.get('server', 'N/A')}\n")
             techs = general.get('technologies', [])
@@ -3007,7 +3007,7 @@ def save_report(output_file=None):
 
             nmap_data = report_data['scan_data'].get('nmap') or {}
             nmap_ports = nmap_data.get('ports') or []
-            f.write("[ESCANEO DE PUERTOS (NMAP)]\n")
+            f.write("[PORT SCAN (NMAP)]\n")
             if nmap_data.get('command'):
                 f.write(f"- Comando: {nmap_data['command']}\n")
             if nmap_data.get('host'):
@@ -3041,7 +3041,7 @@ def save_report(output_file=None):
                 f.write("- No results NSE\n")
             f.write("\n")
 
-            f.write("[ENUMERACIÓN]\n")
+            f.write("[ENUMERATION]\n")
             f.write(f"- Users: {', '.join(report_data['scan_data'].get('users', [])) or 'N/A'}\n")
             f.write(f"- Emails: {', '.join(report_data['scan_data'].get('emails', [])) or 'N/A'}\n\n")
 
@@ -3051,9 +3051,9 @@ def save_report(output_file=None):
                 wp_version = wordpress_data.get('version') or {}
                 wp_theme = wordpress_data.get('main_theme') or {}
                 f.write(f"- Detected: {'Yes' if wordpress_data.get('detected') else 'Not confirmed'}\n")
-                f.write(f"- Version: {wp_version.get('number') or 'N/A'} ({wp_version.get('status') or 'estado desconocido'})\n")
-                f.write(f"- Theme principal: {wp_theme.get('name') or 'N/A'}\n")
-                f.write(f"- Plugins detectados: {len(wordpress_data.get('plugins') or [])}\n")
+                f.write(f"- Version: {wp_version.get('number') or 'N/A'} ({wp_version.get('status') or 'unknown status'})\n")
+                f.write(f"- Main theme: {wp_theme.get('name') or 'N/A'}\n")
+                f.write(f"- Plugins detecteds: {len(wordpress_data.get('plugins') or [])}\n")
                 f.write(f"- Users WPScan: {', '.join(u.get('username','') for u in wordpress_data.get('users', []) if isinstance(u, dict)) or 'N/A'}\n")
                 wp_vulns = wordpress_data.get('vulnerabilities') or []
                 f.write(f"- Vulnerabilities: {len(wp_vulns)}\n")
@@ -3076,8 +3076,8 @@ def save_report(output_file=None):
             spider = report_data["scan_data"].get("spider", {})
             f.write("[SPIDERING]\n")
             f.write(f"- Total URLs: {spider.get('total_urls', 0)}\n")
-            f.write(f"- Total parámetros: {spider.get('total_params', 0)}\n")
-            f.write(f"- Total formularios: {spider.get('total_forms', 0)}\n")
+            f.write(f"- Total parameters: {spider.get('total_params', 0)}\n")
+            f.write(f"- Total forms: {spider.get('total_forms', 0)}\n")
             for u in spider.get('sample_urls', []):
                 f.write(f"  * {u}\n")
             f.write("\n")
@@ -3113,9 +3113,9 @@ def save_report(output_file=None):
 
             src_code_data = report_data['scan_data'].get('source_code_analysis') or {}
             src_code_findings = src_code_data.get('findings') or []
-            f.write("[OSURCE CODE ANALYSIS]\n")
-            f.write(f"- Páginas analizadas: {src_code_data.get('pages_analyzed', 0)}\n")
-            f.write(f"- Recursos JS/JSON analizados: {src_code_data.get('assets_analyzed', 0)}\n")
+            f.write("[SOURCE CODE ANALYSIS]\n")
+            f.write(f"- Pages analyzed: {src_code_data.get('pages_analyzed', 0)}\n")
+            f.write(f"- Assets JS/JSON analizados: {src_code_data.get('assets_analyzed', 0)}\n")
             f.write(f"- Findings: {len(src_code_findings)}\n")
             sev_stats = src_code_data.get('summary') or {}
             if sev_stats:
@@ -3179,14 +3179,14 @@ def save_report(output_file=None):
                         elif module == "ssti":
                             f.write(f"  * url={r.get('url','')} param={r.get('param','')} engine={r.get('engine','')}\n")
                         elif module == "xxe":
-                            f.write(f"  * url={r.get('url','')} content-type={r.get('content_type','')} estado={r.get('note','confirmado')}\n")
+                            f.write(f"  * url={r.get('url','')} content-type={r.get('content_type','')} status={r.get('note','confirmed')}\n")
                         elif module == "crlf":
                             f.write(f"  * vector={r.get('vector','')} payload={r.get('payload','')[:50]}\n")
                         elif module == "smuggling":
-                            f.write(f"  * tipo={r.get('tool') or r.get('type','')} detalle={str(r.get('note') or r.get('output_snippet',''))[:80]}\n")
+                            f.write(f"  * type={r.get('tool') or r.get('type','')} detail={str(r.get('note') or r.get('output_snippet',''))[:80]}\n")
                         elif module == "cache_poisoning":
                             confirmed = "confirmado" if r.get("confirmed") else "reflejado"
-                            f.write(f"  * header={r.get('header','')} valor={r.get('value','')[:40]} estado={confirmed}\n")
+                            f.write(f"  * header={r.get('header','')} value={r.get('value','')[:40]} status={confirmed}\n")
             else:
                 f.write("- No ejecutado\n")
             f.write("\n")
@@ -3196,18 +3196,18 @@ def save_report(output_file=None):
                 for finding in FINDINGS:
                     f.write(_finding_text(finding) + "\n")
             else:
-                f.write("No hallazgos registrados.\n")
+                f.write("No findings recorded.\n")
 
             nuclei_summary = report_data["scan_data"].get("nuclei_summary", {})
             nuclei_findings_list = report_data["scan_data"].get("nuclei_findings", []) or []
             sev_order = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'info': 4, 'unknown': 5}
             if nuclei_summary:
-                f.write("\n[NUCLEI] Summary de vulnerabilidades:\n")
+                f.write("\n[NUCLEI] Vulnerability summary:\n")
                 for sev in sorted(nuclei_summary.keys(), key=lambda s: sev_order.get(s, 99)):
                     tids = nuclei_summary[sev]
-                    f.write(f"- {sev.upper()}: {len(tids)} hallazgos ({', '.join(tids)})\n")
+                    f.write(f"- {sev.upper()}: {len(tids)} findings ({', '.join(tids)})\n")
             if nuclei_findings_list:
-                f.write("\n[NUCLEI] Detail de hallazgos:\n")
+                f.write("\n[NUCLEI] Finding details:\n")
                 sorted_findings = sorted(
                     nuclei_findings_list,
                     key=lambda x: (sev_order.get((x.get('severity') or 'unknown'), 99),
@@ -3253,9 +3253,9 @@ def save_report(output_file=None):
         exts = ",".join(fmt.lower() for fmt, _ in saved)
         print_good(f"Reports saved en {base_path}.{{{exts}}}")
     for fmt, err in errors:
-        print_error(f"No se pudo generar el reporte {fmt}: {err}")
+        print_error(f"Could not generate the report {fmt}: {err}")
     if not saved:
-        print_error("No se pudo guardar ningun formato de reporte.")
+        print_error("Could not save any report format.")
 
 def normalize_url(url):
     if not url.startswith(('http://', 'https://')):
@@ -3263,15 +3263,15 @@ def normalize_url(url):
     return url.rstrip('/')
 
 def _throttle_hook(response, *args, **kwargs):
-    """Aplica REQUEST_DELAY a TODA peticion de la sesion (no solo a los modulos
-    con hilos). Source unica de verdad para --delay."""
+    """Apply REQUEST_DELAY to EVERY session request (not only modules
+    con hilos). Single source of truth for --delay."""
     if REQUEST_DELAY > 0:
         time.sleep(REQUEST_DELAY)
     return response
 
 def _build_retry():
-    """Reintenta solo errores de red transitorios (connect/read), nunca por codigo
-    de estado, para no enmascarar 429/5xx que los modulos de deteccion analizan."""
+    """Retry only transient network errors (connect/read), never by status code
+    so 429/5xx responses analyzed by detection modules are not hidden."""
     try:
         return Retry(
             total=HTTP_RETRIES, connect=HTTP_RETRIES, read=HTTP_RETRIES,
@@ -3302,7 +3302,7 @@ def get_session(user_agent=None):
     return session
 
 def _apply_cookie_string_to_session(session, cookie_string, target_url=None):
-    """Carga una cadena Cookie en requests.Session y en las cabeceras por defecto."""
+    """Load a Cookie string into requests.Session and default headers."""
     cookie_string = (cookie_string or "").strip()
     if not session or not cookie_string:
         return
@@ -3335,7 +3335,7 @@ def _session_header_value(session, name):
     return ""
 
 def _external_http_headers_from_session(session):
-    """Devuelve cabeceras utiles para que CLIs externas respeten la sesion web."""
+    """Return useful headers so external CLIs respect the web session."""
     if not session:
         return []
     headers = []
@@ -3419,10 +3419,10 @@ LOGIN_FAILURE_MARKERS = (
     "invalid credentials", "incorrect password", "incorrect username",
     "wrong password", "wrong username", "bad credentials",
     "login failed", "authentication failed", "access denied",
-    "usuario o contraseña", "contraseña incorrecta", "contrasena incorrecta",
-    "credenciales invalidas", "credenciales inválidas",
-    "credenciales incorrectas", "datos incorrectos", "acceso denegado",
-    "try again", "intenta de nuevo", "inténtalo de nuevo", "intentalo de nuevo",
+    "username or password", "incorrect password", "incorrect password",
+    "invalid credentials", "invalid credentials",
+    "credentials incorrects", "datos incorrects", "acceso denied",
+    "try again", "try again", "try again", "try again",
 )
 
 def _response_shows_login_failure(response):
@@ -3445,11 +3445,11 @@ def _looks_authenticated_response(response, login_url, username=""):
     body = (response.text or "").lower()
     final_path = urlparse(getattr(response, "url", "") or "").path.rstrip("/")
     login_path = urlparse(login_url or "").path.rstrip("/")
-    success_markers = ("logout", "sign out", "cerrar sesion", "cerrar sesión",
+    success_markers = ("logout", "sign out",
                        "dashboard", "welcome", "bienvenido", "my account", "mi cuenta", "profile")
     if any(marker in body for marker in success_markers):
         return True
-    # Yes sigue mostrando un formulario de login, no estamos autenticados.
+    # If it still shows a login form, we are not authenticated.
     if _response_has_login_form(response):
         return False
     if username and username.lower() in body:
@@ -3461,7 +3461,7 @@ def _looks_authenticated_response(response, login_url, username=""):
     return False
 
 def _verify_authenticated_session(session, identifier=""):
-    """Reaccede a la URL objetivo con la sesion para confirmar que sigue autenticada."""
+    """Revisit the target URL with the session to confirm it remains authenticated."""
     try:
         resp = session.get(TARGET_URL, timeout=DEFAULT_TIMEOUT, allow_redirects=True)
     except requests.RequestException:
@@ -3472,41 +3472,41 @@ def check_seclists():
     if os.path.exists(SECLISTS_SMALL):
         return SECLISTS_SMALL
     elif os.path.exists(SECLISTS_MEDIUM):
-        print_warning("No se encontró la wordlist small, usando medium (más grande y lenta).")
+        print_warning("Small wordlist not found, using medium (larger and slower).")
         return SECLISTS_MEDIUM
     else:
-        print_warning("No se encontró SecLists en las rutas por defecto.")
-        response = input_path(f"¿Deseas instalar SecLists automáticamente? (requiere sudo) [s/N]: ").strip().lower()
-        if response == 's':
+        print_warning("SecLists was not found in the default paths.")
+        response = input_path(f"Install SecLists automatically? (requires sudo) [y/N]: ").strip().lower()
+        if response in ('y', 's'):
             try:
                 print_info("Ejecutando: sudo apt update && sudo apt install seclists -y")
                 subprocess.run(["sudo", "apt", "update"], check=True, capture_output=True)
                 subprocess.run(["sudo", "apt", "install", "seclists", "-y"], check=True, capture_output=True)
                 if os.path.exists(SECLISTS_SMALL):
-                    print_good("SecLists instalado correctamente.")
+                    print_good("SecLists installed successfully.")
                     return SECLISTS_SMALL
                 elif os.path.exists(SECLISTS_MEDIUM):
                     return SECLISTS_MEDIUM
                 else:
-                    print_error("La instalación parece haber fallado.")
+                    print_error("The installation appears to have failed.")
             except Exception as e:
-                print_error(f"No se pudo instalar SecLists: {e}")
-        print_warning("Usando wordlist interna reducida para fuzzing.")
+                print_error(f"Could not instalar SecLists: {e}")
+        print_warning("Using wordlist interna reducida para fuzzing.")
         return None
 
-# ========== FUNCIONES DE AUTENTICACIÓN ==========
+# ========== AUTHENTICATION FUNCTIONS ==========
 def _prompt_user_agent():
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User-Agent personalizado (vacio = por defecto):")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Custom User-Agent (empty = default):")
     return input("> ").strip() or None
 
 def _attempt_basic_auth(login_url, username, password, user_agent):
-    """Verifica Basic Auth de forma fiable: sondea sin credenciales, luego con ellas.
+    """Reliably verify Basic Auth: probe without credentials, then with credentials.
     Devuelve ('valid'|'invalid'|'not-used', session|None, response|None)."""
     session = get_session(user_agent)
     try:
         probe = session.get(login_url, timeout=DEFAULT_TIMEOUT)
     except requests.RequestException as e:
-        print_warning(f"No se pudo sondear Basic Auth ({type(e).__name__}).")
+        print_warning(f"Could not sondear Basic Auth ({type(e).__name__}).")
         return "not-used", None, None
     challenge = probe.headers.get("WWW-Authenticate", "").lower()
     if probe.status_code != 401 or "basic" not in challenge:
@@ -3517,12 +3517,12 @@ def _attempt_basic_auth(login_url, username, password, user_agent):
         print_warning(f"Error en Basic Auth ({type(e).__name__}).")
         return "not-used", None, None
     if resp.status_code == 200:
-        session.auth = (username, password)  # persistir credenciales en la sesion
+        session.auth = (username, password)  # persist credentials in the session
         return "valid", session, resp
     return "invalid", None, resp
 
 def _attempt_form_login(login_url, identifier, password, is_email, user_agent):
-    """Detecta el formulario de login y prueba las credenciales.
+    """Detect the login form and test credentials.
     Devuelve ('valid'|'invalid'|'no-form', session|None, response|None, form_url)."""
     session = get_session(user_agent)
     if not HAS_BS4:
@@ -3531,7 +3531,7 @@ def _attempt_form_login(login_url, identifier, password, is_email, user_agent):
     try:
         resp = session.get(login_url, timeout=DEFAULT_TIMEOUT)
     except requests.RequestException as e:
-        print_error(f"No se pudo cargar la URL de login ({type(e).__name__}).")
+        print_error(f"Could not cargar la URL de login ({type(e).__name__}).")
         return "no-form", None, None, login_url
     soup = BeautifulSoup(resp.text, 'html.parser')
     for form in soup.find_all('form'):
@@ -3547,9 +3547,9 @@ def _attempt_form_login(login_url, identifier, password, is_email, user_agent):
                 pass_field = inp.get('name')
             elif itype == 'email' or 'email' in name or 'correo' in name:
                 email_field = inp.get('name')
-            elif 'user' in name or 'login' in name or name in ('uname', 'identifier', 'account', 'usuario'):
+            elif 'user' in name or 'login' in name or name in ('uname', 'identifier', 'account', 'user'):
                 user_field = inp.get('name')
-        # Elegir el campo identificador segun usuario o email.
+        # Elegir el campo identificador segun user o email.
         if is_email:
             ident_field = email_field or user_field
         else:
@@ -3581,25 +3581,25 @@ def setup_authentication():
     global AUTHENTICATED, AUTH_SESSION, TARGET_URL
     user_agent = _prompt_user_agent()
 
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Usar cookie/token de sesion ya obtenido manualmente? [s/N]:")
-    manual_mode = input("> ").strip().lower() == 's'
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Use a cookie/token already obtained manually? [y/N]:")
+    manual_mode = input("> ").strip().lower() in ('y', 's')
     if manual_mode:
         temp_session = get_session(user_agent)
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Cookie completa (ej: PHPSESSID=...; csrftoken=...):")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Full cookie (for example: PHPSESSID=...; csrftoken=...):")
         cookie_string = input("> ").strip()
         if cookie_string:
             _apply_cookie_string_to_session(temp_session, cookie_string, TARGET_URL)
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Header Authorization opcional (ej: Bearer ey...; vacio para omitir):")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Optional Authorization header (for example: Bearer ey...; empty to skip):")
         authorization = input("> ").strip()
         if authorization:
             temp_session.headers["Authorization"] = authorization
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Headers extra opcionales Name: valor (linea vacia para terminar):")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Optional extra headers Name: value (empty line to finish):")
         while True:
             extra = input("> ").strip()
             if not extra:
                 break
             if ":" not in extra:
-                print_warning("Formato invalido. Usa Name: valor")
+                print_warning("Formato invalid. Usa Name: valor")
                 continue
             name, value = extra.split(":", 1)
             if name.strip() and value.strip():
@@ -3609,29 +3609,29 @@ def setup_authentication():
             AUTH_SESSION = temp_session
             AUTHENTICATED = True
             _record_auth_context("manual-session", TARGET_URL, "", temp_session, response=resp)
-            print_good("Sesion manual validada. Las herramientas compatibles usaran cookies/cabeceras.")
+            print_good("Manual session validated. Compatible tools will use cookies/headers.")
             return
         AUTH_SESSION = temp_session
         AUTHENTICATED = True
-        note = "no se pudo confirmar autenticacion (posible login page)" if resp is not None else "sin respuesta del objetivo"
+        note = "could not confirm authentication (possible login page)" if resp is not None else "no target response"
         _record_auth_context("manual-session", TARGET_URL, "", temp_session, response=resp, notes=[note])
         print_warning(f"Sesion manual cargada, pero {note}.")
         return
 
-    print_info("Configuración de autenticación")
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} URL de login (dejar vacío si es la misma que la objetivo):")
+    print_info("Authentication configuration")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Login URL (leave empty if it is the same as the target):")
     login_url = input("> ").strip()
     login_url = normalize_url(login_url) if login_url else TARGET_URL
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User o email:")
     identifier = input("> ").strip()
     is_email = "@" in identifier
-    print_info(f"Identificador detectado como {'email' if is_email else 'usuario'}.")
+    print_info(f"Identifier detected as {'email' if is_email else 'user'}.")
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Password:")
     password = getpass.getpass("> ")
 
     def _finish_fail():
         global AUTHENTICATED, AUTH_SESSION
-        print_warning("No se pudo autenticar. Las pruebas se realizarán sin autenticación.")
+        print_warning("Could not authenticate. Tests will run without authentication.")
         AUTHENTICATED = False
         AUTH_SESSION = None
         SCAN_DATA["authentication"] = {"authenticated": False}
@@ -3639,13 +3639,13 @@ def setup_authentication():
     # 1. Basic Auth (solo si el servidor lo solicita).
     status, session, resp = _attempt_basic_auth(login_url, identifier, password, user_agent)
     if status == "valid":
-        print_good("Credentials válidas (Basic Auth).")
+        print_good("Valid credentials (Basic Auth).")
         AUTH_SESSION = session
         AUTHENTICATED = True
         _record_auth_context("basic-auth", login_url, identifier, session, response=resp)
         return
     if status == "invalid":
-        print_error(f"Credentials inválidas en Basic Auth (HTTP {resp.status_code}).")
+        print_error(f"Invalid credentials en Basic Auth (HTTP {resp.status_code}).")
         _finish_fail()
         return
 
@@ -3654,23 +3654,23 @@ def setup_authentication():
     if status == "valid":
         verify = _verify_authenticated_session(session, identifier)
         if verify is not None and _response_has_login_form(verify):
-            print_warning("El formulario respondió como válido, pero la sesión no persiste (posible CSRF/redirección).")
+            print_warning("The form responded as valid, but the session does not persist (possible CSRF/redirect).")
             _finish_fail()
             return
-        print_good("Credentials válidas. Sesión autenticada verificada.")
+        print_good("Valid credentials. Authenticated session verified.")
         AUTH_SESSION = session
         AUTHENTICATED = True
         _record_auth_context("form-login", form_url, identifier, session, response=resp)
         return
     if status == "invalid":
-        print_error("Credentials inválidas: el formulario rechazó usuario/contraseña.")
+        print_error("Invalid credentials: the form rejected the username/password.")
     else:
-        print_warning("No se detectó formulario HTML de login (posible SPA / OAuth2).")
+        print_warning("No HTML login form detected (possible SPA / OAuth2).")
         # 3. Intentar login headless con Playwright.
         if not check_playwright():
-            print_warning("Playwright no instalado. Instalar para soportar SPAs/OAuth2: pip install playwright && playwright install chromium")
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Instalar Playwright ahora? [s/N]:")
-            if input("> ").strip().lower() == 's':
+            print_warning("Playwright is not installed. Install it to support SPAs/OAuth2: pip install playwright && playwright install chromium")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Install Playwright now? [y/N]:")
+            if input("> ").strip().lower() in ('y', 's'):
                 if install_playwright():
                     # Reimportar tras instalacion.
                     try:
@@ -3693,9 +3693,9 @@ def setup_authentication():
                     _record_auth_context("headless-playwright", login_url, identifier, headless_session, response=verify)
                     return
                 else:
-                    print_error("Login headless: cookies obtenidas pero la sesion no parece autenticada.")
+                    print_error("Headless login: cookies were obtained but the session does not appear authenticated.")
             else:
-                print_error("Login headless falló (no se obtuvieron cookies o no hubo redireccion post-auth).")
+                print_error("Headless login failed (no cookies obtained or no post-auth redirect).")
     _finish_fail()
 
 def get_active_session():
@@ -3724,14 +3724,14 @@ def gather_info(target, session):
         info['cookies'] = resp.cookies
         info['server'] = resp.headers.get('Server', 'No revelado')
 
-        # Detección de tecnologías con WhatWeb
-        print_info("Detectando tecnologías con WhatWeb...")
+        # Technology detection with WhatWeb
+        print_info("Detecting technologies with WhatWeb...")
         ww_result = run_whatweb(target, session)
         if ww_result is not None:
             info['technologies'] = ww_result
             info['technologies_source'] = 'whatweb'
         else:
-            # Fallback: detección básica por cabeceras
+            # Fallback: basic detection by headers
             tech = []
             if 'Set-Cookie' in resp.headers and 'PHPSESSID' in resp.headers['Set-Cookie']:
                 tech.append('PHP')
@@ -3746,7 +3746,7 @@ def gather_info(target, session):
 
         return info
     except Exception as e:
-        print_error(f"No se pudo obtener información: {e}")
+        print_error(f"Could not gather information: {e}")
         return None
 
 def check_robots_sitemap(target, session):
@@ -3757,7 +3757,7 @@ def check_robots_sitemap(target, session):
             try:
                 resp = session.get(url, timeout=DEFAULT_TIMEOUT)
                 if resp.status_code == 200:
-                    print_good(f"Encontrado: {url}")
+                    print_good(f"Found: {url}")
                     paths.append(url)
                     if 'robots.txt' in p:
                         lines = resp.text.splitlines()
@@ -3793,39 +3793,39 @@ def check_http_methods(target, session):
 
 def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREADS,
                      use_ffuf=True, request_timeout=5, rate=0, use_fs_filter=True):
-    """Fuzzing de subdominios (virtual hosts) usando ffuf con técnica de Content-Length.
+    """Subdomain fuzzing (virtual hosts) using ffuf with the Content-Length technique.
 
-    Manda una request con Host inválido (defnotvalid.<base_domain>) para obtener la
+    Send a request with an invalid Host (defnotvalid.<base_domain>) to obtain the
     longitud baseline de "no encontrado" y, si `use_fs_filter` es True, ffuf filtra
     por `-fs <baseline>` descartando todas las respuestas que coincidan.
     """
     results = []
     try:
         if not base_domain:
-            print_error("Domain base vacío. No se puede hacer fuzzing de subdominios.")
+            print_error("Base domain is empty. Cannot run subdomain fuzzing.")
             return results
 
         if wordlist is None and os.path.isfile(SECLISTS_DNS):
             wordlist = SECLISTS_DNS
         if wordlist and not os.path.isfile(wordlist):
-            print_warning(f"No se pudo leer la wordlist '{wordlist}'.")
+            print_warning(f"Could not read wordlist '{wordlist}'.")
             wordlist = None
         if not wordlist:
             print_error("No hay wordlist disponible para vhost fuzzing.")
             return results
 
-        # 1) Baseline: enviar un Host inválido al target y leer Content-Length
+        # 1) Baseline: send an invalid Host header to the target and read Content-Length
         bogus_host = f"defnotvalid{int(time.time()) % 100000}.{base_domain}"
         baseline_size = None
         try:
-            print_info(f"Baseline con Host inválido: {bogus_host}")
+            print_info(f"Baseline with invalid Host: {bogus_host}")
             base_resp = session.get(
                 target,
                 headers={"Host": bogus_host},
                 timeout=DEFAULT_TIMEOUT,
                 allow_redirects=False,
             )
-            # Preferir Content-Length si está presente, si no usar len(content)
+            # Prefer Content-Length when present, otherwise use len(content)
             cl_header = base_resp.headers.get('Content-Length')
             if cl_header and cl_header.isdigit():
                 baseline_size = int(cl_header)
@@ -3833,10 +3833,10 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                 baseline_size = len(base_resp.content)
             print_info(f"Baseline status={base_resp.status_code} Content-Length={baseline_size}")
         except Exception as e:
-            print_warning(f"No se pudo calcular baseline ({e}); ffuf no filtrará por tamaño.")
+            print_warning(f"Could not calculate baseline ({e}); ffuf will not filter by size.")
 
         if use_ffuf and check_ffuf():
-            # Contar entradas válidas de la wordlist para informar al usuario
+            # Contar valid entries de la wordlist para informar al user
             wl_count = 0
             try:
                 with open(wordlist, 'r', encoding='utf-8', errors='ignore') as wlf:
@@ -3847,7 +3847,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
             except Exception:
                 pass
             if wl_count:
-                # ETA aproximado: cada hilo procesa ~10 req/s en promedio
+                # ETA aproximado: cada hilo procesa ~10 req/s en promedium
                 est_seconds = max(1, int(wl_count / max(1, threads * 10)))
                 est_min = est_seconds // 60
                 eta = f"~{est_min}m" if est_min >= 1 else f"~{est_seconds}s"
@@ -3855,7 +3855,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                 if wl_count > 50_000 and threads < 40:
                     print_warning(
                         f"Wordlist grande ({wl_count:,}) con pocos threads ({threads}). "
-                        "Considera Ctrl+C y subir threads o usar una wordlist más corta."
+                        "Consider Ctrl+C and increasing threads or using a shorter wordlist."
                     )
 
             tmp_fd, tmp_path = tempfile.mkstemp(suffix='.json')
@@ -3893,7 +3893,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                             500: Fore.RED, 503: Fore.RED,
                         }
                         if not hits:
-                            print(f"\n  {Fore.YELLOW}No subdominios encontrados (todo filtrado por baseline).{Style.RESET_ALL}\n")
+                            print(f"\n  {Fore.YELLOW}No subdomains found (everything filtered by baseline).{Style.RESET_ALL}\n")
                         else:
                             table_rows = []
                             for hit in sorted(hits, key=lambda x: (x.get('status', 0), x.get('input', {}).get('FUZZ', ''))):
@@ -3923,14 +3923,14 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                                 headers=["STATUS", "VHOST", "SIZE", "WORDS", "DUR"],
                                 rows=table_rows,
                                 alignments=['<', '<', '>', '>', '>'],
-                                footer=f"  Total: {Fore.GREEN}{len(hits)}{Style.RESET_ALL} subdominio(s) encontrados\n",
+                                footer=f"  Total: {Fore.GREEN}{len(hits)}{Style.RESET_ALL} subdomain(s) found\n",
                             )
                     except Exception as e:
                         print_error(f"Error leyendo JSON de ffuf: {e}")
                 if rc not in (0, 1):
-                    print_error(f"ffuf terminó con código {rc}")
+                    print_error(f"ffuf exited with code {rc}")
             except KeyboardInterrupt:
-                print_warning("Fuzzing de subdominios interrumpido por el usuario; esperando a que ffuf guarde resultados parciales...")
+                print_warning("Fuzzing de subdominios interrupted por el user; esperando a que ffuf guarde resultados parciales...")
                 if process:
                     _wait_for_interrupted_child(process, "ffuf")
                 try:
@@ -3953,11 +3953,11 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                         FINDINGS.append(f"[VHOST] {fqdn} [{status}]")
                 except Exception as e:
                     print_error(f"Error leyendo JSON parcial de ffuf: {e}")
-                print_good(f"Se han guardado {len(results)} vhosts encontrados hasta el momento.")
+                print_good(f"Saved {len(results)} vhosts found so far.")
                 SCAN_DATA["vhosts"] = results
                 return results
             except Exception as e:
-                print_error(f"Error ejecutando ffuf: {e}")
+                print_error(f"Error running ffuf: {e}")
             finally:
                 try:
                     os.unlink(tmp_path)
@@ -3966,14 +3966,14 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
             return results
 
         # Method interno (sin ffuf)
-        print_warning("ffuf no disponible, usando método interno (más lento).")
+        print_warning("ffuf unavailable, using internal method (slower).")
         try:
             with open(wordlist, 'r', encoding='utf-8', errors='ignore') as f:
                 subs = [l.strip() for l in f if l.strip() and not l.startswith('#')]
         except Exception as e:
             print_error(f"Error leyendo wordlist: {e}")
             return results
-        print_info(f"Probando {len(subs)} subdominios contra {base_domain}...")
+        print_info(f"Testing {len(subs)} subdomains against {base_domain}...")
 
         def test_sub(sub):
             fqdn = f"{sub}.{base_domain}"
@@ -4026,12 +4026,12 @@ def _is_login_location(loc):
 
 def _resolve_authenticated_status(url, session, status, size):
     """En fuzzing autenticado, resuelve los hits 3xx siguiendo la redireccion con
-    la sesion y devuelve (status_final, size_final, nota).
+    the session and returns (final_status, final_size, note).
 
-    - Yes la redireccion rebota a una pagina de login (param next= o ruta de auth,
+    - If the redirect bounces to a login page (next= parameter or auth route,
       o el destino sigue mostrando un formulario de login) el endpoint esta
-      protegido: se conserva el 3xx y se anota.
-    - Yes resuelve a contenido real, se devuelve el estado final (p.ej. 200) para
+      protected: keep the 3xx and record it.
+    - If it resolves to real content, return the final status (for example, 200) for
       no reportar un 302 enganoso cuando el recurso si es accesible autenticado."""
     if status not in (301, 302, 303, 307, 308):
         return status, size, None
@@ -4057,16 +4057,16 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
             if default_wl:
                 wordlist = default_wl
         if wordlist and not os.path.isfile(wordlist):
-            print_warning(f"No se pudo leer la wordlist '{wordlist}'. Usando lista interna.")
+            print_warning(f"Could not read wordlist '{wordlist}'. Using internal list.")
             wordlist = None
 
         if use_ffuf and check_ffuf() and wordlist and os.path.isfile(wordlist):
-            # Archivo temporal para resultados JSON limpios (sin ruido de calibración)
+            # Temporary file for clean JSON results (without calibration noise)
             tmp_fd, tmp_path = tempfile.mkstemp(suffix='.json')
             os.close(tmp_fd)
 
-            # Pre-filtrar wordlist: descartar comentarios (#), líneas vacías y
-            # entradas con espacios/caracteres no válidos para rutas web.
+            # Pre-filter wordlist: discard comments (#), blank lines, and
+            # entries with spaces/invalid characters for web paths.
             clean_fd, clean_wl = tempfile.mkstemp(suffix='.txt', prefix='wstg_wl_')
             os.close(clean_fd)
             kept = 0
@@ -4082,12 +4082,12 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                             continue
                         dst.write(entry + '\n')
                         kept += 1
-                print_info(f"Wordlist limpia: {kept} entradas válidas (descartados comentarios y líneas inválidas)")
+                print_info(f"Clean wordlist: {kept} valid entries (discarded comments and invalid lines)")
             except Exception as e:
-                print_warning(f"No se pudo limpiar la wordlist ({e}); se usará la original.")
+                print_warning(f"Could not clean the wordlist ({e}); the original will be used.")
                 clean_wl = wordlist
 
-            # Calcular tamaño baseline de la raíz para descartar páginas-comodín
+            # Calculate root baseline size to filter wildcard pages
             baseline_size = None
             try:
                 base_resp = session.get(target, timeout=DEFAULT_TIMEOUT)
@@ -4103,10 +4103,10 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
             ]
             ffuf_cmd = _append_ffuf_session_headers(ffuf_cmd, session)
             if baseline_size:
-                # Filtrar respuestas con el mismo tamaño exacto que la página raíz
+                # Filter responses with the exact same size as the root page
                 ffuf_cmd += ["-fs", str(baseline_size)]
             print_info(f"Ejecutando: {' '.join(ffuf_cmd[:7])}")
-            print()  # línea en blanco antes de la barra nativa de ffuf
+            print()  # blank line before the native ffuf progress bar
 
             results = []
             process = None
@@ -4116,7 +4116,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                 process = subprocess.Popen(ffuf_cmd)
                 process.wait()
                 rc = process.returncode
-                print()  # línea en blanco tras la barra de ffuf
+                print()  # blank line after the ffuf progress bar
 
                 # ── Leer resultados limpios desde el JSON ─────────────────────
                 if os.path.isfile(tmp_path) and os.path.getsize(tmp_path) > 2:
@@ -4131,7 +4131,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                         }
 
                         if not hits:
-                            print(f"\n  {Fore.YELLOW}No results (todos filtrados por auto-calibración){Style.RESET_ALL}\n")
+                            print(f"\n  {Fore.YELLOW}No results (all filtered by auto-calibration){Style.RESET_ALL}\n")
                         else:
                             if AUTHENTICATED:
                                 print_info("Sesion autenticada: resolviendo redirecciones de los hits 3xx...")
@@ -4145,8 +4145,8 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                                 dur_ms  = dur_ns // 1_000_000 if dur_ns else 0
                                 url_hit = hit.get('url', urljoin(target, path))
                                 note    = None
-                                # Con sesion autenticada, un 302 puede esconder un 200 real:
-                                # seguir la redireccion y reportar el estado final.
+                                # With an authenticated session, a 302 can hide a real 200:
+                                # follow the redirect and report the final status.
                                 if AUTHENTICATED:
                                     status, size, note = _resolve_authenticated_status(
                                         url_hit, session, status, size)
@@ -4165,16 +4165,16 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                                 headers=["STATUS", "PATH", "SIZE", "WORDS", "DUR", "NOTA"],
                                 rows=table_rows,
                                 alignments=['<', '<', '>', '>', '>', '<'],
-                                footer=f"  Total: {Fore.GREEN}{len(hits)}{Style.RESET_ALL} endpoint(s) encontrados\n",
+                                footer=f"  Total: {Fore.GREEN}{len(hits)}{Style.RESET_ALL} endpoint(s) found\n",
                             )
                     except Exception as e:
                         print_error(f"Error leyendo JSON de ffuf: {e}")
 
                 if rc not in (0, 1):
-                    print_error(f"ffuf terminó con código {rc}")
+                    print_error(f"ffuf exited with code {rc}")
 
             except KeyboardInterrupt:
-                print_warning("Fuzzing interrumpido por el usuario; esperando a que ffuf guarde resultados parciales...")
+                print_warning("Fuzzing interrupted por el user; esperando a que ffuf guarde resultados parciales...")
                 if process:
                     _wait_for_interrupted_child(process, "ffuf")
                 try:
@@ -4192,19 +4192,19 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                         FINDINGS.append(f"[DIR] {url_hit} [{status}]")
                 except Exception as e:
                     print_error(f"Error leyendo JSON parcial de ffuf: {e}")
-                # Guardar resultados parciales en SCAN_DATA (mutación, no necesita global)
+                # Save partial results in SCAN_DATA (mutation, no global needed)
                 SCAN_DATA["directory_hits"] = results
-                print_good(f"Se han guardado {len(results)} directorios encontrados hasta el momento.")
+                print_good(f"Saved {len(results)} directories found so far.")
                 return results
             except Exception as e:
-                print_error(f"Error ejecutando ffuf: {e}")
-                print_warning("Fallando a método interno...")
+                print_error(f"Error running ffuf: {e}")
+                print_warning("Falling back to internal method...")
             finally:
                 try:
                     os.unlink(tmp_path)
                 except Exception:
                     pass
-                # Eliminar wordlist limpia temporal (sólo si fue creada)
+                # Delete temporary cleaned wordlist (only if it was created)
                 if clean_wl and clean_wl != wordlist:
                     try:
                         os.unlink(clean_wl)
@@ -4214,17 +4214,17 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
             return results
         else:
             if use_ffuf and not check_ffuf():
-                print_warning("ffuf no está instalado. Usando método interno (más lento).")
+                print_warning("ffuf is not installed. Using internal method (slower).")
             if wordlist is None:
                 paths = COMMON_DIRS
-                print_info(f"Usando lista interna reducida ({len(paths)} rutas)")
+                print_info(f"Using reduced internal list ({len(paths)} rutas)")
             else:
                 with open(wordlist, 'r') as f:
                     paths = [line.strip() for line in f if line.strip() and not line.startswith('#')]
-                print_info(f"Usando wordlist: {wordlist} ({len(paths)} entradas)")
+                print_info(f"Using wordlist: {wordlist} ({len(paths)} entradas)")
             
             results = []
-            print_info(f"Iniciando fuzzing de directorios (método interno)...")
+            print_info(f"Starting directory fuzzing (internal method)...")
 
             def test_path(path):
                 url = urljoin(target, path)
@@ -4248,7 +4248,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                             res = future.result()
                             if res:
                                 url, code, size, note = res
-                                print_good(f"Encontrado: {url} (código {code}, tamaño {size})"
+                                print_good(f"Found: {url} (status {code}, size {size})"
                                            + (f" [{note}]" if note else ""))
                                 results.append({'url': url, 'status': code, 'size': size, 'note': note})
                             pbar.update(1)
@@ -4263,7 +4263,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                         res = future.result()
                         if res:
                             url, code, size, note = res
-                            print_good(f"Encontrado: {url} (código {code}, tamaño {size})"
+                            print_good(f"Found: {url} (status {code}, size {size})"
                                        + (f" [{note}]" if note else ""))
                             results.append({'url': url, 'status': code, 'size': size, 'note': note})
             return results
@@ -4336,7 +4336,7 @@ def extract_forms_and_params(target, session):
         params = set()
         form_keys = set()
 
-        print_info("Crawling para detectar formularios e inputs de forma exhaustiva...")
+        print_info("Crawling to detect forms and inputs thoroughly...")
         discovered_urls, spider_params, spider_forms = spider_website(
             target,
             session,
@@ -4347,7 +4347,7 @@ def extract_forms_and_params(target, session):
 
         params.update(spider_params or set())
 
-        # Reutilizar los formularios ya detectados por el spider (con inputs)
+        # Reutilizar los formularios ya detecteds por el spider (con inputs)
         for f in spider_forms or []:
             action_url = f.get('action') or f.get('url') or f.get('page_url') or target
             method = (f.get('method') or 'GET').upper()
@@ -4365,11 +4365,11 @@ def extract_forms_and_params(target, session):
                 'inputs': inputs,
             })
 
-        print_info(f"Forms encontrados: {len(forms)}")
-        print_info(f"Parámetros únicos en enlaces: {len(params)}")
+        print_info(f"Forms found: {len(forms)}")
+        print_info(f"Unique parameters en enlaces: {len(params)}")
         return forms, list(params)
     except Exception as e:
-        print_error(f"Error extrayendo formularios/parámetros: {e}")
+        print_error(f"Error extracting forms/parameters: {e}")
         return [], []
 
 def advanced_injection_tests(url, param, session, method='GET'):
@@ -4388,7 +4388,7 @@ def advanced_injection_tests(url, param, session, method='GET'):
                     print_vuln(f"Posible SQLi time-based en {param} (retraso {elapsed:.2f}s)")
                     return True
             except KeyboardInterrupt:
-                print_warning("Prueba de inyección interrumpida por el usuario.")
+                print_warning("Injection test interrupted by the user.")
                 return False
             except:
                 pass
@@ -4404,7 +4404,7 @@ def advanced_injection_tests(url, param, session, method='GET'):
                     print_vuln(f"Posible XSS en {param} con payload: {payload}")
                     return True
             except KeyboardInterrupt:
-                print_warning("Prueba de inyección interrumpida por el usuario.")
+                print_warning("Injection test interrupted by the user.")
                 return False
             except:
                 pass
@@ -4420,7 +4420,7 @@ def advanced_injection_tests(url, param, session, method='GET'):
                     print_vuln(f"Posible Command Injection en {param} con payload: {payload}")
                     return True
             except KeyboardInterrupt:
-                print_warning("Prueba de inyección interrumpida por el usuario.")
+                print_warning("Injection test interrupted by the user.")
                 return False
             except:
                 pass
@@ -4442,7 +4442,7 @@ def test_path_traversal(url, param, session, method='GET'):
                     print_vuln(f"Path Traversal en {param}: {payload}")
                     return True
             except KeyboardInterrupt:
-                print_warning("Prueba de Path Traversal interrumpida por el usuario.")
+                print_warning("Prueba de Path Traversal interrumpida por el user.")
                 return False
             except:
                 pass
@@ -4466,7 +4466,7 @@ def test_open_redirect(url, param, session, method='GET'):
                         print_vuln(f"Open Redirect en {param} -> {location}")
                         return True
             except KeyboardInterrupt:
-                print_warning("Prueba de Open Redirect interrumpida por el usuario.")
+                print_warning("Prueba de Open Redirect interrumpida por el user.")
                 return False
             except:
                 pass
@@ -4490,7 +4490,7 @@ def check_security_headers(headers):
             else:
                 print_good(f"{header}: {headers[header]}")
     except Exception as e:
-        print_error(f"Error revisando cabeceras: {e}")
+        print_error(f"Error checking headers: {e}")
 
 def check_cookie_security(cookies):
     try:
@@ -4507,7 +4507,7 @@ def check_info_disclosure(resp_text):
     try:
         emails = re.findall(r'[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}', resp_text)
         if emails:
-            print_warning(f"Emails expuestos: {', '.join(set(emails))}")
+            print_warning(f"Emails exposeds: {', '.join(set(emails))}")
         internal_paths = re.findall(r'(?:C:\\|/home/|/var/www/|/etc/)[^\s\'"<>]+', resp_text, re.I)
         if internal_paths:
             print_warning(f"Paths internas expuestas: {set(internal_paths)}")
@@ -4531,7 +4531,7 @@ def check_ssl_tls(target):
     try:
         parsed = urlparse(target)
         if parsed.scheme != 'https':
-            print_info("No se evaluará SSL/TLS (no HTTPS)")
+            print_info("SSL/TLS will not be evaluated (not HTTPS)")
             return
         hostname = parsed.hostname
         port = parsed.port or 443
@@ -4542,9 +4542,9 @@ def check_ssl_tls(target):
                 print_info(f"Certificado para: {cert.get('subject')}")
                 version = ssock.version()
                 if version and version not in ('TLSv1.2', 'TLSv1.3'):
-                    print_warning(f"Protocolo TLS inseguro: {version}")
+                    print_warning(f"Insecure TLS protocol: {version}")
                 else:
-                    print_good(f"Protocolo TLS: {version}")
+                    print_good(f"TLS protocol: {version}")
     except Exception as e:
         print_error(f"SSL/TLS error: {e}")
 
@@ -4564,12 +4564,12 @@ def test_cors_advanced(target, session):
                 acao = resp.headers.get('Access-Control-Allow-Origin', '')
                 acac = resp.headers.get('Access-Control-Allow-Credentials', '').lower()
                 if acao == '*' and acac == 'true':
-                    print_vuln(f"CORS crítico: wildcard + Allow-Credentials=true [{origin}]")
+                    print_vuln(f"Critical CORS: wildcard + Allow-Credentials=true [{origin}]")
                 elif acao == origin:
                     if acac == 'true':
-                        print_vuln(f"CORS: origen reflejado con credenciales permitidas -> {origin}")
+                        print_vuln(f"CORS: reflected origin with credentials allowed -> {origin}")
                     else:
-                        print_warning(f"CORS: origen reflejado sin credenciales -> {origin}")
+                        print_warning(f"CORS: reflected origin without credentials -> {origin}")
                 elif acao == '*':
                     print_warning("CORS: wildcard (*) sin Allow-Credentials")
                 # Verificar preflight OPTIONS
@@ -4593,12 +4593,12 @@ def test_cors_advanced(target, session):
 # ========== API PENTESTING (OWASP API Top 10) ==========
 
 def discover_api_endpoints(target, session):
-    """OWASP API9: Descubre endpoints expuestos y analiza documentación OpenAPI/Swagger.
-    Realiza también fuzzing recursivo bajo prefijos /api/v1, /api/v2, /v1, etc."""
+    """OWASP API9: discover exposed endpoints and analyze OpenAPI/Swagger documentation.
+    Also performs recursive fuzzing under prefixes such as /api/v1, /api/v2, /v1, etc."""
     found = []
     seen_urls = set()
 
-    # Códigos que indican "el endpoint existe" (no 404)
+    # Codes that indicate "the endpoint exists" (not 404)
     INTERESTING = {200, 201, 202, 204, 301, 302, 307, 308, 401, 403, 405, 500}
 
     def _probe(endpoint, depth_label=""):
@@ -4624,16 +4624,16 @@ def discover_api_endpoints(target, session):
             loc = resp.headers.get('Location', '')
             print_info(f"{prefix}[{st}] {url} -> {loc}")
         elif st == 401:
-            print_warning(f"{prefix}[401] {url}  (requiere autenticación)")
+            print_warning(f"{prefix}[401] {url}  (requires authentication)")
         elif st == 403:
             print_warning(f"{prefix}[403] {url}  (prohibido)")
         elif st == 405:
             allow = resp.headers.get('Allow', '')
-            print_warning(f"{prefix}[405] {url}  (método no permitido; Allow: {allow or 'N/A'})")
+            print_warning(f"{prefix}[405] {url}  (method not allowed; Allow: {allow or 'N/A'})")
         elif st == 500:
-            print_error(f"{prefix}[500] {url}  (error interno — posible parámetro no manejado)")
+            print_error(f"{prefix}[500] {url}  (internal error - possible unhandled parameter)")
 
-        # Yes es Swagger/OpenAPI/API docs, parsear y registrar rutas
+        # If it is Swagger/OpenAPI/API docs, parse and register routes
         if st == 200 and any(x in endpoint for x in ('swagger', 'openapi', 'api-docs')):
             try:
                 doc = resp.json()
@@ -4662,13 +4662,13 @@ def discover_api_endpoints(target, session):
             if item:
                 found.append(item)
 
-        # Fuzzing recursivo bajo prefijos típicos de API. Lo hacemos siempre
-        # (no solo si la raíz del prefijo responde) porque muchas apps devuelven
-        # 404 en /api/v1 pero sí exponen /api/v1/users, /api/v1/login, etc.
+        # Recursive fuzzing under typical API prefixes. Always done
+        # (not only when the prefix root responds) because many apps return
+        # 404 on /api/v1 but still expose /api/v1/users, /api/v1/login, etc.
         prefixes_to_fuzz = list(API_BASE_PREFIXES)
 
-        # Derivar prefijos adicionales desde endpoints ya encontrados o
-        # documentados (p. ej. /api/users → añade /api y /api/v1)
+        # Derive additional prefixes from endpoints already found or
+        # documented (for example, /api/users -> add /api and /api/v1)
         for item in list(found):
             ep = item.get('endpoint', '')
             if not ep or not ep.startswith('/'):
@@ -4684,7 +4684,7 @@ def discover_api_endpoints(target, session):
         prefixes_to_fuzz = [p for p in prefixes_to_fuzz if not (p in seen_pref or seen_pref.add(p))]
 
         print_info(
-            f"Fuzzing recursivo: {len(API_REOSURCES)} recursos × "
+            f"Fuzzing recursivo: {len(API_REOSURCES)} assets × "
             f"{len(prefixes_to_fuzz)} prefijos ({', '.join(prefixes_to_fuzz[:8])}"
             f"{', ...' if len(prefixes_to_fuzz) > 8 else ''})"
         )
@@ -4698,8 +4698,8 @@ def discover_api_endpoints(target, session):
                     continue
                 seen_fuzz.add(endpoint)
                 fuzz_endpoints.append(endpoint)
-        # Probado en paralelo: cada endpoint es unico y _probe es seguro bajo el GIL
-        # para esta carga (set.add/list.append atomicos; la rama Swagger no aplica a recursos).
+        # Tested in parallel: each endpoint is unique and _probe is safe under the GIL
+        # para esta carga (set.add/list.append atomicos; la rama Swagger no aplica a assets).
         with ThreadPoolExecutor(max_workers=max(THREADS, 8)) as ex:
             futures = [ex.submit(_probe, ep, "↳ ") for ep in fuzz_endpoints]
             for fut in as_completed(futures):
@@ -4710,7 +4710,7 @@ def discover_api_endpoints(target, session):
                 if item:
                     found.append(item)
 
-        print_info(f"Total endpoints API encontrados/accesibles: {len(found)}")
+        print_info(f"Total API endpoints found/accessible: {len(found)}")
         if found:
             STATUS_COLOR = {
                 200: Fore.GREEN, 201: Fore.GREEN, 202: Fore.GREEN, 204: Fore.GREEN,
@@ -4740,12 +4740,12 @@ def discover_api_endpoints(target, session):
 
 
 def test_api_auth_bypass(found_endpoints, session):
-    """OWASP API5/BFLA: Detecta endpoints restringidos accesibles sin autenticación."""
+    """OWASP API5/BFLA: detect restricted endpoints accessible without authentication."""
     try:
         unauth_session = get_session()
         restricted = [item for item in found_endpoints if item['status'] in (401, 403)]
         if not restricted:
-            print_info("No endpoints restringidos encontrados para probar bypass.")
+            print_info("No restricted endpoints found to test bypass.")
             return
 
         def _looks_like_real_content(resp):
@@ -4799,7 +4799,7 @@ def test_api_auth_bypass(found_endpoints, session):
 
 
 def test_api_idor(found_endpoints, session):
-    """OWASP API1/BOLA: Prueba IDOR modificando IDs en rutas y query params."""
+    """OWASP API1/BOLA: test IDOR by modifying IDs in routes and query parameters."""
     try:
         # (patron, grupo del id, id_inexistente_para_sonda_de_control)
         id_patterns = [
@@ -4834,8 +4834,8 @@ def test_api_idor(found_endpoints, session):
                     continue
                 if base_len <= 50:
                     continue
-                # Sonda de control con un id inexistente. Yes devuelve 200 con
-                # tamano casi identico al base, el endpoint NO discrimina por id
+                # Control probe with a nonexistent ID. If it returns 200 with
+                # size almost identical to baseline, the endpoint does NOT distinguish by ID
                 # (devuelve siempre el mismo shell/SPA) -> cualquier 200 seria
                 # falso positivo, se salta el endpoint.
                 control_200 = False
@@ -4862,19 +4862,19 @@ def test_api_idor(found_endpoints, session):
                     if resp.status_code != 200 or len(resp.content) <= 50:
                         continue
                     alt_len = len(resp.content)
-                    # Yes el control respondio 200 (representacion de "no existe"),
+                    # If the control returned 200 (representation of "does not exist"),
                     # exigir que el objeto alterno difiera de esa representacion.
                     if control_200 and _ratio(alt_len, control_len) < 0.15:
                         continue
-                    # Objeto distinto del base => acceso a otro recurso (BOLA).
+                    # Object differs from baseline => access to another resource (BOLA).
                     detail = (f"{url} -> ID={alt} devuelve 200 ({alt_len}B, "
-                              f"base={base_len}B). El endpoint discrimina por id y "
+                              f"base={base_len}B). The endpoint distinguishes by ID and "
                               f"expone otro objeto sin control de propiedad (OWASP API1).")
                     print_vuln(f"IDOR/BOLA: {detail}")
                     FINDINGS.append({"name": "IDOR / BOLA", "detail": detail, "severity": "high"})
                     hits += 1
         if hits == 0:
-            print_info("No evidencias claras de IDOR en los endpoints encontrados.")
+            print_info("No clear IDOR evidence in the endpoints found.")
     except Exception as e:
         print_error(f"Error en test IDOR: {e}")
 
@@ -4903,7 +4903,7 @@ def _json_field_matches(obj, key, value, depth=0):
     return False
 
 def test_api_mass_assignment(found_endpoints, session):
-    """OWASP API6: Inyecta campos privilegiados y confirma persistencia con re-GET."""
+    """OWASP API6: inject privileged fields and confirm persistence with re-GET."""
     try:
         targets = [item for item in found_endpoints
                    if item['status'] in (200, 201, 0)
@@ -4929,7 +4929,7 @@ def test_api_mass_assignment(found_endpoints, session):
                         continue
                     if resp.status_code not in (200, 201, 202, 204):
                         continue
-                    # Confirmacion fuerte: re-GET y comprobar que el campo privilegiado persistio.
+                    # Strong confirmation: re-GET and verify the privileged field persisted.
                     persisted = False
                     try:
                         verify = session.get(url, timeout=DEFAULT_TIMEOUT)
@@ -4938,7 +4938,7 @@ def test_api_mass_assignment(found_endpoints, session):
                     except Exception:
                         persisted = False
                     if persisted:
-                        detail = (f"{url} [{method_name}] acepto y persistio el campo "
+                        detail = (f"{url} [{method_name}] accepted and persisted the field "
                                   f"privilegiado {key}={value} (OWASP API6).")
                         print_vuln(f"Mass Assignment confirmado: {detail}")
                         FINDINGS.append({"name": "Mass Assignment", "detail": detail,
@@ -4959,7 +4959,7 @@ def test_api_mass_assignment(found_endpoints, session):
 
 
 def test_graphql(target, session):
-    """OWASP API8: Introspección GraphQL habilitada y queries peligrosas."""
+    """OWASP API8: GraphQL introspection enabled and dangerous queries."""
     try:
         gql_endpoints = [urljoin(target, ep)
                          for ep in ('/graphql', '/graphiql', '/api/graphql', '/query', '/api/query')]
@@ -4976,10 +4976,10 @@ def test_graphql(target, session):
                 data = resp.json()
                 if 'data' in data and '__schema' in str(data.get('data', {})):
                     found_any = True
-                    print_vuln(f"GraphQL Introspección habilitada: {gql_url}")
+                    print_vuln(f"GraphQL introspection enabled: {gql_url}")
                     types = [t['name'] for t in data['data']['__schema']['types']
                              if not t['name'].startswith('__')]
-                    print_info(f"  Types expuestos ({len(types)}): {', '.join(types[:15])}")
+                    print_info(f"  Types exposeds ({len(types)}): {', '.join(types[:15])}")
                     FINDINGS.append({
                         "name": "GraphQL introspeccion habilitada",
                         "detail": f"{gql_url} expone el schema completo via introspeccion "
@@ -4988,7 +4988,7 @@ def test_graphql(target, session):
                     })
                 elif 'errors' not in data:
                     found_any = True
-                    print_warning(f"GraphQL activo (introspección deshabilitada): {gql_url}")
+                    print_warning(f"GraphQL active (introspection disabled): {gql_url}")
                 if found_any:
                     try:
                         r2 = session.post(gql_url, json=user_enum,
@@ -4996,10 +4996,10 @@ def test_graphql(target, session):
                                           timeout=DEFAULT_TIMEOUT)
                         d2 = r2.json()
                         if 'data' in d2 and d2['data'] and 'users' in str(d2['data']):
-                            print_vuln(f"GraphQL expone listado de usuarios en {gql_url}")
+                            print_vuln(f"GraphQL expone listado de users en {gql_url}")
                             FINDINGS.append({
-                                "name": "GraphQL expone usuarios",
-                                "detail": f"{gql_url} permite enumerar usuarios via query GraphQL "
+                                "name": "GraphQL expone users",
+                                "detail": f"{gql_url} permite enumerar users via query GraphQL "
                                           f"(OWASP API8/API3).",
                                 "severity": "high",
                             })
@@ -5009,13 +5009,13 @@ def test_graphql(target, session):
             except Exception:
                 pass
         if not found_any:
-            print_info("No endpoints GraphQL detectados o activos.")
+            print_info("No endpoints GraphQL detecteds o activos.")
     except Exception as e:
         print_error(f"Error en test GraphQL: {e}")
 
 
 def test_api_verbose_errors(found_endpoints, session):
-    """OWASP API7: Detecta respuestas de error con información interna expuesta."""
+    """OWASP API7: detect error responses with exposed internal information."""
     try:
         error_payloads = ["'", '"', '{}', '-1', '../', '%00']
         sensitive_patterns = [
@@ -5040,7 +5040,7 @@ def test_api_verbose_errors(found_endpoints, session):
                                 print_vuln(f"Error verbose [{resp.status_code}]: {test_url}")
                                 FINDINGS.append({
                                     "name": "Error verbose / fuga de info interna",
-                                    "detail": f"{test_url} [{resp.status_code}] revela detalle interno "
+                                    "detail": f"{test_url} [{resp.status_code}] reveals internal detail "
                                               f"('{m.group(0)[:40]}') (OWASP API7).",
                                     "severity": "medium",
                                 })
@@ -5049,7 +5049,7 @@ def test_api_verbose_errors(found_endpoints, session):
                 except Exception:
                     pass
         if hits == 0:
-            print_info("No errores verbose detectados en los endpoints probados.")
+            print_info("No errores verbose detecteds en los endpoints probados.")
     except Exception as e:
         print_error(f"Error en test verbose errors: {e}")
 
@@ -5083,12 +5083,12 @@ def enumerate_users_from_endpoints(target, session):
                 pass
         return list(set(users)), list(set(emails))
     except Exception as e:
-        print_error(f"Error enumerando usuarios: {e}")
+        print_error(f"Error enumerando users: {e}")
         return [], []
 
 def test_user_enumeration_form(target, session):
     try:
-        print_info("Comprobando posible enumeración de usuarios en formularios...")
+        print_info("Checking possible user enumeration in forms...")
         resp = session.get(target, timeout=DEFAULT_TIMEOUT)
         if HAS_BS4:
             soup = BeautifulSoup(resp.text, 'html.parser')
@@ -5110,14 +5110,14 @@ def test_user_enumeration_form(target, session):
                         data['password'] = 'dummy'
                     resp_test = session.post(form_url, data=data, timeout=DEFAULT_TIMEOUT)
                     if "user not found" in resp_test.text.lower() or "no existe" in resp_test.text.lower():
-                        print_vuln("Posible enumeración de usuarios detectada (mensaje diferencial)")
+                        print_vuln("Possible user enumeration detected (differential message)")
     except Exception as e:
-        print_error(f"Error en test de enumeración: {e}")
+        print_error(f"Error in enumeration test: {e}")
 
 def bruteforce_login(target, session, usernames, passlist, max_threads=5):
     """
-    Detecta formulario de login principal y realiza fuerza bruta con
-    validación estricta para minimizar falsos positivos.
+    Detect the main login form and perform brute force with
+    strict validation to minimize false positives.
     """
     try:
         result_data = {
@@ -5131,27 +5131,27 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
         if not usernames:
             usernames = ['admin', 'test']
 
-        # Permitir al usuario elegir método y parámetros avanzados
+        # Allow the user to choose method and advanced parameters
         print_info("\n=== Bruteforce avanzado ===")
         use_hydra = False
         hydra_path = shutil.which("hydra")
         if hydra_path:
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Usar hydra para el bruteforce? [S/n]:")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Use hydra for brute force? [Y/n]:")
             resp = input("> ").strip().lower()
             use_hydra = (resp != 'n')
         else:
-            print_warning("hydra no está instalado o no está en PATH. Usando método interno.")
+            print_warning("hydra is not installed or is not in PATH. Using internal method.")
 
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Introduce la URL real del login (dejar vacío para autodetección):")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Enter the real login URL (leave empty for auto-detection):")
         login_url = input("> ").strip()
-        print_info("El mensaje de error de login mejora MUCHO la precisión (evita falsos positivos).")
-        print_info("Yes lo dejas vacío, se intentará autodetectar enviando credenciales imposibles.")
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Mensaje de error exacto de login fallido (vacío = autodetectar):")
+        print_info("The login error message greatly improves accuracy (avoids false positives).")
+        print_info("If you leave it empty, auto-detection will be attempted with impossible credentials.")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Exact failed-login error message (empty = auto-detect):")
         error_msg = input("> ").strip()
-        # Flag para endurecer la heurística cuando no haya error_msg ni candidatos autodetectados
+        # Flag to harden heuristics when there is no error_msg and no autodetected candidates
         strict_heuristic = False
 
-        # Yes no se especifica, autodetectar como antes
+        # If not specified, autodetect as before
         login_forms_map = {}
         urls_to_check = [login_url] if login_url else [target] + [urljoin(target, path) for path in LOGIN_PATHS]
 
@@ -5225,17 +5225,17 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
         login_forms = list(login_forms_map.values())
         for f in login_forms:
             print_good(
-                f"Formulario de login detectado en {f['url']} "
-                f"(usuario: {f['user_field']}, pass: {f['pass_field']}, score={f['score']})"
+                f"Login form detected en {f['url']} "
+                f"(user: {f['user_field']}, pass: {f['pass_field']}, score={f['score']})"
             )
 
         if not login_forms:
-            print_warning("No se detectaron formularios de login automáticamente.")
-            manual = input("¿Deseas introducir los datos manualmente? (s/n): ").strip().lower()
-            if manual == 's':
+            print_warning("No login forms were detected automatically.")
+            manual = input("Enter the data manually? (y/n): ").strip().lower()
+            if manual in ('y', 's'):
                 login_url2 = input("URL completa del formulario de login: ").strip()
-                user_field = input("Name del campo de usuario: ").strip()
-                pass_field = input("Name del campo de contraseña: ").strip()
+                user_field = input("Name del campo de user: ").strip()
+                pass_field = input("Password field name: ").strip()
                 if login_url2 and user_field and pass_field:
                     login_forms.append({
                         'url': normalize_url(login_url2),
@@ -5247,7 +5247,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                     })
                     print_good("Formulario manual agregado.")
                 else:
-                    print_error("Datos incompletos. No se realizará bruteforce.")
+                    print_error("Incomplete data. Bruteforce will not run.")
                     return result_data
             else:
                 print_info("Continuando sin bruteforce.")
@@ -5258,19 +5258,19 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             key=lambda f: (f.get('score', 0), -len(urlparse(f.get('url', '')).path or '/'))
         )
         print_info(
-            f"Usando formulario principal: {primary_form['url']} "
+            f"Using formulario principal: {primary_form['url']} "
             f"({primary_form['user_field']}/{primary_form['pass_field']})"
         )
 
-        # --- Autodetección del mensaje de error de login ---
+        # --- Autodetection of the login error message ---
         if not error_msg:
-            print_info("Autodetectando mensaje de error con credenciales imposibles...")
+            print_info("Auto-detecting error message with impossible credentials...")
             ERROR_KEYWORDS = [
                 'invalid', 'incorrect', 'wrong', 'failed', 'error', 'denied', 'bad credentials',
                 'authentication', 'unauthorized', 'forbidden', 'try again',
-                'inválido', 'invalido', 'incorrecto', 'incorrecta', 'denegado',
-                'no encontrado', 'usuario o contrase', 'contraseña incorrecta',
-                'fallo', 'falló', 'intentar de nuevo', 'no válido', 'no valido',
+                'invalid', 'invalid', 'incorrect', 'incorrect', 'denied',
+                'not found', 'invalid username or password', 'incorrect password',
+                'failed', 'failed', 'try again', 'not valid', 'not valid',
             ]
             candidates = []
             try:
@@ -5304,17 +5304,17 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                     if len(candidates) >= 10:
                         break
             except Exception as e:
-                print_warning(f"No se pudo autodetectar mensaje de error: {e}")
+                print_warning(f"Could not autodetectar mensaje de error: {e}")
 
             if candidates:
-                print_good(f"Candidatos de mensaje de error detectados ({len(candidates)}):")
+                print_good(f"Detected error-message candidates ({len(candidates)}):")
                 for i, c in enumerate(candidates, 1):
                     print(f"  {Fore.YELLOW}{i}{Style.RESET_ALL}. {c}")
-                print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Elige número [1-{len(candidates)}] (Enter = #1, 'n' = ninguno / heurística estricta):")
+                print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Choose number [1-{len(candidates)}] (Enter = #1, 'n' = none / strict heuristic):")
                 choice = input("> ").strip().lower()
                 if choice == 'n':
                     strict_heuristic = True
-                    print_warning("No mensaje de error: se aplicará heurística estricta (menos falsos positivos).")
+                    print_warning("No error message: strict heuristic will be applied (fewer false positives).")
                 else:
                     try:
                         idx = int(choice) - 1 if choice else 0
@@ -5327,23 +5327,23 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                     print_good(f"Mensaje de error seleccionado: '{error_msg}'")
             else:
                 strict_heuristic = True
-                print_warning("No se detectaron candidatos. Se aplicará heurística estricta.")
+                print_warning("No candidates detected. Strict heuristic will be applied.")
 
-        # Cargar lista de contraseñas
+        # Load password list
         passwords = DEFAULT_PASSWORDS
         if passlist and os.path.isfile(passlist):
             with open(passlist, 'r') as f:
                 passwords = [line.strip() for line in f if line.strip()]
         elif passlist:
-            print_warning(f"No se pudo leer {passlist}, usando lista por defecto.")
+            print_warning(f"Could not read {passlist}, using default list.")
         else:
-            # Yes no se proporcionó wordlist, intentar usar la de SecLists
+            # If no wordlist was provided, try the SecLists wordlist
             if os.path.exists(SECLISTS_PASSWORDS):
-                print_info(f"Usando wordlist de contraseñas por defecto: {SECLISTS_PASSWORDS}")
+                print_info(f"Using default password wordlist: {SECLISTS_PASSWORDS}")
                 with open(SECLISTS_PASSWORDS, 'r') as f:
                     passwords = [line.strip() for line in f if line.strip()]
             else:
-                print_warning("No se encontró la wordlist de SecLists, usando lista pequeña por defecto.")
+                print_warning("SecLists wordlist not found, using small default list.")
 
         total_combinations = len(usernames) * len(passwords)
         result_data["total_combinations"] = total_combinations
@@ -5356,7 +5356,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
         }]
 
         if use_hydra:
-            # Crear archivos temporales para usuarios y contraseñas
+            # Create temporary files for users and passwords
             import tempfile
             with tempfile.NamedTemporaryFile('w+', delete=False) as ufile:
                 for u in usernames:
@@ -5386,7 +5386,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 hydra_form += f":H=Cookie\\: {cookie_string}"
             # -t 4: limitar concurrencia (evita duplicados por race entre workers)
             # -I  : ignorar restorefile previo (sin esperar 10s)
-            # -u  : recorrer usuarios primero por contraseña (mejor cobertura)
+            # -u  : iterate users first by password (better coverage)
             hydra_cmd = [
                 "hydra", "-L", ufile_path, "-P", pfile_path,
                 "-t", "4", "-I", "-u",
@@ -5419,7 +5419,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 process.wait()
                 print_info("Hydra finalizado.")
             except Exception as e:
-                print_error(f"Error ejecutando hydra: {e}")
+                print_error(f"Error running hydra: {e}")
             finally:
                 try:
                     os.unlink(ufile_path)
@@ -5427,37 +5427,37 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 except Exception:
                     pass
 
-            # Verificar credenciales con el método interno (sesión real)
-            # para detectar usuarios que hydra no encontró por CSRF/cookies/rate-limit.
+            # Verify credentials with the internal method (real session)
+            # to detect users that hydra did not find because of CSRF/cookies/rate limiting.
             usernames_pendientes = [u for u in usernames if u not in {c["username"] for c in result_data["credentials"]}]
             if usernames_pendientes:
                 print_info(
-                    f"Hydra no encontró credenciales para {len(usernames_pendientes)} usuario(s) "
-                    f"({', '.join(usernames_pendientes)}). Reintentando con sesión real (CSRF-aware)..."
+                    f"Hydra found no credentials for {len(usernames_pendientes)} user(s) "
+                    f"({', '.join(usernames_pendientes)}). Retrying with real session (CSRF-aware)..."
                 )
-                # Cae al método interno con la lista reducida
+                # Fall back to the internal method with the reduced list
                 usernames = usernames_pendientes
                 total_combinations = len(usernames) * len(passwords)
                 result_data["total_combinations"] = (result_data.get("total_combinations") or 0) + total_combinations
             else:
                 return result_data
 
-        # --- Method interno clásico ---
-        print_info(f"Iniciando bruteforce con {len(usernames)} usuarios y {len(passwords)} contraseñas (total {total_combinations} combinaciones)...")
+        # --- Classic internal method ---
+        print_info(f"Starting brute force with {len(usernames)} users and {len(passwords)} passwords (total {total_combinations} combinations)...")
         found_credentials = set()
 
         _IMPOSSIBLE_USER = "__wstg_x7z9q__"
         _IMPOSSIBLE_PASS = "__wstg_x7z9q__"
 
         SUCCESS_KEYWORDS = [
-            'logout', 'log out', 'sign out', 'cerrar sesión', 'cerrar sesion',
+            'logout', 'log out', 'sign out',
             'dashboard', 'panel', 'welcome', 'bienvenido', 'my account', 'mi cuenta',
             'profile', 'perfil'
         ]
         FAILURE_KEYWORDS = [
             'invalid', 'incorrect', 'wrong', 'failed', 'error', 'bad credentials',
-            'authentication failed', 'login failed', 'inválido', 'incorrecto',
-            'usuario no encontrado', 'contraseña incorrecta'
+            'authentication failed', 'login failed', 'invalid', 'incorrect',
+            'user not found', 'incorrect password'
         ]
 
         def _normalize_path(url_value):
@@ -5515,7 +5515,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             if any(k in body for k in FAILURE_KEYWORDS):
                 return False
 
-            # Señales positivas independientes
+            # Independent positive signals
             has_success_kw = any(k in body for k in SUCCESS_KEYWORDS)
             status_changed = (baseline_status != -1
                               and resp_follow.status_code != baseline_status
@@ -5529,15 +5529,15 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             size_outlier = fail_max > 0 and (final_len < fail_min or final_len > fail_max)
             path_left_login = final_path != baseline_path and not _is_login_path(final_path)
 
-            # Mode estricto (sin error_msg): exige ≥2 señales positivas distintas
-            # o al menos una señal "fuerte" (keyword de éxito + cambio de path/status).
+            # Strict mode (without error_msg): requires >=2 different positive signals
+            # or at least one "strong" signal (success keyword + path/status change).
             if strict_heuristic:
                 strong = has_success_kw and (status_changed or path_left_login or redirect_off_login)
                 signals = sum([has_success_kw, status_changed, redirect_off_login,
                                size_outlier, path_left_login])
                 return strong or signals >= 2
 
-            # Heurística normal (cuando tenemos error_msg confirmado)
+            # Normal heuristic (when confirmed error_msg exists)
             if _is_login_path(final_path):
                 if size_outlier:
                     return True
@@ -5596,24 +5596,24 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 for future in as_completed(futures):
                     completed += 1
                     if completed % 100 == 0 or completed == total_combinations:
-                        print_info(f"Progreso bruteforce: {completed}/{total_combinations} combinaciones probadas")
+                        print_info(f"Progreso bruteforce: {completed}/{total_combinations} combinations probadas")
                     future.result()
 
-        # Combinar con credenciales previas (p. ej. encontradas por hydra antes del fallback)
+        # Combine with previous credentials (for example, found by hydra before fallback)
         prev_creds = {(c["username"], c["password"]) for c in result_data.get("credentials", [])}
         all_creds = prev_creds | found_credentials
         if all_creds:
-            print_good(f"Bruteforce completado. Credentials únicas encontradas: {len(all_creds)}")
+            print_good(f"Brute force completed. Unique credentials found: {len(all_creds)}")
             rows = [
                 [f"{Fore.MAGENTA}{u}{Style.RESET_ALL}", f"{Fore.MAGENTA}{p}{Style.RESET_ALL}"]
                 for u, p in sorted(all_creds)
             ]
             print_table(
-                headers=["USUARIO", "CONTRASEÑA"],
+                headers=["USER", "PASSWORD"],
                 rows=rows,
-                title="Credentials válidas:",
+                title="Valid credentials:",
             )
-            # Registrar también en FINDINGS
+            # Also register in FINDINGS
             for u, p in sorted(all_creds):
                 FINDINGS.append(f"[CRED] {u}:{p}")
             result_data["credentials"] = [
@@ -5621,7 +5621,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 for u, p in sorted(all_creds)
             ]
         else:
-            print_info("Bruteforce completado. No se encontraron credenciales válidas.")
+            print_info("Bruteforce completed. No valid credentials were found.")
         return result_data
     except Exception as e:
         print_error(f"Error en bruteforce: {e}")
@@ -5762,11 +5762,11 @@ def _stream_command_output(cmd, capture=True, prefer_pty=True, interrupt_label="
             process.wait()
             return process.returncode, _decode_process_output(chunks)
         except KeyboardInterrupt:
-            print_warning(f"{interrupt_label} interrumpido; deteniendo proceso...")
+            print_warning(f"{interrupt_label} interrupted; deteniendo proceso...")
             _stop_interrupted_process(process, interrupt_label)
             return None, _decode_process_output(chunks)
         except Exception as e:
-            print_warning(f"No se pudo usar PTY para {interrupt_label} ({type(e).__name__}); usando pipe.")
+            print_warning(f"Could not use PTY for {interrupt_label} ({type(e).__name__}); using pipe.")
         finally:
             for fd in (slave_fd, master_fd):
                 if fd is not None:
@@ -5790,7 +5790,7 @@ def _stream_command_output(cmd, capture=True, prefer_pty=True, interrupt_label="
         process.wait()
         return process.returncode, _decode_process_output(chunks)
     except KeyboardInterrupt:
-        print_warning(f"{interrupt_label} interrumpido; deteniendo proceso...")
+        print_warning(f"{interrupt_label} interrupted; deteniendo proceso...")
         _stop_interrupted_process(process, interrupt_label)
         return None, _decode_process_output(chunks)
 
@@ -5801,7 +5801,7 @@ def _capture_command_output(cmd, interrupt_label="proceso"):
         stdout, _ = process.communicate()
         return process.returncode, (stdout or b"").decode("utf-8", errors="replace")
     except KeyboardInterrupt:
-        print_warning(f"{interrupt_label} interrumpido; deteniendo proceso...")
+        print_warning(f"{interrupt_label} interrupted; deteniendo proceso...")
         _stop_interrupted_process(process, interrupt_label)
         return None, ""
 
@@ -5842,7 +5842,7 @@ def _default_wordpress_password_wordlist():
     if os.path.isfile(SECLISTS_PASSWORDS):
         return SECLISTS_PASSWORDS
     if os.path.isfile(ROCKYOU_WORDLIST_GZ):
-        print_warning(f"rockyou existe comprimida en {ROCKYOU_WORDLIST_GZ}; descomprímela para usarla con WPScan.")
+        print_warning(f"rockyou exists compressed at {ROCKYOU_WORDLIST_GZ}; decompress it to use it with WPScan.")
     return None
 
 def _wpscan_component_version(component):
@@ -6118,7 +6118,7 @@ def _run_wpscan_visible(cmd, request_timeout=None, label="WPScan"):
     print_info(f"Ejecutando {label} con salida nativa: {_format_external_command(cmd)}")
     rc, stdout_text = _stream_command_output(cmd, capture=True, prefer_pty=True, interrupt_label="wpscan")
     if rc == 4:
-        print_warning("WPScan retorno codigo 4; reintentando con opciones mas tolerantes.")
+        print_warning("WPScan returned code 4; retrying with more tolerant options.")
         retry_cmd = _wpscan_retry_command(cmd, request_timeout=request_timeout)
         print_info(f"Reintentando {label}: {_format_external_command(retry_cmd)}")
         rc2, out2 = _stream_command_output(retry_cmd, capture=True, prefer_pty=True, interrupt_label="wpscan")
@@ -6128,10 +6128,10 @@ def _run_wpscan_visible(cmd, request_timeout=None, label="WPScan"):
     return rc, stdout_text
 
 def _run_wpscan_json(cmd, request_timeout=None):
-    print_info("Generando JSON de WPScan para construir el resumen final...")
+    print_info("Generating WPScan JSON to build the final summary...")
     rc, stdout_text = _capture_command_output(cmd, interrupt_label="wpscan")
     if rc == 4:
-        print_warning("WPScan retorno codigo 4 al generar JSON; reintentando con opciones mas tolerantes.")
+        print_warning("WPScan returned code 4 while generating JSON; retrying with more tolerant options.")
         retry_cmd = _wpscan_retry_command(cmd, request_timeout=request_timeout)
         rc2, out2 = _capture_command_output(retry_cmd, interrupt_label="wpscan")
         if out2:
@@ -6143,7 +6143,7 @@ def _wpscan_was_interrupted(return_code):
     return return_code is None or return_code in (130, -2, -15)
 
 def run_wpscan_enumeration(target, session, wpscan_path, api_token=None, threads=5, request_timeout=15,
-                           enum_flags="u,ap,at", label="WPScan enumeracion"):
+                           enum_flags="u,ap,at", label="WPScan enumeration"):
     tmp_fd, tmp_path = tempfile.mkstemp(suffix=".json", prefix="wpscan_enum_")
     os.close(tmp_fd)
     # Usar enumerate explicito para evitar ambiguedades con versiones de WPScan
@@ -6175,7 +6175,7 @@ def run_wpscan_enumeration(target, session, wpscan_path, api_token=None, threads
     if not interrupted:
         json_rc, json_stdout = _run_wpscan_json(json_cmd, request_timeout=request_timeout)
     else:
-        print_info("WPScan interrumpido. Se omite la generacion JSON para volver al menu inmediatamente.")
+        print_info("WPScan interrupted. Se omite la generacion JSON para volver al menu inmediatamente.")
 
     data = _load_json_file(tmp_path)
     try:
@@ -6193,7 +6193,7 @@ def run_wpscan_enumeration(target, session, wpscan_path, api_token=None, threads
     scan["stdout_tail"] = stdout_text[-4000:] if stdout_text else ""
     scan["json_stdout_tail"] = json_stdout[-4000:] if json_stdout else ""
     if not scan["interrupted"] and scan["return_code"] not in (0, None):
-        print_warning(f"WPScan termino con codigo {scan['return_code']}. Se guardara lo que haya podido parsearse.")
+        print_warning(f"WPScan finished with code {scan['return_code']}. Saving whatever could be parsed.")
     return scan
 
 def run_wpscan_bruteforce(target, session, wpscan_path, users, passlist, api_token=None,
@@ -6206,7 +6206,7 @@ def run_wpscan_bruteforce(target, session, wpscan_path, users, passlist, api_tok
         "return_code": None,
     }
     if not users or not passlist or not os.path.isfile(passlist):
-        print_warning("No hay usuarios o wordlist válida para bruteforce WordPress.")
+        print_warning("No users or valid wordlist for WordPress bruteforce.")
         return result
 
     user_fd, user_path = tempfile.mkstemp(suffix=".txt", prefix="wpscan_users_")
@@ -6240,14 +6240,14 @@ def run_wpscan_bruteforce(target, session, wpscan_path, users, passlist, api_tok
             pass
 
     if result["return_code"] not in (0, None):
-        print_warning(f"WPScan bruteforce terminó con código {result['return_code']}.")
+        print_warning(f"WPScan bruteforce finished with status {result['return_code']}.")
     if result["credentials"]:
         rows = [[f"{Fore.MAGENTA}{c['username']}{Style.RESET_ALL}",
                  f"{Fore.MAGENTA}{c['password']}{Style.RESET_ALL}"]
                 for c in result["credentials"]]
-        print_table(headers=["USUARIO", "CONTRASEÑA"], rows=rows, title="Credentials WordPress válidas:")
+        print_table(headers=["USER", "PASSWORD"], rows=rows, title="Valid WordPress credentials:")
     else:
-        print_info("WPScan no reportó credenciales válidas.")
+        print_info("WPScan reportd no valid credentials.")
     return result
 
 def _wp_summary_value(value, width=90):
@@ -6287,28 +6287,28 @@ def print_wpscan_detailed_summary(scan):
     credentials = scan.get("credentials") or []
     interesting = scan.get("interesting_findings") or []
 
-    print_phase("RESUMEN WORDPRESS / WPSCAN")
+    print_phase("SUMMARY WORDPRESS / WPSCAN")
     core_rows = [
         ["Target", _wp_summary_value(scan.get("target"), 90)],
         ["Detected", "Yes" if scan.get("detected") else "Not confirmed"],
-        ["Version WordPress", _wp_summary_value(version.get("number"))],
-        ["Status version", _wp_summary_value(version.get("status"))],
-        ["Version encontrada por", _wp_summary_value(version.get("found_by"), 90)],
-        ["Theme principal", _wp_summary_value(main_theme.get("name"))],
-        ["Plugins encontrados", str(len(plugins))],
-        ["Themes encontrados", str(len(themes) + (1 if main_theme else 0))],
-        ["Users encontrados", str(len(users))],
+        ["WordPress version", _wp_summary_value(version.get("number"))],
+        ["Version status", _wp_summary_value(version.get("status"))],
+        ["Version found by", _wp_summary_value(version.get("found_by"), 90)],
+        ["Main theme", _wp_summary_value(main_theme.get("name"))],
+        ["Plugins found", str(len(plugins))],
+        ["Themes found", str(len(themes) + (1 if main_theme else 0))],
+        ["Users found", str(len(users))],
         ["Vulnerabilities", str(len(vulnerabilities))],
-        ["Credentials validas", str(len(credentials))],
+        ["Valid credentials", str(len(credentials))],
     ]
-    print_table(headers=["Field", "Value"], rows=core_rows, title="Summary general WordPress:")
+    print_table(headers=["Field", "Value"], rows=core_rows, title="General WordPress summary:")
 
     if plugins:
         print_table(
             headers=["Plugin", "Version", "Ultima", "Conf.", "Vulns", "Ubicacion"],
             rows=_wp_component_rows(plugins),
             alignments=['<', '<', '<', '>', '>', '<'],
-            title=f"Plugins WordPress encontrados ({len(plugins)}):",
+            title=f"WordPress plugins found ({len(plugins)}):",
         )
     else:
         print_info("WPScan no reporto plugins.")
@@ -6333,7 +6333,7 @@ def print_wpscan_detailed_summary(scan):
             headers=["Theme", "Version", "Ultima", "Conf.", "Vulns", "Ubicacion"],
             rows=_wp_component_rows(theme_items),
             alignments=['<', '<', '<', '>', '>', '<'],
-            title=f"Themes WordPress encontrados ({len(theme_items)}):",
+            title=f"WordPress themes found ({len(theme_items)}):",
         )
     else:
         print_info("WPScan no reporto temas.")
@@ -6352,10 +6352,10 @@ def print_wpscan_detailed_summary(scan):
             headers=["User", "ID", "Name", "Encontrado por"],
             rows=user_rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Users WordPress encontrados ({len(user_rows)}):",
+            title=f"WordPress users found ({len(user_rows)}):",
         )
     else:
-        print_info("WPScan no reporto usuarios.")
+        print_info("WPScan no reporto users.")
 
     if interesting:
         interesting_rows = [
@@ -6394,7 +6394,7 @@ def print_wpscan_detailed_summary(scan):
             title=f"Vulnerabilities WordPress ({len(vuln_rows)}):",
         )
     else:
-        print_info("WPScan no reporto vulnerabilidades.")
+        print_info("WPScan reportd no vulnerabilities.")
 
     if credentials:
         cred_rows = [
@@ -6409,7 +6409,7 @@ def print_wpscan_detailed_summary(scan):
             headers=["User", "Password", "Source"],
             rows=cred_rows,
             alignments=['<', '<', '<'],
-            title=f"Credentials WordPress validas ({len(cred_rows)}):",
+            title=f"Valid WordPress credentials ({len(cred_rows)}):",
             border_color=Fore.GREEN,
         )
 
@@ -6560,13 +6560,13 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
     existing_users = list(existing_users or [])
     detection = detect_wordpress_for_full_pentest(target, session)
     if not detection.get("detected"):
-        print_info("Target no identificado como WordPress. Se mantiene la enumeracion habitual de usuarios.")
+        print_info("Target not identified as WordPress. Keeping the usual user enumeration.")
         return existing_users
 
     wpscan_path = check_wpscan()
     if not wpscan_path:
         if not install_wpscan():
-            print_warning("WPScan no disponible. Se mantiene solo la enumeracion habitual de usuarios.")
+            print_warning("WPScan unavailable. Keeping only the usual user enumeration.")
             return existing_users
         wpscan_path = check_wpscan()
         if not wpscan_path:
@@ -6575,7 +6575,7 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
 
     api_token = os.environ.get("WPSCAN_API_TOKEN") or os.environ.get("WPVULNDB_API_TOKEN") or ""
     if api_token:
-        print_info("Usando token API de WPScan/WPVulnDB desde variable de entorno.")
+        print_info("Using token API de WPScan/WPVulnDB desde variable de entorno.")
 
     scan = run_wpscan_enumeration(
         target,
@@ -6585,11 +6585,11 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
         threads=max(5, THREADS),
         request_timeout=max(15, DEFAULT_TIMEOUT),
         enum_flags="u",
-        label="WPScan enumeracion de usuarios",
+        label="WPScan enumeration de users",
     )
     SCAN_DATA["wordpress"] = scan
     if scan.get("interrupted"):
-        print_info("Enumeracion WPScan interrumpida. Continuando con los usuarios encontrados por los metodos habituales.")
+        print_info("WPScan enumeration interrupted. Continuing with users found by the usual methods.")
         return existing_users
 
     wp_users = [u.get("username") for u in scan.get("users") or [] if isinstance(u, dict) and u.get("username")]
@@ -6605,7 +6605,7 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
         )
         return merged_users
 
-    print_info("WPScan no identifico usuarios WordPress adicionales.")
+    print_info("WPScan no identifico users WordPress adicionales.")
     return existing_users
 
 def run_wordpress_attacks(target, session):
@@ -6622,10 +6622,10 @@ def run_wordpress_attacks(target, session):
 
     api_token = os.environ.get("WPSCAN_API_TOKEN") or os.environ.get("WPVULNDB_API_TOKEN") or ""
     if api_token:
-        print_info("Usando token API de WPScan/WPVulnDB desde variable de entorno.")
+        print_info("Using token API de WPScan/WPVulnDB desde variable de entorno.")
     else:
         try:
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Token API WPVulnDB/WPScan (opcional, Enter para omitir):")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} WPVulnDB/WPScan API token (optional, Enter to skip):")
             api_token = getpass.getpass("> ").strip()
         except (KeyboardInterrupt, EOFError):
             api_token = ""
@@ -6644,28 +6644,28 @@ def run_wordpress_attacks(target, session):
     main_theme = scan.get("main_theme") or {}
 
     if not scan.get("detected"):
-        print_warning("WPScan no confirmó que el objetivo sea WordPress.")
+        print_warning("WPScan did not confirm that the target is WordPress.")
     else:
         summary_rows = [
-            ["WordPress", version.get("number") or "detectado"],
-            ["Status version", version.get("status") or "-"],
-            ["Theme principal", main_theme.get("name") or "-"],
-            ["Plugins detectados", str(len(plugins))],
+            ["WordPress", version.get("number") or "detected"],
+            ["Version status", version.get("status") or "-"],
+            ["Main theme", main_theme.get("name") or "-"],
+            ["Plugins detecteds", str(len(plugins))],
             ["Users", str(len(users))],
             ["Vulnerabilities", str(len(vulnerabilities))],
         ]
         print_table(headers=["Field", "Value"], rows=summary_rows, title="Summary WordPress:")
 
     if version.get("number"):
-        _append_finding_once(f"[WP] WordPress {version.get('number')} ({version.get('status') or 'estado desconocido'})")
+        _append_finding_once(f"[WP] WordPress {version.get('number')} ({version.get('status') or 'unknown status'})")
     for plugin in plugins:
         if isinstance(plugin, dict) and plugin.get("name"):
-            _append_finding_once(f"[WP:PLUGIN] {plugin.get('name')} {plugin.get('version') or 'version desconocida'}")
+            _append_finding_once(f"[WP:PLUGIN] {plugin.get('name')} {plugin.get('version') or 'unknown version'}")
     if main_theme.get("name"):
-        _append_finding_once(f"[WP:THEME] {main_theme.get('name')} {main_theme.get('version') or 'version desconocida'}")
+        _append_finding_once(f"[WP:THEME] {main_theme.get('name')} {main_theme.get('version') or 'unknown version'}")
     for theme in scan.get("themes") or []:
         if isinstance(theme, dict) and theme.get("name"):
-            _append_finding_once(f"[WP:THEME] {theme.get('name')} {theme.get('version') or 'version desconocida'}")
+            _append_finding_once(f"[WP:THEME] {theme.get('name')} {theme.get('version') or 'unknown version'}")
     for user in users:
         _append_finding_once(f"[WP:USER] {user}")
     for vuln in vulnerabilities:
@@ -6679,23 +6679,23 @@ def run_wordpress_attacks(target, session):
         print_table(headers=["User"], rows=user_rows, title="Users WordPress identificados:")
 
         try:
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Lanzar fuerza bruta con WPScan sobre estos usuarios? [S/n]:")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Run WPScan brute force against these users? [Y/n]:")
             do_brute = input("> ").strip().lower() != 'n'
         except (KeyboardInterrupt, EOFError):
             do_brute = False
         if do_brute:
             passlist = input_path(
-                "Path a wordlist de contraseñas (Enter = rockyou/SecLists si existe): "
+                "Password wordlist path (Enter = rockyou/SecLists if present): "
             ).strip()
             if not passlist:
                 passlist = _default_wordpress_password_wordlist()
                 if passlist:
-                    print_info(f"Usando wordlist por defecto: {passlist}")
+                    print_info(f"Using wordlist por defecto: {passlist}")
             if not passlist or not os.path.isfile(passlist):
-                print_warning("No hay wordlist de contraseñas válida. Saltando bruteforce WordPress.")
+                print_warning("No valid password wordlist. Skipping WordPress bruteforce.")
             else:
                 try:
-                    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Method de ataque [xmlrpc/wp-login] (default xmlrpc):")
+                    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Attack method [xmlrpc/wp-login] (default xmlrpc):")
                     mode_in = input("> ").strip().lower()
                 except (KeyboardInterrupt, EOFError):
                     mode_in = ""
@@ -6712,14 +6712,14 @@ def run_wordpress_attacks(target, session):
                     for cred in brute["credentials"]:
                         _append_finding_once(f"[CRED:WP] {cred.get('username')}:{cred.get('password')}")
     else:
-        print_info("WPScan no identificó usuarios; se omite la fuerza bruta automática.")
+        print_info("WPScan did not identify users; automatic brute force is skipped.")
 
     SCAN_DATA["wordpress"] = scan
     print_wpscan_detailed_summary(scan)
     return scan
 
 def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True):
-    print_info(f"Iniciando spidering en {target} (máx páginas: {max_pages}, profundidad: {max_depth})")
+    print_info(f"Starting spidering on {target} (max pages: {max_pages}, depth: {max_depth})")
     base_parsed = urlparse(target)
     base_domain = base_parsed.netloc
 
@@ -6733,7 +6733,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
             robots_parser = rp
             print_info("robots.txt cargado correctamente.")
         except (OSError, ValueError) as e:
-            print_warning(f"No se pudo cargar robots.txt ({type(e).__name__}: {e}). Continuando sin restricciones.")
+            print_warning(f"Could not cargar robots.txt ({type(e).__name__}: {e}). Continuando sin restricciones.")
 
     visited = set()
     urls_queue = deque()
@@ -6744,7 +6744,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
     form_keys_seen = set()
     discovered_urls.add(target)
     
-    with tqdm(total=max_pages, desc="Spidering", unit="pág", ncols=80, disable=not HAS_TQDM) as pbar:
+    with tqdm(total=max_pages, desc="Spidering", unit="pg", ncols=80, disable=not HAS_TQDM) as pbar:
         while urls_queue and len(visited) < max_pages:
             current_url, depth = urls_queue.popleft()
             if current_url in visited:
@@ -6757,7 +6757,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
                 pbar.set_postfix({"Actual": os.path.basename(current_url)[:30], "Desc": len(discovered_urls)})
             else:
                 if len(visited) % 20 == 0:
-                    print_info(f"Spidering progreso: {len(visited)} páginas visitadas, {len(discovered_urls)} URLs descubiertas")
+                    print_info(f"Spidering progress: {len(visited)} pages visited, {len(discovered_urls)} URLs discovered")
             
             try:
                 try:
@@ -6804,7 +6804,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
                                 if f_url not in discovered_urls:
                                     discovered_urls.add(f_url)
                                     urls_queue.append((f_url, depth+1))
-                        # Extraer inputs útiles (excluyendo submit/button/etc.)
+                        # Extract useful inputs (excluding submit/button/etc.)
                         form_inputs = []
                         for inp in form.find_all(['input', 'textarea', 'select']):
                             name = inp.get('name')
@@ -6854,24 +6854,24 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
                 print_error(f"Error spidering {current_url}: {e}")
                 continue
     
-    print_good(f"Spidering completado. Páginas visitadas: {len(visited)}, URLs únicas descubiertas: {len(discovered_urls)}")
+    print_good(f"Spidering completed. Pages visited: {len(visited)}, unique URLs discovered: {len(discovered_urls)}")
     if all_params:
-        print_info(f"Parámetros únicos encontrados: {len(all_params)} -> {', '.join(list(all_params)[:20])}")
+        print_info(f"Unique parameters found: {len(all_params)} -> {', '.join(list(all_params)[:20])}")
     if forms_found:
-        print_info(f"Forms detectados durante el spidering: {len(forms_found)}")
+        print_info(f"Forms detecteds durante el spidering: {len(forms_found)}")
     return discovered_urls, all_params, forms_found
 
-# ========== OSURCE CODE ANALYSIS ==========
-# Patrones de búsqueda en el código fuente (HTML, JS, JSON, mapas, CSS).
-# Cada entrada: (severidad, etiqueta, regex compilada, requiere_value_group).
-_SRC_MAX_BYTES = 2 * 1024 * 1024   # cap por archivo (2 MB)
+# ========== SOURCE CODE ANALYSIS ==========
+# Search patterns in source code (HTML, JS, JSON, maps, CSS).
+# Each entry: (severity, label, compiled regex, requires_value_group).
+_SRC_MAX_BYTES = 2 * 1024 * 1024   # cap per file (2 MB)
 _SRC_SNIPPET_CHARS = 140
 _SRC_MAX_FINDINGS_PER_FILE = 30
 
 _OSURCE_PATTERNS = [
-    ("critical", "Clave privada PEM",
+    ("critical", "Clave private PEM",
      re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----"), False),
-    ("critical", "Cadena de conexión BD con credenciales",
+    ("critical", "Database connection string with credentials",
      re.compile(r"\b(?:mongodb(?:\+srv)?|mysql|postgres(?:ql)?|redis|amqps?|mssql|jdbc:[a-z]+)://[^\s\"'<>]*:[^\s\"'<>@]+@[^\s\"'<>]+", re.IGNORECASE), False),
     ("high", "AWS Access Key ID",
      re.compile(r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b"), False),
@@ -6907,13 +6907,13 @@ _OSURCE_PATTERNS = [
          r"(?:(?!-->)[\s\S]){0,400}"
          r")\s*-->",
          re.IGNORECASE), True),
-    ("medium", "Source map expuesto",
+    ("medium", "Exposed source map",
      re.compile(r"//[#@]\s*sourceMappingURL\s*=\s*([^\s\"']+)"), True),
-    ("medium", "IP privada hardcoded",
+    ("medium", "Hardcoded private IP",
      re.compile(r"\b(?:10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3})\b"), False),
     ("low", "Path sensible referenciada",
      re.compile(r"[\"'](/(?:admin|adminer|debug|console|h2-console|phpmyadmin|backup|backups|dump|wp-admin|actuator|internal|staging|.git|.env)[A-Za-z0-9_\-/.]*)[\"']"), True),
-    ("low", "Email expuesto",
+    ("low", "Email exposed",
      re.compile(r"\b[A-Za-z0-9_.+\-]+@[A-Za-z0-9\-]+\.[A-Za-z0-9.\-]+\b"), False),
 ]
 
@@ -6963,7 +6963,7 @@ def _download_text_capped(session, url, max_bytes=_SRC_MAX_BYTES):
 
 
 def _extract_linked_assets(html_text, base_url, base_netloc):
-    """Devuelve URLs de scripts/links/sources/.map del mismo dominio referenciados en el HTML."""
+    """Return script/link/source/.map URLs from the same domain referenced in the HTML."""
     assets = set()
     if not html_text:
         return assets
@@ -6995,7 +6995,7 @@ def _extract_linked_assets(html_text, base_url, base_netloc):
 
 
 def _scan_text_for_secrets(text, source_url):
-    """Aplica los patrones del catálogo al texto y devuelve lista de hallazgos."""
+    """Apply catalog patterns to text and return a list of findings."""
     findings = []
     seen = set()
     if not text:
@@ -7010,7 +7010,7 @@ def _scan_text_for_secrets(text, source_url):
             value = (value or "").strip()
             if not value:
                 continue
-            if label == "Email expuesto" and value.lower().endswith(('.png', '.jpg', '.svg', '.gif', '.webp')):
+            if label == "Email exposed" and value.lower().endswith(('.png', '.jpg', '.svg', '.gif', '.webp')):
                 continue
             # Filtro de boilerplate UI para comentarios HTML: si el comentario
             # es claramente decorativo (footer/header/logo/...) sin contenido
@@ -7022,7 +7022,7 @@ def _scan_text_for_secrets(text, source_url):
                            "modal", "tooltip", "dropdown", "breadcrumb",
                            "container", "wrapper", "section start", "section end",
                            "begin block", "end block", "content start", "content end")
-                # Yes el comentario contiene alguna keyword UI y NO contiene
+                # If the comment contains a UI keyword and does NOT contain
                 # ninguna palabra realmente sensible (password/secret/token/...),
                 # ignorarlo.
                 strong = ("password", "passwd", "secret", "api_key", "api-key",
@@ -7053,30 +7053,30 @@ def _scan_text_for_secrets(text, source_url):
 
 
 def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200):
-    """Analiza el código fuente de las URLs descubiertas en busca de credenciales y datos expuestos.
+    """Analyze discovered URL source code for credentials and exposed data.
 
     Args:
-        target: URL base (usada para deducir el dominio).
+        target: Base URL (used to infer the domain).
         session: requests.Session activa (autenticada si procede).
-        urls: iterable de URLs (sample del spider). Yes None, se usa solo target.
-        max_urls: máximo de páginas HTML a descargar.
-        max_assets: máximo de recursos JS/JSON/MAP a descargar.
+        urls: iterable of URLs (spider sample). If None, only the target is used.
+        max_urls: maximum number of HTML pages to download.
+        max_assets: maximum number of JS/JSON/MAP assets to download.
 
-    Devuelve dict con estadísticas y lista de hallazgos.
+    Return a dict with statistics and a list of findings.
     """
     base_netloc = urlparse(target).netloc
     seed_urls = list(urls) if urls else [target]
     if target not in seed_urls:
         seed_urls.insert(0, target)
-    # Limitar páginas: priorizar URLs HTML
+    # Limit pages: prioritize HTML URLs
     seed_urls = [u for u in seed_urls if urlparse(u).netloc == base_netloc][:max_urls]
 
-    print_info(f"Analizando código fuente de {len(seed_urls)} páginas (max {max_urls})...")
+    print_info(f"Analyzing source code for {len(seed_urls)} pages (max {max_urls})...")
 
     findings = []
     pages_analyzed = 0
     assets_to_scan = set()
-    pages_iter = tqdm(seed_urls, desc="Páginas", unit="pág", ncols=80,
+    pages_iter = tqdm(seed_urls, desc="Pages", unit="pg", ncols=80,
                       disable=not HAS_TQDM) if HAS_TQDM else seed_urls
 
     for url in pages_iter:
@@ -7088,11 +7088,11 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
             assets_to_scan.update(_extract_linked_assets(text, url, base_netloc))
         findings.extend(_scan_text_for_secrets(text, url))
 
-    # Limitar recursos analizados
+    # Limitar assets analizados
     assets_list = list(assets_to_scan)[:max_assets]
     if assets_list:
-        print_info(f"Analizando {len(assets_list)} recursos JS/JSON/MAP enlazados...")
-    assets_iter = tqdm(assets_list, desc="Recursos", unit="archivo", ncols=80,
+        print_info(f"Analizando {len(assets_list)} assets JS/JSON/MAP enlazados...")
+    assets_iter = tqdm(assets_list, desc="Assets", unit="file", ncols=80,
                        disable=not HAS_TQDM) if HAS_TQDM else assets_list
     assets_analyzed = 0
     for asset_url in assets_iter:
@@ -7119,7 +7119,7 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
     for f in unique_findings:
         sev_count[f["severity"]] = sev_count.get(f["severity"], 0) + 1
 
-    # Volcar hallazgos críticos/altos a FINDINGS globales
+    # Add critical/high findings to global FINDINGS
     for f in unique_findings:
         if f["severity"] in ("critical", "high"):
             FINDINGS.append(
@@ -7129,12 +7129,12 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
 
     if unique_findings:
         print_good(
-            f"Análisis de código fuente completado: {len(unique_findings)} hallazgos "
+            f"Source-code analysis completed: {len(unique_findings)} findings "
             f"(C:{sev_count.get('critical',0)} H:{sev_count.get('high',0)} "
             f"M:{sev_count.get('medium',0)} L:{sev_count.get('low',0)}) "
-            f"sobre {pages_analyzed} páginas + {assets_analyzed} recursos."
+            f"across {pages_analyzed} pages + {assets_analyzed} assets."
         )
-        # Tabla visual con los primeros 50 hallazgos ordenados por severidad
+        # Tabla visual con los primeros 50 findings ordenados por severity
         SEV_ORDER = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
         SEV_COLOR = {
             'critical': Fore.MAGENTA, 'high': Fore.RED,
@@ -7162,9 +7162,9 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
                 tipo, url, value,
             ])
         if len(unique_findings) <= 50:
-            title = f"Findings del análisis de código ({len(unique_findings)}):"
+            title = f"Source-code analysis findings ({len(unique_findings)}):"
         else:
-            title = f"Findings del análisis de código (top 50 de {len(unique_findings)}):"
+            title = f"Source-code analysis findings (top 50 of {len(unique_findings)}):"
         print_table(
             headers=["SEVERIDAD", "TIPO", "URL", "VALOR"],
             rows=rows,
@@ -7173,8 +7173,8 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
         )
     else:
         print_info(
-            f"Análisis de código fuente completado sin hallazgos "
-            f"({pages_analyzed} páginas, {assets_analyzed} recursos)."
+            f"Source-code analysis completed without findings "
+            f"({pages_analyzed} pages, {assets_analyzed} assets)."
         )
 
     return {
@@ -7247,7 +7247,7 @@ def _run_ad_command(cmd, label, timeout=300, secrets=None):
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         output = _strip_ansi((proc.stdout or "") + (proc.stderr or ""))
         if output.strip():
-            preview = output if len(output) <= 6000 else output[:6000] + "\n...[salida truncada en consola, completa en reporte]..."
+            preview = output if len(output) <= 6000 else output[:6000] + "\n...[output truncated in console, complete in report]..."
             print(preview)
         return {
             "label": label,
@@ -7268,7 +7268,7 @@ def _run_ad_command(cmd, label, timeout=300, secrets=None):
             "output": output,
         }
     except KeyboardInterrupt:
-        print_warning(f"{label} interrumpido por el usuario.")
+        print_warning(f"{label} interrupted por el user.")
         return {
             "label": label,
             "command": visible,
@@ -7278,7 +7278,7 @@ def _run_ad_command(cmd, label, timeout=300, secrets=None):
             "output": "",
         }
     except Exception as e:
-        print_error(f"Error ejecutando {label}: {e}")
+        print_error(f"Error running {label}: {e}")
         return {
             "label": label,
             "command": visible,
@@ -7475,29 +7475,29 @@ def _normalize_kerberos_hashes(hash_lines, roast_type):
 
 def run_active_directory_pentest(target=None):
     print_phase("PENTESTING ACTIVE DIRECTORY")
-    print_warning("Ejecuta este modulo solo con autorizacion explicita sobre el dominio/AD objetivo.")
+    print_warning("Run this module only with explicit authorization for the target domain/AD.")
     parsed = urlparse(target or TARGET_URL or "")
     default_dc = parsed.hostname or ""
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} IP/FQDN del Domain Controller [{default_dc}]:")
     dc = input("> ").strip() or default_dc
     if not dc:
-        print_error("Domain Controller requerido.")
+        print_error("Domain Controller required.")
         return None
     suggested_domain = ".".join((dc.split(".")[1:] if "." in dc else []))
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain AD FQDN [{suggested_domain}]:")
     domain = input("> ").strip() or suggested_domain
     if not domain:
-        print_error("Domain requerido para Kerberos/LDAP/NXC.")
+        print_error("Domain required para Kerberos/LDAP/NXC.")
         return None
     base_dn = _domain_to_base_dn(domain)
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Base DN LDAP [{base_dn}]:")
     base_dn = input("> ").strip() or base_dn
 
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User de dominio para enumerar (vacio = anonimo/guest):")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain user for enumeration (empty = anonymous/guest):")
     username = input("> ").strip()
     password = ""
     if username:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Password de {username}:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Password for {username}:")
         password = getpass.getpass("> ")
     auth_mode = "authenticated" if username else "anonymous"
 
@@ -7538,7 +7538,7 @@ def run_active_directory_pentest(target=None):
     if kerbrute_path:
         default_users = _default_ad_user_wordlist()
         prompt_default = default_users or "sin default"
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Wordlist de usuarios para kerbrute userenum [{prompt_default}] (vacio = saltar):")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Wordlist de users para kerbrute userenum [{prompt_default}] (empty = skip):")
         user_wl = input_path("> ").strip() or default_users
         ad_user_wordlist = user_wl if user_wl and os.path.isfile(user_wl) else None
         if ad_user_wordlist:
@@ -7556,16 +7556,16 @@ def run_active_directory_pentest(target=None):
                 _append_finding_once(f"[AD:USER] {user}")
             if valid_users:
                 print_table(
-                    headers=["#", "User válido (Kerbrute)"],
+                    headers=["#", "Valid user (Kerbrute)"],
                     rows=[[str(i), _adtrim(u, 60)] for i, u in enumerate(valid_users, 1)],
                     alignments=['>', '<'],
-                    title=f"Kerbrute — usuarios válidos ({len(valid_users)}):",
+                    title=f"Kerbrute - valid users ({len(valid_users)}):",
                     border_color=Fore.GREEN,
                 )
         elif user_wl:
-            print_warning(f"No se pudo leer la wordlist de usuarios: {user_wl}")
+            print_warning(f"Could not read wordlist de users: {user_wl}")
     else:
-        print_warning("kerbrute no esta instalado o no esta en PATH. Saltando userenum Kerberos.")
+        print_warning("kerbrute is not installed or is not in PATH. Skipping Kerberos user enumeration.")
 
     ldap_path = check_ldapsearch()
     if ldap_path:
@@ -7595,14 +7595,14 @@ def run_active_directory_pentest(target=None):
                                _adtrim(u.get("cn") or "-", 35),
                                _adtrim(u.get("upn") or "-", 45)] for u in ldap_users_now[:30]],
                         alignments=['<', '<', '<'],
-                        title=f"LDAP — usuarios ({len(ldap_users_now)}):",
+                        title=f"LDAP — users ({len(ldap_users_now)}):",
                     )
             elif label == "groups":
                 result["ldap"]["groups"] = _normalize_ldap_groups(entries)
                 ldap_groups_now = result["ldap"]["groups"]
                 if ldap_groups_now:
                     print_table(
-                        headers=["Group", "Descripción", "Members"],
+                        headers=["Group", "Description", "Members"],
                         rows=[[_adtrim(g.get("name") or "-", 35),
                                _adtrim(g.get("description") or "-", 45),
                                str(len(g.get("members") or []))] for g in ldap_groups_now[:30]],
@@ -7630,7 +7630,7 @@ def run_active_directory_pentest(target=None):
             result["ldap"]["commands"].append(command_data)
             result["raw_commands"].append(run)
     else:
-        print_warning("ldapsearch no esta instalado o no esta en PATH. Saltando LDAP.")
+        print_warning("ldapsearch is not installed or is not in PATH. Skipping LDAP.")
 
     discovered_users = []
     discovered_users.extend(result.get("kerbrute", {}).get("valid_users") or [])
@@ -7642,16 +7642,16 @@ def run_active_directory_pentest(target=None):
 
     getnp_path = check_impacket_getnpusers()
     if getnp_path:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Ejecutar AS-REP Roasting con impacket-GetNPUsers? [S/n]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Run AS-REP Roasting with impacket-GetNPUsers? [Y/n]:")
         do_asrep = input("> ").strip().lower() != 'n'
         if do_asrep:
             usersfile = valid_users_file
             if not usersfile:
                 default_usersfile = ad_user_wordlist or _default_ad_user_wordlist() or ""
-                print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Path usersfile para AS-REP [{default_usersfile or 'requerida'}]:")
+                print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Users file path for AS-REP [{default_usersfile or 'required'}]:")
                 usersfile = input_path("> ").strip() or default_usersfile
             if not usersfile or not os.path.isfile(usersfile):
-                print_warning("AS-REP Roasting requiere un usersfile legible.")
+                print_warning("AS-REP Roasting requires un usersfile legible.")
             else:
                 out_file = os.path.join(_ad_artifact_dir(domain, dc), "asrep_hashes.txt")
                 cmd = [
@@ -7686,17 +7686,17 @@ def run_active_directory_pentest(target=None):
                         border_color=Fore.YELLOW,
                     )
                 for item in hashes:
-                    _append_finding_once(f"[AD:ASREP] {item.get('username') or 'usuario'} hash AS-REP roastable")
+                    _append_finding_once(f"[AD:ASREP] {item.get('username') or 'user'} hash AS-REP roastable")
     else:
-        print_warning("impacket-GetNPUsers no esta instalado o no esta en PATH. Saltando AS-REP Roasting.")
+        print_warning("impacket-GetNPUsers is not installed or is not in PATH. Skipping AS-REP roasting.")
 
     getspns_path = check_impacket_getuserspns()
     if getspns_path:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Ejecutar Kerberoasting con impacket-GetUserSPNs? [S/n]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Run Kerberoasting with impacket-GetUserSPNs? [Y/n]:")
         do_kerberoast = input("> ").strip().lower() != 'n'
         if do_kerberoast:
             if not username or not password:
-                print_warning("Kerberoasting con GetUserSPNs requiere credenciales de dominio. Saltando.")
+                print_warning("Kerberoasting with GetUserSPNs requires domain credentials. Skipping.")
             else:
                 roast_user = username
                 if "\\" in roast_user:
@@ -7735,9 +7735,9 @@ def run_active_directory_pentest(target=None):
                         border_color=Fore.YELLOW,
                     )
                 for item in hashes:
-                    _append_finding_once(f"[AD:KERBEROAST] {item.get('username') or 'usuario'} SPN Kerberoastable")
+                    _append_finding_once(f"[AD:KERBEROAST] {item.get('username') or 'user'} SPN Kerberoastable")
     else:
-        print_warning("impacket-GetUserSPNs no esta instalado o no esta en PATH. Saltando Kerberoasting.")
+        print_warning("impacket-GetUserSPNs is not installed or is not in PATH. Skipping Kerberoasting.")
 
     nxc_path = check_nxc()
     if nxc_path:
@@ -7755,17 +7755,17 @@ def run_active_directory_pentest(target=None):
         }
         result["raw_commands"].append(run)
 
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Ejecutar fuerza bruta/password spray con nxc? [s/N]:")
-        brute = input("> ").strip().lower() == 's'
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Run brute force/password spray with nxc? [y/N]:")
+        brute = input("> ").strip().lower() in ('y', 's')
         if brute:
             default_users = _default_ad_user_wordlist()
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User o ruta de userlist [{username or default_users or 'requerido'}]:")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User or userlist path [{username or default_users or 'required'}]:")
             nxc_users = input_path("> ").strip() or username or default_users
             default_pass = _default_ad_password_wordlist()
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Password o ruta de passlist [{default_pass or 'requerido'}]:")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Password or passlist path [{default_pass or 'required'}]:")
             nxc_pass = input_path("> ").strip() or default_pass
             if not nxc_users or not nxc_pass:
-                print_warning("User/userlist y password/passlist son requeridos para nxc bruteforce.")
+                print_warning("User/userlist and password/passlist are required for nxc bruteforce.")
             else:
                 brute_cmd = [
                     nxc_path, "smb", dc, "-d", domain,
@@ -7795,11 +7795,11 @@ def run_active_directory_pentest(target=None):
                         rows=[[f"{Fore.GREEN}{_adtrim(c.get('username') or '-', 40)}{Style.RESET_ALL}",
                                f"{Fore.GREEN}{_adtrim(c.get('password') or '-', 40)}{Style.RESET_ALL}"] for c in creds],
                         alignments=['<', '<'],
-                        title=f"NXC — credenciales válidas ({len(creds)}):",
+                        title=f"NXC — valid credentials ({len(creds)}):",
                         border_color=Fore.GREEN,
                     )
     else:
-        print_warning("nxc/netexec no esta instalado o no esta en PATH. Saltando SMB/NXC.")
+        print_warning("nxc/netexec is not installed or is not in PATH. Skipping SMB/NXC.")
 
     ldap_users = result["ldap"].get("users", [])
     ldap_groups = result["ldap"].get("groups", [])
@@ -7831,18 +7831,18 @@ def check_playwright():
     return HAS_PLAYWRIGHT
 
 def install_playwright():
-    print_info("Instalando playwright y navegador Chromium...")
+    print_info("Installing Playwright and Chromium browser...")
     try:
         subprocess.run([sys.executable, "-m", "pip", "install", "playwright"], check=True)
         subprocess.run([sys.executable, "-m", "playwright", "install", "chromium"], check=True)
-        print_good("Playwright instalado correctamente.")
+        print_good("Playwright installed successfully.")
         return True
     except Exception as e:
         print_error(f"Error instalando playwright: {e}")
         return False
 
 def _attempt_headless_login(login_url, identifier, password, user_agent=None):
-    """Login headless con Playwright para SPAs (Angular/Vue/React) y OAuth2/OIDC.
+    """Headless login with Playwright for SPAs (Angular/Vue/React) and OAuth2/OIDC.
     Devuelve (cookies_dict, final_url) o (None, None) si falla."""
     if not HAS_PLAYWRIGHT:
         return None, None
@@ -7854,7 +7854,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
             page = ctx.new_page()
             page.goto(login_url, wait_until="networkidle", timeout=30000)
 
-            # Espera a que aparezca algún campo de email/usuario/contraseña.
+            # Wait for any email/user/password field to appear.
             for sel in ["input[type='email']", "input[name*='email']", "input[name*='user']",
                         "input[name*='login']", "input[name*='identifier']"]:
                 try:
@@ -7864,7 +7864,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
                 except Exception:
                     continue
 
-            # Algunos flujos OAuth2 tienen el campo de contraseña en un segundo paso.
+            # Some OAuth2 flows have the password field in a second step.
             # Intentamos hacer clic en "Yesguiente"/"Next"/"Continue" si no hay campo de password visible.
             try:
                 page.wait_for_selector("input[type='password']", timeout=4000)
@@ -7893,7 +7893,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
             for btn_sel in [
                 "button[type='submit']", "input[type='submit']",
                 "button:has-text('Login')", "button:has-text('Yesgn in')",
-                "button:has-text('Iniciar sesión')", "button:has-text('Connexion')",
+                "button:has-text('Connexion')",
                 "[data-testid='login-button']", "[data-testid='submit']",
             ]:
                 try:
@@ -7921,7 +7921,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
         from_login = urlparse(login_url).path.rstrip("/")
         to_path = urlparse(final_url).path.rstrip("/")
         if from_login and from_login == to_path:
-            return None, final_url  # No hubo redireccion: probablemente fallo.
+            return None, final_url  # No hubo redireccion: probablemente failed.
 
         cookies = {c["name"]: c["value"] for c in raw_cookies if c.get("name")}
         return cookies, final_url
@@ -7931,7 +7931,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
         return None, None
 
 def _apply_playwright_cookies_to_session(session, cookies_dict, target_url=None):
-    """Carga un dict de cookies obtenidas con Playwright en la sesion requests."""
+    """Load a dict of cookies obtained with Playwright into the requests session."""
     if not cookies_dict:
         return
     cookie_string = "; ".join(f"{k}={v}" for k, v in cookies_dict.items())
@@ -7994,10 +7994,10 @@ SSRF_PROBES = [
 
 
 def _collect_injection_points(target):
-    """Reune vectores de inyeccion descubiertos (spider + formularios + modulo
-    de inyeccion) y la lista de endpoints conocidos, para que las pruebas
-    avanzadas (SSRF/SSTI/XXE) ataquen los endpoints reales de la app y no solo
-    la raiz. Devuelve (get_points, post_points, endpoints)."""
+    """Collect discovered injection vectors (spider + forms + module
+    injection) and the list of known endpoints, so the tests
+    advanced (SSRF/SSTI/XXE) hit real app endpoints and not only
+    la root. Devuelve (get_points, post_points, endpoints)."""
     get_points, post_points = [], []
     endpoints, seen_pt = set(), set()
 
@@ -8061,7 +8061,7 @@ def _send_probe(session, url, param, payload, method):
 
 def test_ssrf(target, session, collaborator_url=None):
     """SSRF: ataca los parametros/endpoints descubiertos por el spider (no solo
-    la raiz) usando oraculos deterministas (file://, metadata cloud)."""
+    the root) using deterministic oracles (file://, cloud metadata)."""
     results = []
     confirmed = set()
     get_points, post_points, endpoints = _collect_injection_points(target)
@@ -8085,11 +8085,11 @@ def test_ssrf(target, session, collaborator_url=None):
         for param in SSRF_URL_PARAMS:
             _add_vec(ep, param, "GET")
 
-    print_info(f"Probando SSRF en {len(vectors)} vectores (parametros + endpoints descubiertos)...")
+    print_info(f"Testing SSRF en {len(vectors)} vectores (parametros + endpoints descubiertos)...")
     for url, param, method in vectors:
         if (url, param) in confirmed:
             continue
-        # Para el fuzz de nombres comunes basta el oraculo file://; para puntos
+        # Para el fuzz de nombres common basta el oraculo file://; para puntos
         # realmente descubiertos se prueban todas las sondas.
         probes = SSRF_PROBES if (url, param) in {(u, p) for u, p in get_points + post_points} else SSRF_PROBES[:1]
         for payload, markers in probes:
@@ -8115,7 +8115,7 @@ def test_ssrf(target, session, collaborator_url=None):
                 _send_probe(session, url, param, collaborator_url, method)
 
     # Headers con IPs internas (oraculo determinista).
-    print_info("Probando SSRF via cabeceras HTTP...")
+    print_info("Testing SSRF via HTTP headers...")
     for header in SSRF_HEADERS:
         for payload, markers in SSRF_PROBES[1:]:
             try:
@@ -8155,7 +8155,7 @@ SSTI_PROBES = [
 ]
 
 # Solo firmas de error especificas de motor (clases de excepcion / tracebacks),
-# no palabras genericas como "jinja2" o "template" que aparecen en paginas
+# not generic words like "jinja2" or "template" that appear on pages
 # descriptivas sin que exista vulnerabilidad.
 SSTI_ERROR_MARKERS = [
     "TemplateSyntaxError", "jinja2.exceptions", "UndefinedError",
@@ -8233,8 +8233,8 @@ def _build_xxe_payloads(field_names=None):
 
 def _xml_endpoint_candidates(target, found_endpoints):
     """Construye endpoints candidatos para XXE a partir de spider, formularios,
-    directorios y endpoints conocidos, derivando sufijos API/XML y normalizando
-    prefijos tipo /lab/<x> -> /<x> y /<x>/api (donde suele vivir el parser XML)."""
+    known directories and endpoints, deriving API/XML suffixes and normalizing
+    prefixes like /lab/<x> -> /<x> and /<x>/api (where the XML parser often lives)."""
     cand = set()
 
     def _add(u):
@@ -8276,7 +8276,7 @@ def _xml_endpoint_candidates(target, found_endpoints):
 
 def test_xxe(target, session, found_endpoints=None):
     """XXE: descubre endpoints que aceptan XML (incluidos los derivados como
-    /xxe/api) y prueba lectura de ficheros locales con oraculo determinista."""
+    /xxe/api) and test local file reads with a deterministic oracle."""
     results = []
     # Names de campo descubiertos en formularios, para inyectar donde se reflejen.
     form_fields = []
@@ -8285,10 +8285,10 @@ def test_xxe(target, session, found_endpoints=None):
     payloads = _build_xxe_payloads(form_fields)
 
     candidates = _xml_endpoint_candidates(target, found_endpoints)[:80]
-    print_info(f"Probando XXE en {len(candidates)} endpoint(s) candidatos (XML)...")
+    print_info(f"Testing XXE en {len(candidates)} endpoint(s) candidatos (XML)...")
     hit_eps = set()
     for endpoint_url in candidates:
-        # Sondeo rapido: ¿acepta POST con cuerpo XML?
+        # Quick probe: does it accept POST with an XML body?
         try:
             probe = session.post(endpoint_url, data="<x/>",
                                  headers={"Content-Type": "application/xml"},
@@ -8309,7 +8309,7 @@ def test_xxe(target, session, found_endpoints=None):
                     continue
                 body = resp.text or ""
                 if markers and any(m in body for m in markers):
-                    msg = f"XXE confirmado en {endpoint_url} (Content-Type: {content_type}) — lectura de fichero local"
+                    msg = f"XXE confirmed in {endpoint_url} (Content-Type: {content_type}) — local file read"
                     print_vuln(msg)
                     results.append({"url": endpoint_url, "content_type": content_type,
                                     "payload": payload[:80]})
@@ -8332,9 +8332,9 @@ CRLF_PAYLOADS = [
 ]
 
 def test_crlf(target, session):
-    """CRLF injection / HTTP Response Splitting en parametros y rutas."""
+    """CRLF injection / HTTP Response Splitting in parameters and routes."""
     results = []
-    print_info("Probando inyeccion CRLF...")
+    print_info("Testing CRLF injection...")
     base_parsed = urlparse(target)
 
     for payload in CRLF_PAYLOADS:
@@ -8387,7 +8387,7 @@ def test_request_smuggling(target, session):
     results = []
     smuggler = _find_smuggler_path()
     if smuggler:
-        print_info(f"Usando smuggler.py para HTTP Request Smuggling...")
+        print_info(f"Using smuggler.py para HTTP Request Smuggling...")
         try:
             cmd = ["python3", smuggler, "-u", target, "-t", str(DEFAULT_TIMEOUT), "-q"]
             if smuggler == "smuggler":
@@ -8395,7 +8395,7 @@ def test_request_smuggling(target, session):
             out = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             output = (out.stdout or "") + (out.stderr or "")
             if any(x in output.lower() for x in ["vulnerable", "smuggl", "clte", "tecl", "found"]):
-                msg = f"HTTP Request Smuggling detectado por smuggler.py en {target}"
+                msg = f"HTTP Request Smuggling detected por smuggler.py en {target}"
                 print_vuln(msg)
                 results.append({"tool": "smuggler", "output_snippet": output[:300]})
                 FINDINGS.append({"name": "HTTP Request Smuggling", "detail": msg, "severity": "critical"})
@@ -8452,8 +8452,8 @@ def test_request_smuggling(target, session):
             else:
                 print_info("No respuesta anomala en prueba manual CL.TE.")
         except Exception as e:
-            print_warning(f"No se pudo hacer prueba manual de smuggling: {e}")
-        print_info("Para analisis completo: pip install requests && git clone https://github.com/defparam/smuggler")
+            print_warning(f"Could not hacer prueba manual de smuggling: {e}")
+        print_info("For full analysis: pip install requests && git clone https://github.com/defparam/smuggler")
 
     if not results:
         print_info("No indicios de HTTP Request Smuggling confirmados.")
@@ -8473,9 +8473,9 @@ CACHE_POIOSN_HEADERS = [
 ]
 
 def test_cache_poisoning(target, session):
-    """Cache Poisoning: inyecta cabeceras de control y comprueba reflexion en respuesta cacheada."""
+    """Cache Poisoning: inject control headers and check reflection in cached response."""
     results = []
-    print_info("Probando Cache Poisoning via cabeceras no-standard...")
+    print_info("Testing Cache Poisoning via non-standard headers...")
     import random, string
     rand_id = "".join(random.choices(string.ascii_lowercase + string.digits, k=8))
 
@@ -8506,14 +8506,14 @@ def test_cache_poisoning(target, session):
         except requests.RequestException:
             pass
 
-    # Header X-Cache / Age para comprobar si el objetivo usa cache.
+    # X-Cache / Age header to check whether the target uses cache.
     try:
         resp = session.get(target, timeout=DEFAULT_TIMEOUT)
         cache_headers = {k.lower(): v for k, v in resp.headers.items()}
         cache_active = bool(cache_headers.get("x-cache") or cache_headers.get("age") or
                             cache_headers.get("cf-cache-status") or cache_headers.get("x-varnish"))
         if not cache_active:
-            print_info("No se detectaron cabeceras de cache (X-Cache/Age/CF-Cache-Status). El objetivo puede no usar cache publica.")
+            print_info("No cache headers detected (X-Cache/Age/CF-Cache-Status). The target may not use public cache.")
     except Exception:
         pass
 
@@ -8532,7 +8532,7 @@ def _b64_encode_jwt(data):
     return base64.urlsafe_b64encode(json.dumps(data, separators=(",", ":")).encode()).rstrip(b"=").decode()
 
 def _jwt_forge_alg_none(token):
-    """Genera version del token con alg:none y sin firma."""
+    """Generate a token version with alg:none and no signature."""
     parts = token.split(".")
     if len(parts) != 3:
         return None
@@ -8541,7 +8541,7 @@ def _jwt_forge_alg_none(token):
     return f"{_b64_encode_jwt(header)}.{parts[1]}."
 
 def _jwt_test_alg_none(target, session, token, header_name="Authorization", prefix="Bearer"):
-    """Envia el token con alg:none y comprueba si el servidor lo acepta."""
+    """Send the token with alg:none and check whether the server accepts it."""
     forged = _jwt_forge_alg_none(token)
     if not forged:
         return False
@@ -8549,7 +8549,7 @@ def _jwt_test_alg_none(target, session, token, header_name="Authorization", pref
     try:
         r1 = session.get(target, timeout=DEFAULT_TIMEOUT)
         r2 = session.get(target, headers=test_headers, timeout=DEFAULT_TIMEOUT)
-        # Yes la respuesta con alg:none tiene el mismo contenido que la autenticada, es vulnerable.
+        # If the alg:none response has the same content as the authenticated one, it is vulnerable.
         if r2.status_code == r1.status_code and r2.status_code not in (401, 403):
             return True
     except Exception:
@@ -8557,7 +8557,7 @@ def _jwt_test_alg_none(target, session, token, header_name="Authorization", pref
     return False
 
 def _jwt_brute_secret(token, wordlist=None):
-    """Brute force de secreto HMAC con una wordlist pequeña. Devuelve el secreto si lo encuentra."""
+    """Brute force HMAC secret with a small wordlist. Return the secret if found."""
     try:
         import hmac as _hmac
         import hashlib as _hashlib
@@ -8601,27 +8601,27 @@ def _jwt_brute_secret(token, wordlist=None):
     return None
 
 def test_jwt_tokens(target, session):
-    """JWT: deteccion, analisis, alg:none, RS256->HS256, kid path traversal, brute force de secreto."""
+    """JWT: detection, analysis, alg:none, RS256->HS256, kid path traversal, secret brute force."""
     try:
         resp = session.get(target, timeout=DEFAULT_TIMEOUT)
         jwt_regex = re.compile(r'eyJ[A-Za-z0-9_-]+\.eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]*')
         jwt_candidates = set()
-        # Buscar en cabeceras.
+        # Search in headers.
         for header_val in resp.headers.values():
             jwt_candidates.update(jwt_regex.findall(header_val))
         # Buscar en cookies.
         for cookie in resp.cookies:
             jwt_candidates.update(jwt_regex.findall(cookie.value))
-        # Buscar en la sesion activa (si hay token Bearer).
+        # Search in the active session (if there is a Bearer token).
         auth_header = _session_header_value(session, "Authorization")
         if auth_header:
             jwt_candidates.update(jwt_regex.findall(auth_header))
-        # Cookies persistentes del jar de la sesion (token guardado tras login).
+        # Persistent cookies from the session jar (token saved after login).
         for cookie in session.cookies:
             jwt_candidates.update(jwt_regex.findall(cookie.value or ""))
         # Cuerpo de la respuesta: las SPAs embeben el token en el HTML/JS.
         jwt_candidates.update(jwt_regex.findall(resp.text or ""))
-        # Respuestas de los endpoints de API descubiertos (cabeceras y cuerpo).
+        # Responses from discovered API endpoints (headers and body).
         for ep in (SCAN_DATA.get("api_endpoints") or [])[:15]:
             eurl = ep.get("url") if isinstance(ep, dict) else None
             if not eurl:
@@ -8635,7 +8635,7 @@ def test_jwt_tokens(target, session):
                 pass
 
         if not jwt_candidates:
-            print_info("No JWT detectados en cabeceras, cookies, cuerpo ni endpoints de API.")
+            print_info("No JWTs detected in headers, cookies, body, or API endpoints.")
             return
 
         for jwt in jwt_candidates:
@@ -8647,7 +8647,7 @@ def test_jwt_tokens(target, session):
                 payload_data = _b64_decode_jwt(parts[1])
                 alg = header_data.get("alg", "").upper()
                 kid = header_data.get("kid", "")
-                print_info(f"JWT detectado — alg: {alg}  kid: {kid or 'N/A'}")
+                print_info(f"JWT detected — alg: {alg}  kid: {kid or 'N/A'}")
 
                 # alg:none activo.
                 if alg in ("NONE", ""):
@@ -8690,9 +8690,9 @@ def test_jwt_tokens(target, session):
                         print_vuln(msg)
                         FINDINGS.append({"name": "JWT weak secret", "detail": msg, "severity": "critical"})
                     else:
-                        print_info("  Secreto no encontrado en wordlist reducida (revisar manualmente con hashcat).")
+                        print_info("  Secret not found in reduced wordlist (revisar manualmente con hashcat).")
 
-                # Fields de privilegio expuestos.
+                # Fields de privilegio exposeds.
                 sensitive_keys = {"admin", "role", "is_admin", "permission", "privilege", "scope", "group", "groups"}
                 exposed = [k for k in payload_data if k.lower() in sensitive_keys]
                 if exposed:
@@ -8721,7 +8721,7 @@ def test_jwt_tokens(target, session):
 # ========== RATE LIMITING MEJORADO ==========
 
 def test_api_rate_limiting(target, session):
-    """Rate limiting: 429, soft-block (retrasos), captcha y ban por IP."""
+    """Rate limiting: 429, soft-block (delays), captcha, and IP ban."""
     candidates = [
         urljoin(target, "/api/v1/login"),
         urljoin(target, "/api/login"),
@@ -8774,7 +8774,7 @@ def test_api_rate_limiting(target, session):
             captcha_markers = ["captcha", "recaptcha", "hcaptcha", "turnstile", "challenge", "verify you"]
             for status, body in body_samples[-5:]:
                 if any(m in body.lower() for m in captcha_markers):
-                    msg = f"Captcha detectado en {test_url} — proteccion anti-brute force activa"
+                    msg = f"Captcha detected en {test_url} — proteccion anti-brute force activa"
                     print_good(msg)
                     FINDINGS.append({"name": "Rate limiting (captcha)", "detail": msg, "severity": "info"})
                     return
@@ -8787,7 +8787,7 @@ def test_api_rate_limiting(target, session):
                 return
 
             # No proteccion.
-            msg = f"No rate limiting detectado en {test_url}: {len(statuses)} peticiones sin bloqueo"
+            msg = f"No rate limiting detected en {test_url}: {len(statuses)} peticiones without blocking"
             print_vuln(msg)
             FINDINGS.append({"name": "No rate limiting", "detail": msg, "severity": "medium"})
             return
@@ -8804,13 +8804,13 @@ def run_advanced_security_tests(target, session):
     adv = {}
 
     # Colaborador OOB opcional.
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} URL de colaborador OOB para SSRF (ej: Burp Collaborator, interactsh). Vacio para omitir:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} OOB collaborator URL for SSRF (for example: Burp Collaborator, interactsh). Empty to skip:")
     collab = input("> ").strip() or None
 
     print_info("[1/6] SSRF...")
     adv["ssrf"] = safe_execute(test_ssrf, target, session, collab) or []
 
-    print_info("[2/6] SSTI en parametros y formularios descubiertos...")
+    print_info("[2/6] SSTI in discovered parameters and forms...")
     ssti_hits = []
     ssti_seen = set()
     get_points, post_points, ssti_endpoints = _collect_injection_points(target)
@@ -8907,20 +8907,20 @@ def run_advanced_security_tests(target, session):
                     rows, title="Cache Poisoning — Findings",
                     border_color=Fore.YELLOW)
 
-    # Tabla resumen global.
+    # Global summary table.
     module_names = ["ssrf", "ssti", "xxe", "crlf", "smuggling", "cache_poisoning"]
     summary_rows = [[name.upper(), str(len(adv.get(name) or []))] for name in module_names]
     total = sum(len(adv.get(n) or []) for n in module_names)
     print_table(["Module", "Findings"], summary_rows,
                 title="Advanced Tests — Summary",
-                footer=f"  Total hallazgos: {total}",
+                footer=f"  Total findings: {total}",
                 border_color=Fore.CYAN)
-    print_good(f"Pruebas avanzadas completadas. {total} hallazgos registrados.")
+    print_good(f"Advanced tests completed. {total} findings recorded.")
 
 
-# ========== MENÚ PRINCIPAL ==========
+# ========== MAIN MENU ==========
 def _has_scan_data():
-    """True si se ha ejecutado al menos un módulo y hay datos para reportar."""
+    """True if at least one module ran and there is data to report."""
     return any([
         bool(FINDINGS),
         bool(SCAN_DATA.get("general")),
@@ -9012,20 +9012,20 @@ def run_vhost_fuzzing(target, session):
     print_phase("FUZZING DE SUBDOMINIOS (VHOST)")
     parsed = urlparse(target)
     host = parsed.hostname or ""
-    # Yes el target es una IP, hace falta dominio base manual; si es FQDN, sugerirlo
+    # If the target is an IP, manual base domain is required; if it is an FQDN, suggest it
     is_ip = bool(re.match(r'^\d{1,3}(\.\d{1,3}){3}$', host))
     if is_ip:
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain base (ej: planning.htb) — obligatorio cuando el target es IP:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Base domain (for example: planning.htb) - required when target is an IP:")
         base_domain = input("> ").strip()
     else:
         default = host
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain base [{default}]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Base domain [{default}]:")
         base_in = input("> ").strip()
         base_domain = base_in or default
     if not base_domain:
-        print_error("Domain base requerido. Saltando vhost fuzzing.")
+        print_error("Base domain required. Skipping vhost fuzzing.")
         return
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Usar wordlist por defecto (SecLists DNS/namelist.txt)? [S/n]:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Use default wordlist (SecLists DNS/namelist.txt)? [Y/n]:")
     use_default = input("> ").strip().lower()
     wordlist = None
     if use_default == 'n':
@@ -9033,13 +9033,13 @@ def run_vhost_fuzzing(target, session):
         if custom_wl:
             wordlist = custom_wl
     if check_ffuf():
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Usar ffuf? (recomendado) [S/n]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Use ffuf? (recommended) [Y/n]:")
         use_ffuf = input("> ").strip().lower() != 'n'
     else:
         use_ffuf = False
-        print_warning("ffuf no está instalado. Usando método interno.")
+        print_warning("ffuf is not installed. Using internal method.")
     # Para vhost fuzzing, el cuello de botella es el RTT del servidor (no CPU
-    # local), así que conviene un default alto. El usuario puede bajarlo si
+    # local), so a high default is useful. The user can lower it if
     # el target tiene WAF/rate-limiting.
     default_threads = max(THREADS, 50)
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Threads [{default_threads}]:")
@@ -9050,7 +9050,7 @@ def run_vhost_fuzzing(target, session):
             vhost_threads = default_threads
     except ValueError:
         vhost_threads = default_threads
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Timeout por request en segundos [5]:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Request timeout in seconds [5]:")
     timeout_in = input("> ").strip()
     try:
         req_timeout = int(timeout_in) if timeout_in else 5
@@ -9058,7 +9058,7 @@ def run_vhost_fuzzing(target, session):
             req_timeout = 5
     except ValueError:
         req_timeout = 5
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Añadir filtro por File Size detectado (-fs en ffuf)? [S/n]:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Add detected file-size filter (-fs in ffuf)? [Y/n]:")
     use_fs = input("> ").strip().lower()
     use_fs_bool = (use_fs != 'n')
 
@@ -9070,7 +9070,7 @@ def run_vhost_fuzzing(target, session):
 
 def run_directory_fuzzing(target, session):
     print_phase("FUZZING DE DIRECTORIOS")
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Usar wordlist por defecto (raft-small-directories)? [S/n]:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Use default wordlist (raft-small-directories)? [Y/n]:")
     use_default = input("> ").strip().lower()
     wordlist = None
     if use_default == 'n':
@@ -9078,13 +9078,13 @@ def run_directory_fuzzing(target, session):
         if custom_wl:
             wordlist = custom_wl
         else:
-            print_warning("No se proporcionó wordlist. Usando lista interna.")
+            print_warning("No wordlist provided. Using internal list.")
     if check_ffuf():
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Usar ffuf para fuzzing? (recomendado) [S/n]:")
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Use ffuf for fuzzing? (recommended) [Y/n]:")
         use_ffuf = input("> ").strip().lower() != 'n'
     else:
         use_ffuf = False
-        print_warning("ffuf no está instalado. Usando método interno.")
+        print_warning("ffuf is not installed. Using internal method.")
     hits = dir_bruteforce(target, session, wordlist=wordlist, threads=THREADS, use_ffuf=use_ffuf) or []
     SCAN_DATA["directory_hits"] = hits
 
@@ -9101,10 +9101,10 @@ def run_injection_tests(target, session):
             "forms": list(forms or []),
         }
         if not forms and not url_params:
-            print_warning("No se encontraron parámetros ni formularios para probar.")
+            print_warning("No parameters or forms found to test.")
             return
         if url_params:
-            print_info(f"Probando {len(url_params)} parámetros GET...")
+            print_info(f"Testing {len(url_params)} GET parameters...")
             for param in url_params:
                 if advanced_injection_tests(target, param, session, 'GET'):
                     SCAN_DATA["injection"]["tested_get_params"].append(param)
@@ -9117,7 +9117,7 @@ def run_injection_tests(target, session):
                     continue
                 SCAN_DATA["injection"]["tested_get_params"].append(param)
         if forms:
-            print_info(f"Probando {len(forms)} formularios...")
+            print_info(f"Testing {len(forms)} forms...")
             for form in forms:
                 action = form['action']
                 method = form['method']
@@ -9144,7 +9144,7 @@ def run_injection_tests(target, session):
                         if test_open_redirect(form_url, inp, session, 'GET'):
                             continue
     except KeyboardInterrupt:
-        print_warning("Pruebas de inyección interrumpidas por el usuario.")
+        print_warning("Injection tests interrupted by the user.")
         return
 
 def run_api_tests(target, session):
@@ -9154,9 +9154,9 @@ def run_api_tests(target, session):
     SCAN_DATA["api_endpoints"] = found
     print_info("[2/7] CORS avanzado...")
     safe_execute(test_cors_advanced, target, session)
-    print_info("[3/7] GraphQL introspección...")
+    print_info("[3/7] GraphQL introspection...")
     safe_execute(test_graphql, target, session)
-    print_info("[4/7] JWT & autenticación...")
+    print_info("[4/7] JWT & authentication...")
     safe_execute(test_jwt_tokens, target, session)
     if found:
         print_info("[5/7] IDOR / BOLA...")
@@ -9167,9 +9167,9 @@ def run_api_tests(target, session):
         safe_execute(test_api_verbose_errors, found, session)
         safe_execute(test_api_auth_bypass, found, session)
     else:
-        print_info("[5-7/7] Saltando tests de endpoints (ninguno encontrado).")
+        print_info("[5-7/7] Skipping endpoint tests (none found).")
     safe_execute(test_api_rate_limiting, target, session)
-    print_good("Pruebas de API completadas.")
+    print_good("API tests completed.")
 
 def run_user_enum_bruteforce(target, session):
     print_phase("USER ENUMERATION AND BRUTE FORCE")
@@ -9178,20 +9178,20 @@ def run_user_enum_bruteforce(target, session):
     SCAN_DATA["users"] = users
     SCAN_DATA["emails"] = sorted(set(emails or []))
     if users:
-        print_good(f"Users encontrados: {', '.join(users)}")
+        print_good(f"Users found: {', '.join(users)}")
     if emails:
-        print_good(f"Emails encontrados: {', '.join(emails)}")
+        print_good(f"Emails found: {', '.join(emails)}")
     safe_execute(test_user_enumeration_form, target, session)
     wp_users = safe_execute(run_wpscan_user_enumeration_if_wordpress, target, session, users)
     if wp_users is not None:
         users = sorted(set(wp_users or []))
         SCAN_DATA["users"] = users
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Desea realizar fuerza bruta de contraseñas? (s/n):")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Run password brute force? (y/n):")
     want_brute = input("> ").strip().lower()
-    if want_brute in ('', 's'):
-        passlist = input_path("Path a wordlist de contraseñas (dejar vacío para usar por defecto de SecLists): ").strip()
+    if want_brute in ('', 'y', 's'):
+        passlist = input_path("Password wordlist path (leave empty to use SecLists default): ").strip()
         if not users:
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Introduce usuarios separados por comas:")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Introduce users separados por comas:")
             users_input = input("> ").strip()
             if users_input:
                 users = [u.strip() for u in users_input.split(',') if u.strip()]
@@ -9203,19 +9203,19 @@ def run_user_enum_bruteforce(target, session):
 
 def run_spider(target, session):
     print_phase("SPIDERING / MAPEO COMPLETO DEL SITIO")
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Máximo número de páginas a rastrear (default 500):")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Maximum number of pages to crawl (default 500):")
     max_pages = input("> ").strip()
     if not max_pages:
         max_pages = 500
     else:
         max_pages = int(max_pages)
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Profundidad máxima de rastreo (default 3):")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Maximum crawl depth (default 3):")
     max_depth = input("> ").strip()
     if not max_depth:
         max_depth = 3
     else:
         max_depth = int(max_depth)
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} ¿Respetar robots.txt? [S/n]:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Respect robots.txt? [Y/n]:")
     use_robots = input("> ").strip().lower() != 'n'
     urls, params, forms = spider_website(target, session, max_pages=max_pages, max_depth=max_depth, use_robots=use_robots)
     SCAN_DATA["spider"] = {
@@ -9226,12 +9226,12 @@ def run_spider(target, session):
         "sample_params": sorted(list(params)),
         "sample_forms": list(forms),
     }
-    print_good(f"Total URLs descubiertas: {len(urls)}")
+    print_good(f"Total URLs discovered: {len(urls)}")
     if params:
-        print_info(f"Parámetros únicos encontrados: {len(params)}")
-    save = input("¿Guardar lista de URLs en un archivo? (s/n): ").strip().lower()
-    if save == 's':
-        filename = input("Name del archivo (default: spider_output.txt): ").strip()
+        print_info(f"Unique parameters found: {len(params)}")
+    save = input("Save URL list to a file? (y/n): ").strip().lower()
+    if save in ('y', 's'):
+        filename = input("Name del file (default: spider_output.txt): ").strip()
         if not filename:
             filename = "spider_output.txt"
         with open(filename, 'w') as f:
@@ -9241,22 +9241,22 @@ def run_spider(target, session):
     return urls
 
 def run_source_code_analysis(target, session, urls=None):
-    """Analiza el código fuente de las páginas accesibles en busca de credenciales y scripts expuestos.
+    """Analyze accessible page source code for credentials and exposed scripts.
 
-    Yes no se proporciona `urls`, intenta reutilizar las URLs muestreadas en SCAN_DATA["spider"];
-    si tampoco existen, ofrece ejecutar un spider rápido o analizar solo el target.
+    If `urls` is not provided, try to reuse sampled URLs from SCAN_DATA["spider"];
+    if none exist, offer to run a quick spider or analyze only the target.
     """
-    print_phase("OSURCE CODE ANALYSIS")
+    print_phase("SOURCE CODE ANALYSIS")
     if urls is None:
         sample = (SCAN_DATA.get("spider") or {}).get("sample_urls") or []
         if sample:
             urls = list(sample)
-            print_info(f"Usando {len(urls)} URLs del último spider.")
+            print_info(f"Using {len(urls)} URLs from the last spider.")
         else:
             try:
                 ans = input(
-                    f"{Fore.YELLOW}[?]{Style.RESET_ALL} No hay spider previo. "
-                    f"¿Ejecutar spider rápido (max 50 páginas)? [S/n]: "
+                    f"{Fore.YELLOW}[?]{Style.RESET_ALL} No previous spider data. "
+                    f"Run a quick spider (max 50 pages)? [Y/n]: "
                 ).strip().lower()
             except (KeyboardInterrupt, EOFError):
                 ans = 'n'
@@ -9274,17 +9274,17 @@ def run_source_code_analysis(target, session, urls=None):
                 }
                 urls = list(discovered)
             else:
-                print_warning("Analizando solo la URL objetivo.")
+                print_warning("Analyzing only the target URL.")
                 urls = [target]
     result = analyze_source_code(target, session, urls=urls)
     SCAN_DATA["source_code_analysis"] = result
     return result
 
 def print_final_summary(target):
-    """Imprime una recopilación final con todas las tablas de SCAN_DATA y FINDINGS.
+    """Print a final collection with all SCAN_DATA and FINDINGS tables.
 
-    Se invoca al terminar el pentesting completo (opción 9) para ofrecer una
-    vista consolidada de toda la información recopilada antes de guardar el reporte.
+    Called at the end of a full pentest (option 9) to provide a
+    consolidated view of all information collected before saving the report.
     """
     SEV_ORDER = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3, 'info': 4, 'unknown': 5}
     SEV_COLOR = {
@@ -9316,7 +9316,7 @@ def print_final_summary(target):
             return f"({total})"
         return f"(top {limit} de {total})"
 
-    print_phase("RESUMEN FINAL DEL PENTESTING")
+    print_phase("FINAL PENTEST SUMMARY")
 
     general = SCAN_DATA.get("general") or {}
     nuclei_summary = SCAN_DATA.get("nuclei_summary") or {}
@@ -9345,7 +9345,7 @@ def print_final_summary(target):
     kerberoast_hashes = (ad_imp.get("kerberoast") or {}).get("hashes") or []
     ad_creds = (ad_nxc.get("bruteforce") or {}).get("credentials") or []
 
-    # 1. Summary ejecutivo
+    # 1. Executive summary
     overview_rows = [
         ["Target", _trim(target, 90)],
         ["Status HTTP", str(general.get("status_code", "-"))],
@@ -9357,29 +9357,29 @@ def print_final_summary(target):
         ["Vulnerabilities Nuclei", str(len(nuclei_findings))],
         ["URLs spider", str(spider.get("total_urls", 0))],
         ["Subdominios (vhosts)", str(len(vhosts))],
-        ["Directories encontrados", str(len(dir_hits))],
+        ["Directories found", str(len(dir_hits))],
         ["Endpoints API", str(len(api_endpoints))],
         ["Users", str(len(users))],
         ["Emails", str(len(emails))],
-        ["Credentials válidas", str(len(creds))],
-        ["WordPress vulnerabilidades", str(len(wordpress.get("vulnerabilities") or []))],
+        ["Valid credentials", str(len(creds))],
+        ["WordPress vulnerabilities", str(len(wordpress.get("vulnerabilities") or []))],
         ["Users AD (LDAP)", str(len(ad_ldap.get("users") or []))],
         ["AS-REP roastable", str(len(asrep_hashes))],
         ["Kerberoastable SPNs", str(len(kerberoast_hashes))],
         ["Credentials AD (NXC)", str(len(ad_creds))],
-        ["Findings en código fuente", str(len(src_findings))],
-        ["SSRF hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("ssrf") or []))],
-        ["SSTI hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("ssti") or []))],
-        ["XXE hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("xxe") or []))],
-        ["CRLF hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("crlf") or []))],
-        ["HTTP Smuggling hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("smuggling") or []))],
-        ["Cache Poisoning hallazgos", str(len((SCAN_DATA.get("advanced_security") or {}).get("cache_poisoning") or []))],
+        ["Source-code findings", str(len(src_findings))],
+        ["SSRF findings", str(len((SCAN_DATA.get("advanced_security") or {}).get("ssrf") or []))],
+        ["SSTI findings", str(len((SCAN_DATA.get("advanced_security") or {}).get("ssti") or []))],
+        ["XXE findings", str(len((SCAN_DATA.get("advanced_security") or {}).get("xxe") or []))],
+        ["CRLF findings", str(len((SCAN_DATA.get("advanced_security") or {}).get("crlf") or []))],
+        ["HTTP Smuggling findings", str(len((SCAN_DATA.get("advanced_security") or {}).get("smuggling") or []))],
+        ["Cache Poisoning findings", str(len((SCAN_DATA.get("advanced_security") or {}).get("cache_poisoning") or []))],
     ]
     print_table(
         headers=["Field", "Value"],
         rows=overview_rows,
         alignments=['<', '<'],
-        title="Summary ejecutivo:",
+        title="Executive summary:",
     )
 
     # 2. Headers de seguridad
@@ -9410,7 +9410,7 @@ def print_final_summary(target):
             headers=["Cookie"],
             rows=cookie_rows,
             alignments=['<'],
-            title="Cookies detectadas:",
+            title="Cookies detected:",
         )
 
     # 4. HTTP methods + robots
@@ -9468,8 +9468,8 @@ def print_final_summary(target):
     # 5. Spider
     if spider:
         spider_rows = [
-            ["URLs totales", str(spider.get("total_urls", 0))],
-            ["Parámetros únicos", str(spider.get("total_params", 0))],
+            ["Total URLs", str(spider.get("total_urls", 0))],
+            ["Unique parameters", str(spider.get("total_params", 0))],
             ["Forms", str(spider.get("total_forms", 0))],
         ]
         print_table(
@@ -9485,16 +9485,16 @@ def print_final_summary(target):
                 headers=["URL"],
                 rows=url_rows,
                 alignments=['<'],
-                title=f"Muestra de URLs descubiertas {_count_label(spider.get('total_urls', 0), len(url_rows))}:",
+                title=f"Discovered URL sample {_count_label(spider.get('total_urls', 0), len(url_rows))}:",
             )
 
-    # 5b. Análisis de código fuente
+    # 5b. Source-code analysis
     if src_code:
         sev_stats = src_code.get("summary") or {}
         code_overview = [
-            ["Páginas analizadas", str(src_code.get("pages_analyzed", 0))],
-            ["Recursos JS/JSON analizados", str(src_code.get("assets_analyzed", 0))],
-            ["Findings totales", str(len(src_findings))],
+            ["Pages analyzed", str(src_code.get("pages_analyzed", 0))],
+            ["Assets JS/JSON analizados", str(src_code.get("assets_analyzed", 0))],
+            ["Total findings", str(len(src_findings))],
             [f"{Fore.MAGENTA}Critical{Style.RESET_ALL}", str(sev_stats.get("critical", 0))],
             [f"{Fore.RED}High{Style.RESET_ALL}", str(sev_stats.get("high", 0))],
             [f"{Fore.YELLOW}Medium{Style.RESET_ALL}", str(sev_stats.get("medium", 0))],
@@ -9504,7 +9504,7 @@ def print_final_summary(target):
             headers=["Metric", "Value"],
             rows=code_overview,
             alignments=['<', '>'],
-            title="Análisis de código fuente:",
+            title="Source-code analysis:",
         )
         if src_findings:
             sorted_src = sorted(
@@ -9522,10 +9522,10 @@ def print_final_summary(target):
                     _trim(f.get("url", "-"), 60),
                 ])
             print_table(
-                headers=["Severity", "Type", "Value detectado", "URL"],
+                headers=["Severity", "Type", "Detected value", "URL"],
                 rows=code_rows,
                 alignments=['<', '<', '<', '<'],
-                title=f"Findings en código fuente {_count_label(len(sorted_src), len(code_rows))}:",
+                title=f"Source-code findings {_count_label(len(sorted_src), len(code_rows))}:",
             )
 
     # 6a. Subdominios (vhosts)
@@ -9541,7 +9541,7 @@ def print_final_summary(target):
             headers=["Status", "VHost", "Size"],
             rows=vh_rows,
             alignments=['<', '<', '>'],
-            title=f"Subdominios encontrados {_count_label(len(vhosts), len(vh_rows))}:",
+            title=f"Subdomains found {_count_label(len(vhosts), len(vh_rows))}:",
         )
 
     # 6b. Directories
@@ -9557,7 +9557,7 @@ def print_final_summary(target):
             headers=["Status", "URL", "Size"],
             rows=dir_rows,
             alignments=['<', '<', '>'],
-            title=f"Directories encontrados {_count_label(len(dir_hits), len(dir_rows))}:",
+            title=f"Directories found {_count_label(len(dir_hits), len(dir_rows))}:",
         )
 
     # 6c. WordPress / WPScan
@@ -9570,7 +9570,7 @@ def print_final_summary(target):
             ["Detected", "Yes" if wordpress.get("detected") else "Not confirmed"],
             ["Version", wp_version.get("number") or "-"],
             ["Status", wp_version.get("status") or "-"],
-            ["Theme principal", wp_theme.get("name") or "-"],
+            ["Main theme", wp_theme.get("name") or "-"],
             ["Users", str(len(wp_users))],
             ["Vulnerabilities", str(len(wp_vulns))],
             ["Credentials", str(len(wordpress.get("credentials") or []))],
@@ -9626,22 +9626,22 @@ def print_final_summary(target):
             title="Users and emails descubiertos:",
         )
 
-    # 9. Inyección
+    # 9. Injection
     if injection.get("executed"):
         inj_rows = [
-            ["Forms detectados", str(injection.get("forms_found", 0))],
-            ["Parámetros GET detectados", str(injection.get("url_params_found", 0))],
-            ["Parámetros GET probados", str(len(injection.get("tested_get_params", [])))],
+            ["Forms detecteds", str(injection.get("forms_found", 0))],
+            ["Detected GET parameters", str(injection.get("url_params_found", 0))],
+            ["Tested GET parameters", str(len(injection.get("tested_get_params", [])))],
             ["Tested form inputs", str(len(injection.get("tested_form_inputs", [])))],
         ]
         print_table(
             headers=["Metric", "Value"],
             rows=inj_rows,
             alignments=['<', '>'],
-            title="Pruebas de inyección:",
+            title="Injection tests:",
         )
 
-    # 9b. Pruebas avanzadas
+    # 9b. Advanced tests
     adv_sum = SCAN_DATA.get("advanced_security") or {}
     if adv_sum:
         module_names_fs = ["ssrf", "ssti", "xxe", "crlf", "smuggling", "cache_poisoning"]
@@ -9656,7 +9656,7 @@ def print_final_summary(target):
             alignments=['<', '>'],
             title="Advanced Tests de Seguridad:",
         )
-        # Details solo si hay hallazgos.
+        # Details solo si hay findings.
         for mod, headers_detail, row_fn in [
             ("ssrf", ["Type", "Vector", "Payload/Value", "HTTP"],
              lambda r: [r.get("type","ssrf"), r.get("param") or r.get("header") or "-",
@@ -9681,7 +9681,7 @@ def print_final_summary(target):
                     border_color=Fore.RED if mod in ("ssrf","ssti","xxe","smuggling") else Fore.YELLOW,
                 )
 
-    # 10. Credentials válidas
+    # 10. Valid credentials
     if creds:
         cred_rows = []
         for c in creds:
@@ -9692,7 +9692,7 @@ def print_final_summary(target):
             headers=["User", "Password"],
             rows=cred_rows,
             alignments=['<', '<'],
-            title="Credentials válidas encontradas:",
+            title="Valid credentials found:",
             border_color=Fore.GREEN,
         )
 
@@ -9744,10 +9744,10 @@ def print_final_summary(target):
                 _trim(unique_str, 100),
             ])
         print_table(
-            headers=["Severity", "Cantidad", "Templates únicos"],
+            headers=["Severity", "Count", "Unique templates"],
             rows=sum_rows,
             alignments=['<', '>', '<'],
-            title="Vulnerabilities por severidad (Nuclei):",
+            title="Vulnerabilities by severity (Nuclei):",
         )
 
     relevant_nuclei = [n for n in nuclei_findings if n.get('severity') in ('critical', 'high', 'medium', 'low')]
@@ -9781,7 +9781,7 @@ def print_final_summary(target):
         for cat in sorted(cats.keys()):
             cat_rows.append([cat, str(len(cats[cat]))])
         print_table(
-            headers=["Category", "Cantidad"],
+            headers=["Category", "Count"],
             rows=cat_rows,
             alignments=['<', '>'],
             title=f"Findings clasificados (total: {len(FINDINGS)}):",
@@ -9803,23 +9803,23 @@ def print_final_summary(target):
             headers=["Category", "Detail"],
             rows=find_rows,
             alignments=['<', '<'],
-            title=f"Detail de hallazgos {_count_label(len(FINDINGS), len(find_rows))}:",
+            title=f"Finding details {_count_label(len(FINDINGS), len(find_rows))}:",
         )
 
     print()
-    print_good("Recopilación finalizada. Use 'Guardar reporte' al salir para exportar TXT/JSON/HTML/MD.")
+    print_good("Collection complete. Use 'Save report' on exit to export TXT/JSON/HTML/MD.")
 
 
 def run_full_pentest(target, session, interactive_ad=True):
     print_phase("INICIANDO PENTESTING COMPLETO")
-    # Orden según menú principal:
+    # Order according to main menu:
     run_information_gathering(target, session)         # 2
     safe_execute(run_nmap_scan, target, session)       # 3
     run_nuclei_scan(target, session)                   # 4
     run_vhost_fuzzing(target, session)                 # 5
     run_directory_fuzzing(target, session)             # 6
     spider_urls = run_spider(target, session)          # 7
-    # 8. Análisis de código fuente sobre todas las URLs descubiertas
+    # 8. Source-code analysis for all discovered URLs
     safe_execute(
         run_source_code_analysis,
         target, session,
@@ -9832,14 +9832,14 @@ def run_full_pentest(target, session, interactive_ad=True):
     run_wordpress_attacks_if_detected(target, session) # 13
     if interactive_ad:
         try:
-            run_ad = input(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Ejecutar modulo Active Directory? [s/N]: ").strip().lower() == 's'
+            run_ad = input(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Run the Active Directory module? [y/N]: ").strip().lower() in ('y', 's')
         except (KeyboardInterrupt, EOFError):
             run_ad = False
     else:
         run_ad = False
     if run_ad:
         safe_execute(run_active_directory_pentest, target)  # 13
-    print_good("Pentesting completo finalizado.")
+    print_good("Full pentest completed.")
     print_final_summary(target)
 
 # ========== MULTI-OBJETIVO ==========
@@ -9854,12 +9854,12 @@ def _read_target_file(path):
                     continue
                 out.append(line)
     except Exception as e:
-        print_error(f"No se pudo leer la lista '{path}': {e}")
+        print_error(f"Could not read list '{path}': {e}")
     return out
 
 def _collect_targets(args):
-    """Reune targets de -u (repetible / separado por comas) y -L/--list (ficheros).
-    Normaliza y deduplica conservando el orden."""
+    """Collect targets from -u (repeatable / comma-separated) and -L/--list (files).
+    Normalize and deduplicate while preserving order."""
     raw = []
     for u in (args.url or []):
         raw.extend(p.strip() for p in u.split(",") if p.strip())
@@ -9874,12 +9874,12 @@ def _collect_targets(args):
     return targets
 
 def _prompt_target_selection():
-    """No argumentos: pregunta objetivo unico o lista. Devuelve (targets, batch)."""
+    """No arguments: ask for a single target or a list. Returns (targets, batch)."""
     print("\nSelect target type:")
     print("  1. Single URL")
-    print("  2. Lista de targets (varias URLs o un fichero)")
+    print("  2. Target list (multiple URLs or a file)")
     try:
-        choice = input("Opción [1]: ").strip() or "1"
+        choice = input("Option [1]: ").strip() or "1"
     except (KeyboardInterrupt, EOFError):
         sys.exit(0)
 
@@ -9910,20 +9910,20 @@ def _prompt_target_selection():
             seen.add(norm)
             targets.append(norm)
     if not targets:
-        print_error("No se introdujeron targets válidos.")
+        print_error("No valid targets were provided.")
         sys.exit(1)
 
     try:
         batch = input(
-            f"{len(targets)} targets cargados. ¿Mode batch "
-            f"(pentest completo automático por objetivo)? [s/N]: "
-        ).strip().lower() == 's'
+            f"{len(targets)} targets loaded. Batch mode "
+            f"(automatic full pentest per target)? [y/N]: "
+        ).strip().lower() in ('y', 's')
     except (KeyboardInterrupt, EOFError):
         batch = False
     return targets, batch
 
 def _reset_scan_state():
-    """Status limpio para empezar un objetivo desde cero."""
+    """Clean state for starting a target from scratch."""
     global SCAN_DATA, AUTHENTICATED, AUTH_SESSION
     FINDINGS.clear()
     SCAN_DATA = _fresh_scan_data()
@@ -9959,15 +9959,15 @@ def _print_markdown_block(target):
     md = _build_markdown_report(report_data)
     print()
     print("=" * 70)
-    print(" RESUMEN EN MARKDOWN (copia desde la línea siguiente):")
+    print(" MARKDOWN SUMMARY (copy from the next line):")
     print("=" * 70)
     print(md)
     print("=" * 70)
-    print_good("Fin del markdown. Copia el bloque anterior.")
+    print_good("End of markdown. Copy the block above.")
 
 def _dispatch_scan_option(option, target, session):
-    """Ejecuta una opcion de modulo (1-15) contra 'target'. Devuelve la sesion
-    (posiblemente nueva tras autenticar) si la opcion era de modulo, o None si no."""
+    """Run a module option (1-15) against 'target'. Returns the session
+    (possibly new after authentication) if the option was a module, or None otherwise."""
     global AUTHENTICATED, AUTH_SESSION
     if option == '1':
         setup_authentication()
@@ -10011,7 +10011,7 @@ def _print_batch_summary(summary):
     )
 
 def run_batch_targets(targets):
-    """No interactivo: full pentest per target, reporte por objetivo y resumen final."""
+    """Non-interactive: full pentest per target, per-target report, and final summary."""
     global TARGET_URL
     print_phase(f"BATCH MODE: {len(targets)} targets (full pentest per target)")
     summary = []
@@ -10024,10 +10024,10 @@ def run_batch_targets(targets):
         try:
             run_full_pentest(t, session, interactive_ad=False)
         except KeyboardInterrupt:
-            status = "interrumpido"
-            print_warning(f"Target {t} interrumpido.")
+            status = "interrupted"
+            print_warning(f"Target {t} interrupted.")
             try:
-                if input("¿Continuar con el siguiente objetivo? [S/n]: ").strip().lower() == 'n':
+                if input("Continue with the next target? [Y/n]: ").strip().lower() == 'n':
                     summary.append((t, len(FINDINGS), status))
                     break
             except (KeyboardInterrupt, EOFError):
@@ -10039,15 +10039,15 @@ def run_batch_targets(targets):
         try:
             save_report(OUTPUT_FILE)
         except Exception as e:
-            print_error(f"No se pudo guardar el reporte de {t}: {e}")
+            print_error(f"Could not save the report for {t}: {e}")
         summary.append((t, len(FINDINGS), status))
-    print_phase("RESUMEN GLOBAL DEL BATCH")
+    print_phase("GLOBAL BATCH SUMMARY")
     _print_batch_summary(summary)
     print("\n" + Fore.GREEN + "Happy Hacking :)" + Style.RESET_ALL)
 
 def run_multi_interactive(targets):
-    """Menú interactivo: cada opción seleccionada se ejecuta en TODOS los targets,
-    manteniendo el estado (SCAN_DATA/FINDINGS) por objetivo entre módulos."""
+    """Interactive menu: each selected option runs against ALL targets,
+    keeping per-target state (SCAN_DATA/FINDINGS) between modules."""
     global TARGET_URL
     states, sessions = {}, {}
     for t in targets:
@@ -10106,9 +10106,9 @@ def run_multi_interactive(targets):
             elif option in ('16', '17'):
                 for t in targets:
                     _restore_state(states[t])
-                    print_phase(f"{'MARKDOWN' if option == '16' else 'RESUMEN'}: {t}")
+                    print_phase(f"{'MARKDOWN' if option == '16' else 'SUMMARY'}: {t}")
                     if not _has_scan_data():
-                        print_warning("No data para este objetivo todavía.")
+                        print_warning("No data for this target yet.")
                     elif option == '16':
                         _print_markdown_block(t)
                     else:
@@ -10200,11 +10200,11 @@ def main():
     targets = _collect_targets(args)
     batch = args.batch
 
-    # No targets por CLI: selector interactivo (único o lista).
+    # No CLI targets: interactive selector (single or list).
     if not targets and not batch:
         targets, batch = _prompt_target_selection()
 
-    # Mode batch: requiere targets y no es interactivo.
+    # Batch mode: requires targets and is non-interactive.
     if batch:
         if not targets:
             print_error("--batch requires at least one target (-u/-L).")
@@ -10212,13 +10212,13 @@ def main():
         run_batch_targets(targets)
         return
 
-    # Varios targets: menú interactivo aplicado a todos.
+    # Multiple targets: interactive menu applied to all.
     if len(targets) > 1:
-        print_info(f"{len(targets)} targets cargados. Cada opción se ejecutará en todos.")
+        print_info(f"{len(targets)} targets loaded. Each option will run against all targets.")
         run_multi_interactive(targets)
         return
 
-    # Un solo objetivo (o ninguno: se pide por consola).
+    # Single target (or none: prompt in console).
     if targets:
         TARGET_URL = targets[0]
         print_info(f"Target: {TARGET_URL}")
@@ -10230,7 +10230,7 @@ def main():
     session = get_session()
 
     def _exit_gracefully():
-        """Cierra el programa mostrando el reporte y el mensaje final."""
+        """Close the program after showing the report and final message."""
         print()
         has_scan_data = _has_scan_data()
         if has_scan_data:
@@ -10238,7 +10238,7 @@ def main():
             if not auto_save:
                 try:
                     auto_save = input(
-                        f"\nSave scan report ({len(FINDINGS)} hallazgos)? [S/n]: "
+                        f"\nSave scan report ({len(FINDINGS)} findings)? [Y/n]: "
                     ).strip().lower() != 'n'
                 except (KeyboardInterrupt, EOFError):
                     auto_save = False
@@ -10250,7 +10250,7 @@ def main():
     while True:
         try:
             show_menu()
-            # Ya está en el menú principal
+            # Already in the main menu
             option = input("Select an option: ").strip()
         except (KeyboardInterrupt, EOFError):
             try:
@@ -10312,11 +10312,11 @@ def main():
                     md = _build_markdown_report(report_data)
                     print()
                     print("=" * 70)
-                    print(" RESUMEN EN MARKDOWN (copia desde la línea siguiente):")
+                    print(" MARKDOWN SUMMARY (copy from the next line):")
                     print("=" * 70)
                     print(md)
                     print("=" * 70)
-                    print_good("Fin del markdown. Copia el bloque anterior.")
+                    print_good("End of markdown. Copy the block above.")
             elif option == '17':
                 if not _has_scan_data():
                     print_warning("No data yet. Run a module or the full pentest first.")
