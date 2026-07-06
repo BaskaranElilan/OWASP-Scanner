@@ -41,45 +41,74 @@ OWASP Scanner is an interactive web security testing toolkit based on the OWASP 
 
 ## Installation
 
+Kali Linux protects the system Python environment, so do not install these packages directly with `python3 -m pip install -r requirements.txt`. Use a virtual environment instead.
+
+Recommended Kali/Linux setup:
+
 ```bash
 git clone https://github.com/BaskaranElilan/OWASP-Scanner.git
 cd OWASP-Scanner
-python3 -m pip install -r requirements.txt
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+You can also use the helper script:
+
+```bash
+chmod +x install.sh
+./install.sh
+source .venv/bin/activate
+```
+
+If `python3 -m venv .venv` fails on Kali/Debian, install the venv package first:
+
+```bash
+sudo apt update
+sudo apt install -y python3-venv
 ```
 
 Optional tools can be installed through your operating system package manager or their official installation methods. On Kali Linux, many of them are available through `apt`.
 
 ## Usage
 
+Activate the virtual environment first if you installed with the recommended setup:
+
+```bash
+cd OWASP-Scanner
+source .venv/bin/activate
+```
+
 Start the interactive scanner:
 
 ```bash
-python3 owasp-scanner.py
+python owasp-scanner.py
 ```
 
 Scan a single target:
 
 ```bash
-python3 owasp-scanner.py --url https://example.com
+python owasp-scanner.py --url https://example.com
 ```
 
 Save reports with a custom output base:
 
 ```bash
-python3 owasp-scanner.py --url https://example.com --output report.txt
+python owasp-scanner.py --url https://example.com --output report.txt
 ```
 
 Scan multiple targets interactively:
 
 ```bash
-python3 owasp-scanner.py -u https://a.example -u https://b.example
-python3 owasp-scanner.py -u https://a.example,https://b.example
+python owasp-scanner.py -u https://a.example -u https://b.example
+python owasp-scanner.py -u https://a.example,https://b.example
 ```
 
 Run a non-interactive full pentest for each target in a list:
 
 ```bash
-python3 owasp-scanner.py -L targets.txt --batch
+python owasp-scanner.py -L targets.txt --batch
 ```
 
 ## CLI Options

@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.4.2-owasp-scanner.2 - 2026-07-06
+
+### Installation Fix
+
+- Updated the README to avoid Kali/Debian `externally-managed-environment` pip errors.
+- Documented the recommended `.venv` installation flow.
+- Added `install.sh` to create a virtual environment and install requirements safely.
 ## v1.4.2-owasp-scanner.1 - 2026-07-06
 
 ### Rebrand and Documentation
