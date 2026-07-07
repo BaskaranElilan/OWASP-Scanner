@@ -30,7 +30,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from urllib.robotparser import RobotFileParser
 
 
-# ===== INPUT CON AUTOCOMPLETADO DE RUTAS (TAB) =====
+# ===== INPUT WITH PATH AUTOCOMPLETE (TAB) =====
 if os.name == 'nt':
     try:
         from prompt_toolkit import prompt
@@ -70,7 +70,7 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 try:
     from urllib3.util.retry import Retry
-except ImportError:  # urllib3 < 1.26 empaquetado dentro de requests
+except ImportError:  # urllib3 < 1.26 bundled inside requests
     from requests.packages.urllib3.util.retry import Retry
 
 requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
@@ -519,7 +519,7 @@ def run_whatweb(target, session=None):
                 plugins.append(tail)
 
             for plugin in plugins:
-                # Separar nombre del valor entre corchetes
+                # Split the name from the value inside brackets
                 pm = re.match(r'^([A-Za-z0-9_\-\./ ]+?)(?:\[(.+)\])?$', plugin, re.DOTALL)
                 if pm:
                     name = pm.group(1).strip()
@@ -540,7 +540,7 @@ def run_whatweb(target, session=None):
                     print(f"    {color}▸ {name}{Style.RESET_ALL}")
 
         print(f"{Fore.CYAN}{SEP}{Style.RESET_ALL}\n")
-        # Eliminar duplicados por (name, detail)
+        # Remove duplicates by (name, detail)
         seen = set()
         unique_techs = []
         for t in technologies:
@@ -600,13 +600,13 @@ def run_nmap_scan(target):
 
     host = urlparse(target).hostname or target
     if not host:
-        print_error("Could not extraer el host del target.")
+        print_error("Could not extract the host from the target.")
         return None
 
     print_info(f"Ejecutando: nmap -sV {host}")
     print()
     try:
-        # Aumentado timeout porque 600s puede quedarse corto en targets con muchos puertos
+        # Increased timeout because 600s can fall short on targets with many ports
         proc = subprocess.run(
             [nmap_path, "-sV", "-oX", "-", host],
             capture_output=True, text=True, timeout=1800
@@ -692,7 +692,7 @@ def run_nmap_scan(target):
             alignments=['<', '<', '<', '<'],
             title=f"Open ports ({len(ports)}):",
         )
-        # Registrar en FINDINGS los puertos abiertos para que appearsn
+        # Record open ports in FINDINGS so they appear
         # also in the classified findings sections.
         for p in ports:
             label = p.get("service", "") or "?"
@@ -830,7 +830,7 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
     cmd.append(host)
 
     visible_cmd = _format_external_command(cmd)
-    print_info(f"Ejecutando escaneo Targeted NSE: {visible_cmd}")
+    print_info(f"Running Targeted NSE scan: {visible_cmd}")
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=2400)
     except subprocess.TimeoutExpired:
@@ -899,15 +899,15 @@ def _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=None):
                 first_line,
             ])
         print_table(
-            headers=["Port", "Service", "Script", "Resultado"],
+            headers=["Port", "Service", "Script", "Result"],
             rows=rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Resultados Targeted NSEs ({len(results)} scripts con salida):",
+            title=f"Targeted NSE Results ({len(results)} scripts with output):",
         )
         if len(results) > 40:
             print_info(f"... and {len(results) - 40} more NSE results in the report.")
     else:
-        print_info("El escaneo Targeted NSE no devolvio salidas relevantes.")
+        print_info("The Targeted NSE scan didn't return relevant output.")
 
     return {
         "executed": True,
@@ -931,7 +931,7 @@ def run_nmap_scan(target, session=None):
 
     host = urlparse(target).hostname or target
     if not host:
-        print_error("Could not extraer el host del target.")
+        print_error("Could not extract the host from the target.")
         return None
 
     print_info(f"Ejecutando: nmap -sV {host}")
@@ -997,7 +997,7 @@ def run_nmap_scan(target, session=None):
                 f"{label}" + (f" ({version_str})" if version_str else "")
             )
     else:
-        print_info("nmap no encontro puertos abiertos visibles.")
+        print_info("nmap did not find visible open ports.")
 
     nse_data = _run_nmap_nse_scan(nmap_path, host, host_info, ports, session=session) if ports else {
         "executed": False,
@@ -1066,7 +1066,7 @@ def run_nuclei_scan(target, session=None):
         cmd = _append_nuclei_session_headers(cmd, session)
         if session and _external_http_headers_from_session(session):
             print_info("Nuclei will use headers/cookies from the authenticated session.")
-        # IMPORTANTE: stdout en modo binario para evitar UnicodeDecodeError con
+        # IMPORTANT: stdout in binary mode to avoid UnicodeDecodeError with
         # non-UTF-8 banners/symbols emitted by Nuclei. Decode tolerantly.
         # Filter noisy Interactsh backend lines (corrupt bytes in stderr).
         NOISE_PATTERNS = (
@@ -1157,7 +1157,7 @@ def run_nuclei_scan(target, session=None):
         'low': Fore.CYAN, 'info': Fore.WHITE, 'unknown': Fore.WHITE,
     }
 
-    # Deduplicar por (template_id, url, severity) — Nuclei puede emitir el mismo
+    # Deduplicate by (template_id, url, severity) — Nuclei can emit the same
     # finding multiple times (for example, missing security headers, one per header).
     normalized = []
     seen_dedup = set()
@@ -1216,7 +1216,7 @@ def run_nuclei_scan(target, session=None):
             if len(relevant) > 50:
                 print(f"  ... and {len(relevant) - 50} more relevant findings (see report)")
 
-        # Persistir cada hallazgo en FINDINGS para que appears en TXT/HTML
+        # Persist each finding in FINDINGS so it appears in TXT/HTML
         for n in normalized:
             FINDINGS.append(
                 f"[NUCLEI:{n['severity'].upper()}] {n['template_id']}"
@@ -1293,7 +1293,7 @@ def _visible_len(s):
     return len(_ANSI_RE.sub('', str(s)))
 
 def _pad_cell(cell, width, align='<'):
-    """Pad una celda al ancho dado, ignoring ANSI codes for calculation."""
+    """Pad a cell to the given width, ignoring ANSI codes for calculation."""
     cell_str = str(cell)
     pad = width - _visible_len(cell_str)
     if pad <= 0:
@@ -1310,7 +1310,7 @@ def print_table(headers, rows, alignments=None, title=None, border_color=None, f
 
     headers: list[str]
     rows: list[list[str]] (cells may contain ANSI codes)
-    alignments: list[str] con '<', '>' o '^' por columna (default '<')
+    alignments: list[str] with '<', '>' or '^' per column (default '<')
     title: cadena opcional encima de la tabla
     footer: cadena opcional debajo de la tabla
     """
@@ -1545,7 +1545,7 @@ def _build_html_report(report_data):
         ("Nuclei", len(nuclei_findings), "bad" if nuclei_findings else "neutral", "bug-beetle", "nuclei"),
         ("Technologies", len(technologies), "good" if technologies else "neutral", "stack", "info"),
         ("Endpoints API", len(api_endpoints), "info", "brackets-curly", "api"),
-        ("Directories", len(directories), "info", "folders", "directorios"),
+        ("Directories", len(directories), "info", "folders", "directories"),
         ("Users", len(users), "neutral", "users-three", "info"),
         ("Credentials", len(creds), "bad" if creds else "neutral", "key", "credentials"),
         ("AD users", len(ad_ldap.get("users") or []), "info", "tree-structure", "ad"),
@@ -1571,7 +1571,7 @@ def _build_html_report(report_data):
     header_rows = [[k, v] for k, v in (general.get("headers") or {}).items()]
     cookie_rows = [[c] for c in (general.get("cookies") or [])]
     auth_rows = [[
-        "Status", status_badge("Autenticado" if auth.get("authenticated") else "Unauthenticated")
+        "Status", status_badge("Authenticated" if auth.get("authenticated") else "Unauthenticated")
     ], [
         "Method", esc(auth.get("method", "-"))
     ], [
@@ -1605,7 +1605,7 @@ def _build_html_report(report_data):
         return re.sub(r"[^a-z0-9]", "", str(s).lower())
 
     def users_emails_block(users, emails):
-        # Correlaciona email <-> user por la parte local del correo
+        # Correlates email <-> user by the local part of the email
         pairs, matched_u, matched_e = [], set(), set()
         for u in users:
             un = _norm_ident(u)
@@ -1632,7 +1632,7 @@ def _build_html_report(report_data):
         + table(["Header", "Value"], header_rows, "No headers recorded.")
         + "</div>"
         + "<div class='panel'><h3>Cookies</h3>"
-        + table(["Cookie"], cookie_rows, "No cookies registradas.")
+        + table(["Cookie"], cookie_rows, "No cookies recorded.")
         + "</div>"
     )
 
@@ -1656,7 +1656,7 @@ def _build_html_report(report_data):
         + table(["Port", "Status", "Service", "Version", "Scripts"], nmap_rows, raw_cols={1})
         + "</div><div class='panel'><h3>Targeted NSE</h3>"
         + f"<p class='muted'>NSE command: <code>{esc((nmap_data.get('nse') or {}).get('command', '-'))}</code></p>"
-        + table(["Port", "Service", "Script", "Type", "Output"], nse_rows, "No salidas NSE.", raw_cols={3})
+        + table(["Port", "Service", "Script", "Type", "Output"], nse_rows, "No NSE output.", raw_cols={3})
         + "</div>"
     )
 
@@ -1664,7 +1664,7 @@ def _build_html_report(report_data):
     for item in findings:
         text = _finding_text(item)
         m = re.match(r'^\[([^\]]+)\]\s*(.*)', text)
-        key = m.group(1) if m else "OTROS"
+        key = m.group(1) if m else "OTHER"
         msg = m.group(2) if m else text
         grouped.setdefault(key, []).append(msg)
     finding_rows = [[cat, len(items), "<br>".join(esc(i) for i in items)] for cat, items in sorted(grouped.items())]
@@ -1789,11 +1789,11 @@ def _build_html_report(report_data):
         + "</div><div class='panel'><h3>LDAP groups</h3>"
         + table(["Group", "Description", "Members"], [[g.get("name", "-"), g.get("description", "-"), len(g.get("members") or [])] for g in (ad_ldap.get("groups") or [])], "No grupos LDAP.")
         + "</div><div class='panel'><h3>LDAP computers</h3>"
-        + table(["Computer", "OS", "Version"], [[c.get("name", "-"), c.get("os", "-"), c.get("os_version", "-")] for c in (ad_ldap.get("computers") or [])], "No equipos LDAP.")
+        + table(["Computer", "OS", "Version"], [[c.get("name", "-"), c.get("os", "-"), c.get("os_version", "-")] for c in (ad_ldap.get("computers") or [])], "No LDAP computers.")
         + "</div><div class='panel'><h3>AS-REP Roasting</h3>"
-        + table(["User", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in asrep_hashes], "No hashes AS-REP.")
+        + table(["User", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in asrep_hashes], "No AS-REP hashes.")
         + "</div><div class='panel'><h3>Kerberoasting</h3>"
-        + table(["User/SPN", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in kerberoast_hashes], "No hashes Kerberoast.")
+        + table(["User/SPN", "Hash"], [[h.get("username", "-"), h.get("hash", "-")] for h in kerberoast_hashes], "No Kerberoast hashes.")
         + "</div><div class='panel'><h3>NXC credentials</h3>"
         + table(["User", "Password"], [[c.get("username", "-"), c.get("password", "-")] for c in ad_creds], "No NXC credentials.")
         + "</div>"
@@ -1822,14 +1822,14 @@ def _build_html_report(report_data):
     exposure_content = (
         "<div class='grid two'>"
         + "<div class='panel'><h3>robots.txt paths</h3>"
-        + table(["Path"], [[p] for p in robots_paths], "No rutas en robots.txt.")
-        + "</div><div class='panel'><h3>Methods HTTP permitidos</h3>"
+        + table(["Path"], [[p] for p in robots_paths], "No paths in robots.txt.")
+        + "</div><div class='panel'><h3>Allowed HTTP Methods</h3>"
         + (compact_list(sorted(http_methods)) if http_methods else "<span class='muted'>No methods detected (OPTIONS).</span>")
         + "</div></div>"
         + "<div class='panel'><h3>Injection tests</h3>"
-        + "<h4>Parameters GET probados</h4>" + (compact_list(inj_get) if inj_get else "<span class='muted'>No parametros GET probados.</span>")
+        + "<h4>Tested GET Parameters</h4>" + (compact_list(inj_get) if inj_get else "<span class='muted'>No GET parameters tested.</span>")
         + "<h4>Tested form inputs</h4>"
-        + table(["Form action", "Input", "Method"], inj_form_rows, "No inputs de formulario probados.")
+        + table(["Form action", "Input", "Method"], inj_form_rows, "No form inputs tested.")
         + "</div>"
     )
 
@@ -1877,12 +1877,12 @@ def _build_html_report(report_data):
     raw_content = (
         "<div class='panel'><h3>Statistics</h3><pre>"
         + esc(json.dumps(stats, indent=2, ensure_ascii=False))
-        + "</pre></div><div class='panel'><h3>JSON completo</h3><pre>"
+        + "</pre></div><div class='panel'><h3>Complete JSON</h3><pre>"
         + esc(json.dumps(scan_data, indent=2, ensure_ascii=False))
         + "</pre></div>"
     )
 
-    # Presencia: solo se muestran las secciones con informacion collected.
+    # Presence: only sections with collected information are shown.
     present = {
         "summary": True,
         "info": bool(technologies or users or emails or general.get("headers") or general.get("cookies") or general.get("server")),
@@ -1891,7 +1891,7 @@ def _build_html_report(report_data):
         "nuclei": bool(nuclei_findings or nuclei_summary),
         "api": bool(api_endpoints),
         "vhosts": bool(vhosts),
-        "directorios": bool(directories),
+        "directories": bool(directories),
         "exposure": bool(robots_paths or http_methods or inj_get or inj_forms),
         "advanced": bool(adv_sec),
         "wordpress": bool(wordpress),
@@ -1909,7 +1909,7 @@ def _build_html_report(report_data):
         ("nuclei", "Nuclei", nuclei_content, len(nuclei_findings)),
         ("api", "API", api_content, len(api_endpoints)),
         ("vhosts", "VHosts", vhost_content, len(vhosts)),
-        ("directorios", "Directories", dir_content, len(directories)),
+        ("directories", "Directories", dir_content, len(directories)),
         ("exposure", "Exposed Surface", exposure_content, len(robots_paths) + len(http_methods)),
         ("advanced", "Advanced Tests", adv_content, adv_total),
         ("wordpress", "WordPress", wp_content, len(wordpress.get("vulnerabilities") or [])),
@@ -1924,11 +1924,11 @@ def _build_html_report(report_data):
     SEC_ICON = {
         "summary": "gauge", "info": "info", "nmap": "network", "findings": "warning-octagon",
         "nuclei": "bug-beetle", "api": "brackets-curly", "vhosts": "globe-hemisphere-west",
-        "directorios": "folders", "exposure": "eye", "advanced": "shield-warning", "wordpress": "wordpress-logo",
+        "directories": "folders", "exposure": "eye", "advanced": "shield-warning", "wordpress": "wordpress-logo",
         "spider": "share-network", "source": "code", "ad": "tree-structure",
         "credentials": "key", "raw": "database",
     }
-    # Phosphor no incluye el logo de WordPress: se inyecta el SVG oficial.
+    # Phosphor doesn't include the WordPress logo: the official SVG is injected.
     WP_PATH = ("M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zM1.211 12c0-1.564.336-3.049.935-4.39"
                "l5.151 14.114C3.694 19.962 1.211 16.271 1.211 12zm10.789 10.789c-1.06 0-2.082-.155-3.048-.439l3.237-9.406 "
                "3.315 9.087c.022.053.048.101.078.149-1.12.393-2.325.609-3.582.609zm1.487-15.864c.65-.034 1.235-.103 1.235-.103"
@@ -2006,7 +2006,7 @@ def _build_html_report(report_data):
         + "</div>"
     ) if (sev_chips or sec_chips) else ""
 
-    # Donut de severity (conic-gradient) calculado en servidor
+    # Severity donut (conic-gradient) calculated server-side
     sev_palette = [
         ("critical", "var(--c-crit)"), ("high", "var(--c-high)"), ("medium", "var(--c-med)"),
         ("low", "var(--c-low)"), ("info", "var(--c-info)"),
@@ -2252,10 +2252,10 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
   thead{ display:table-header-group; } th{ position:static !important; }
   .section{ break-inside:auto; margin-bottom:18px; }
   .section-head,h1,h2,h3,h4{ break-after:avoid; page-break-after:avoid; }
-  /* Mostrar contenido completo (sin recortes de scroll) */
+  /* Show full content (no scroll clipping) */
   pre{ max-height:none !important; overflow:visible !important; }
   .table-wrap{ overflow:visible !important; } table{ min-width:0 !important; }
-  /* Respiro extra para que nada quede pegado a los bordes */
+  /* Extra breathing room so nothing sits flush against the edges */
   section.section:first-of-type{ padding-top:2px; }
 }
 </style>
@@ -2313,7 +2313,7 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
     var next=root.getAttribute("data-theme")==="dark"?"light":"dark"; paint(next); localStorage.setItem(key,next); });
   var sb=document.getElementById("sidebar"), mb=document.getElementById("menuBtn");
   if(mb) mb.addEventListener("click",function(){ sb.classList.toggle("open"); });
-  // Colapsar sidebar (desktop) con persistencia
+  // Collapse sidebar (desktop) with persistence
   var layout=document.getElementById("layout"), ck="owasp_scanner_sidebar_collapsed";
   function setCollapse(c){ layout.classList.toggle("collapsed",c);
     var ic=document.getElementById("collapseIcon"); if(ic) ic.style.transform=c?"rotate(180deg)":"none"; }
@@ -2380,7 +2380,7 @@ summary{ cursor:pointer; color:var(--ink); font-weight:600; }
     )
 
 def _md_escape_cell(value):
-    """Escapa el contenido de una celda de tabla markdown."""
+    """Escapes the content of a markdown table cell."""
     text = str(value) if value is not None else ""
     # No line breaks or literal pipes
     text = text.replace('\r', ' ').replace('\n', '<br>')
@@ -2467,7 +2467,7 @@ def _build_markdown_report(report_data):
         ["Technologies", tech_str],
         ["Findings (FINDINGS)", str(len(findings))],
         ["Open ports (nmap)", str(len(nmap_ports))],
-        ["Resultados Targeted NSEs", str(len(nmap_nse))],
+        ["Targeted NSE Results", str(len(nmap_nse))],
         ["Vulnerabilities Nuclei", str(len(nuclei_findings_list))],
         ["URLs spider", str(spider.get("total_urls", 0))],
         ["Subdominios (vhosts)", str(len(vhosts))],
@@ -2514,7 +2514,7 @@ def _build_markdown_report(report_data):
     # 4. HTTP methods + robots
     misc_rows = []
     if http_methods:
-        misc_rows.append(["HTTP Methods permitidos", ", ".join(http_methods)])
+        misc_rows.append(["HTTP Methods allowed", ", ".join(http_methods)])
     if robots_paths:
         misc_rows.append([f"Paths robots/sitemap ({len(robots_paths)})", ", ".join(robots_paths[:15])])
     if misc_rows:
@@ -2525,7 +2525,7 @@ def _build_markdown_report(report_data):
 
     # 4b. Nmap (puertos abiertos)
     if nmap_ports:
-        parts.append(f"## Escaneo de puertos (Nmap) ({len(nmap_ports)})")
+        parts.append(f"## Port Scan (Nmap) ({len(nmap_ports)})")
         parts.append("")
         if nmap_data.get("command"):
             parts.append(f"- **Comando:** `{nmap_data['command']}`")
@@ -2647,7 +2647,7 @@ def _build_markdown_report(report_data):
             ["Version", str(wp_version.get("number") or "-")],
             ["Version status", str(wp_version.get("status") or "-")],
             ["Main theme", str(wp_theme.get("name") or "-")],
-            ["Plugins detecteds", str(len(wp_plugins))],
+            ["Plugins detected", str(len(wp_plugins))],
             ["Users WPScan", str(len(wp_users))],
             ["Vulnerabilities", str(len(wp_vulns))],
             ["Credentials WP", str(len(wp_creds))],
@@ -2754,7 +2754,7 @@ def _build_markdown_report(report_data):
 
     # 7. API endpoints
     if api_endpoints:
-        parts.append(f"## Endpoints API descubiertos ({len(api_endpoints)})")
+        parts.append(f"## Discovered API Endpoints ({len(api_endpoints)})")
         parts.append("")
         rows = [[str(ep.get("status", "-")),
                  str(ep.get("endpoint") or ep.get("url", "-")),
@@ -2765,7 +2765,7 @@ def _build_markdown_report(report_data):
 
     # 8. Users and emails
     if users or emails:
-        parts.append("## Users and emails descubiertos")
+        parts.append("## Discovered users and emails")
         parts.append("")
         ue_rows = []
         if users:
@@ -2842,7 +2842,7 @@ def _build_markdown_report(report_data):
         parts.append("## Injection tests")
         parts.append("")
         inj_rows = [
-            ["Forms detecteds", str(injection.get("forms_found", 0))],
+            ["Forms detected", str(injection.get("forms_found", 0))],
             ["Detected GET parameters", str(injection.get("url_params_found", 0))],
             ["Tested GET parameters", str(len(injection.get("tested_get_params", [])))],
             ["Tested form inputs", str(len(injection.get("tested_form_inputs", [])))],
@@ -2895,7 +2895,7 @@ def _build_markdown_report(report_data):
         for f in findings:
             text = _finding_text(f)
             m = re.match(r'^\[([^\]]+)\]', text)
-            cat = m.group(1) if m else "OTROS"
+            cat = m.group(1) if m else "OTHER"
             cats.setdefault(cat, []).append(text)
         parts.append(f"## Findings clasificados (total: {len(findings)})")
         parts.append("")
@@ -2911,7 +2911,7 @@ def _build_markdown_report(report_data):
             if m:
                 rows.append([m.group(1), m.group(2)])
             else:
-                rows.append(["OTROS", text])
+                rows.append(["OTHER", text])
         parts.append(_md_table(["Category", "Detail"], rows))
         parts.append("")
 
@@ -3053,7 +3053,7 @@ def save_report(output_file=None):
                 f.write(f"- Detected: {'Yes' if wordpress_data.get('detected') else 'Not confirmed'}\n")
                 f.write(f"- Version: {wp_version.get('number') or 'N/A'} ({wp_version.get('status') or 'unknown status'})\n")
                 f.write(f"- Main theme: {wp_theme.get('name') or 'N/A'}\n")
-                f.write(f"- Plugins detecteds: {len(wordpress_data.get('plugins') or [])}\n")
+                f.write(f"- Plugins detected: {len(wordpress_data.get('plugins') or [])}\n")
                 f.write(f"- Users WPScan: {', '.join(u.get('username','') for u in wordpress_data.get('users', []) if isinstance(u, dict)) or 'N/A'}\n")
                 wp_vulns = wordpress_data.get('vulnerabilities') or []
                 f.write(f"- Vulnerabilities: {len(wp_vulns)}\n")
@@ -3097,12 +3097,12 @@ def save_report(output_file=None):
                 f.write("- Ninguno\n")
             f.write("\n")
 
-            f.write("[DIRECTORIOS ENCONTRADOS]\n")
+            f.write("[DIRECTORIES FOUND]\n")
             for hit in report_data['scan_data'].get('directory_hits', []):
                 f.write(f"- [{hit.get('status')}] {hit.get('url')} size={hit.get('size', 'N/A')}\n")
             f.write("\n")
 
-            f.write("[CREDENCIALES BRUTEFORCE]\n")
+            f.write("[BRUTEFORCE CREDENTIALS]\n")
             creds = report_data['scan_data'].get('bruteforce_credentials', [])
             if creds:
                 for cred in creds:
@@ -3168,7 +3168,7 @@ def save_report(output_file=None):
             f.write("\n")
 
             adv_sec_txt = report_data['scan_data'].get('advanced_security') or {}
-            f.write("[PRUEBAS AVANZADAS DE SEGURIDAD]\n")
+            f.write("[ADVANCED SECURITY TESTS]\n")
             if adv_sec_txt:
                 for module in ["ssrf", "ssti", "xxe", "crlf", "smuggling", "cache_poisoning"]:
                     hits = adv_sec_txt.get(module) or []
@@ -3264,7 +3264,7 @@ def normalize_url(url):
 
 def _throttle_hook(response, *args, **kwargs):
     """Apply REQUEST_DELAY to EVERY session request (not only modules
-    con hilos). Single source of truth for --delay."""
+    with threads). Single source of truth for --delay."""
     if REQUEST_DELAY > 0:
         time.sleep(REQUEST_DELAY)
     return response
@@ -3278,7 +3278,7 @@ def _build_retry():
             status=0, backoff_factor=0.3,
             raise_on_status=False, respect_retry_after_header=False,
         )
-    except TypeError:  # urllib3 antiguo sin algunos kwargs
+    except TypeError:  # old urllib3 without some kwargs
         return Retry(total=HTTP_RETRIES, backoff_factor=0.3)
 
 def get_session(user_agent=None):
@@ -3491,7 +3491,7 @@ def check_seclists():
                     print_error("The installation appears to have failed.")
             except Exception as e:
                 print_error(f"Could not instalar SecLists: {e}")
-        print_warning("Using wordlist interna reducida para fuzzing.")
+        print_warning("Using reduced internal wordlist for fuzzing.")
         return None
 
 # ========== AUTHENTICATION FUNCTIONS ==========
@@ -3501,7 +3501,7 @@ def _prompt_user_agent():
 
 def _attempt_basic_auth(login_url, username, password, user_agent):
     """Reliably verify Basic Auth: probe without credentials, then with credentials.
-    Devuelve ('valid'|'invalid'|'not-used', session|None, response|None)."""
+    Returns ('valid'|'invalid'|'not-used', session|None, response|None)."""
     session = get_session(user_agent)
     try:
         probe = session.get(login_url, timeout=DEFAULT_TIMEOUT)
@@ -3523,10 +3523,10 @@ def _attempt_basic_auth(login_url, username, password, user_agent):
 
 def _attempt_form_login(login_url, identifier, password, is_email, user_agent):
     """Detect the login form and test credentials.
-    Devuelve ('valid'|'invalid'|'no-form', session|None, response|None, form_url)."""
+    Returns ('valid'|'invalid'|'no-form', session|None, response|None, form_url)."""
     session = get_session(user_agent)
     if not HAS_BS4:
-        print_warning("BeautifulSoup no disponible: no se puede analizar el formulario de login.")
+        print_warning("BeautifulSoup not available: cannot parse the login form.")
         return "no-form", None, None, login_url
     try:
         resp = session.get(login_url, timeout=DEFAULT_TIMEOUT)
@@ -3549,7 +3549,7 @@ def _attempt_form_login(login_url, identifier, password, is_email, user_agent):
                 email_field = inp.get('name')
             elif 'user' in name or 'login' in name or name in ('uname', 'identifier', 'account', 'user'):
                 user_field = inp.get('name')
-        # Elegir el campo identificador segun user o email.
+        # Choose the identifier field based on user or email.
         if is_email:
             ident_field = email_field or user_field
         else:
@@ -3570,7 +3570,7 @@ def _attempt_form_login(login_url, identifier, password, is_email, user_agent):
         try:
             resp2 = session.post(form_url, data=data, timeout=DEFAULT_TIMEOUT, allow_redirects=True)
         except requests.RequestException as e:
-            print_error(f"Error al enviar el formulario ({type(e).__name__}).")
+            print_error(f"Error submitting the form ({type(e).__name__}).")
             continue
         if _looks_authenticated_response(resp2, login_url, identifier):
             return "valid", session, resp2, form_url
@@ -3615,7 +3615,7 @@ def setup_authentication():
         AUTHENTICATED = True
         note = "could not confirm authentication (possible login page)" if resp is not None else "no target response"
         _record_auth_context("manual-session", TARGET_URL, "", temp_session, response=resp, notes=[note])
-        print_warning(f"Sesion manual cargada, pero {note}.")
+        print_warning(f"Manual session loaded, but {note}.")
         return
 
     print_info("Authentication configuration")
@@ -3636,7 +3636,7 @@ def setup_authentication():
         AUTH_SESSION = None
         SCAN_DATA["authentication"] = {"authenticated": False}
 
-    # 1. Basic Auth (solo si el servidor lo solicita).
+    # 1. Basic Auth (only if the server requests it).
     status, session, resp = _attempt_basic_auth(login_url, identifier, password, user_agent)
     if status == "valid":
         print_good("Valid credentials (Basic Auth).")
@@ -3649,7 +3649,7 @@ def setup_authentication():
         _finish_fail()
         return
 
-    # 2. Login por formulario.
+    # 2. Form-based login.
     status, session, resp, form_url = _attempt_form_login(login_url, identifier, password, is_email, user_agent)
     if status == "valid":
         verify = _verify_authenticated_session(session, identifier)
@@ -3666,7 +3666,7 @@ def setup_authentication():
         print_error("Invalid credentials: the form rejected the username/password.")
     else:
         print_warning("No HTML login form detected (possible SPA / OAuth2).")
-        # 3. Intentar login headless con Playwright.
+        # 3. Attempt headless login with Playwright.
         if not check_playwright():
             print_warning("Playwright is not installed. Install it to support SPAs/OAuth2: pip install playwright && playwright install chromium")
             print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Install Playwright now? [y/N]:")
@@ -3680,14 +3680,14 @@ def setup_authentication():
                     except Exception:
                         pass
         if HAS_PLAYWRIGHT:
-            print_info("Intentando login headless con Playwright...")
+            print_info("Attempting headless login with Playwright...")
             cookies_dict, final_url = _attempt_headless_login(login_url, identifier, password, user_agent)
             if cookies_dict:
                 headless_session = get_session(user_agent)
                 _apply_playwright_cookies_to_session(headless_session, cookies_dict, TARGET_URL)
                 verify = _verify_authenticated_session(headless_session, identifier)
                 if verify is not None and not _response_has_login_form(verify):
-                    print_good(f"Login headless exitoso (Playwright). URL final: {final_url}")
+                    print_good(f"Headless login successful (Playwright). Final URL: {final_url}")
                     AUTH_SESSION = headless_session
                     AUTHENTICATED = True
                     _record_auth_context("headless-playwright", login_url, identifier, headless_session, response=verify)
@@ -3705,7 +3705,7 @@ def get_active_session():
     else:
         return get_session()
 
-# ========== FUNCIONES DE PRUEBA ==========
+# ========== TEST FUNCTIONS ==========
 def safe_execute(func, *args, **kwargs):
     try:
         return func(*args, **kwargs)
@@ -3781,7 +3781,7 @@ def check_http_methods(target, session):
         resp = session.options(target, timeout=DEFAULT_TIMEOUT)
         if 'Allow' in resp.headers:
             allowed = [m.strip() for m in resp.headers['Allow'].split(',')]
-            print_info(f"Methods HTTP permitidos: {', '.join(allowed)}")
+            print_info(f"Allowed HTTP Methods: {', '.join(allowed)}")
         trace_resp = session.request('TRACE', target, timeout=DEFAULT_TIMEOUT)
         if trace_resp.status_code == 200:
             print_vuln("Method TRACE habilitado (Cross-Yeste Tracing)")
@@ -3796,8 +3796,8 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
     """Subdomain fuzzing (virtual hosts) using ffuf with the Content-Length technique.
 
     Send a request with an invalid Host (defnotvalid.<base_domain>) to obtain the
-    longitud baseline de "no encontrado" y, si `use_fs_filter` es True, ffuf filtra
-    por `-fs <baseline>` descartando todas las respuestas que coincidan.
+    baseline length of "not found", and if `use_fs_filter` is True, ffuf filters
+    via `-fs <baseline>` discarding all matching responses.
     """
     results = []
     try:
@@ -3811,7 +3811,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
             print_warning(f"Could not read wordlist '{wordlist}'.")
             wordlist = None
         if not wordlist:
-            print_error("No hay wordlist disponible para vhost fuzzing.")
+            print_error("No wordlist available for vhost fuzzing.")
             return results
 
         # 1) Baseline: send an invalid Host header to the target and read Content-Length
@@ -3836,7 +3836,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
             print_warning(f"Could not calculate baseline ({e}); ffuf will not filter by size.")
 
         if use_ffuf and check_ffuf():
-            # Contar valid entries de la wordlist para informar al user
+            # Count valid entries in the wordlist to inform the user
             wl_count = 0
             try:
                 with open(wordlist, 'r', encoding='utf-8', errors='ignore') as wlf:
@@ -3847,14 +3847,14 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
             except Exception:
                 pass
             if wl_count:
-                # ETA aproximado: cada hilo procesa ~10 req/s en promedium
+                # Approximate ETA: each thread processes ~10 req/s on average
                 est_seconds = max(1, int(wl_count / max(1, threads * 10)))
                 est_min = est_seconds // 60
                 eta = f"~{est_min}m" if est_min >= 1 else f"~{est_seconds}s"
                 print_info(f"Wordlist: {wl_count:,} entradas · threads: {threads} · timeout: {request_timeout}s · ETA: {eta}")
                 if wl_count > 50_000 and threads < 40:
                     print_warning(
-                        f"Wordlist grande ({wl_count:,}) con pocos threads ({threads}). "
+                        f"Large wordlist ({wl_count:,}) with few threads ({threads}). "
                         "Consider Ctrl+C and increasing threads or using a shorter wordlist."
                     )
 
@@ -3930,7 +3930,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                 if rc not in (0, 1):
                     print_error(f"ffuf exited with code {rc}")
             except KeyboardInterrupt:
-                print_warning("Fuzzing de subdominios interrupted por el user; esperando a que ffuf guarde resultados parciales...")
+                print_warning("Subdomain fuzzing interrupted by the user; waiting for ffuf to save partial results...")
                 if process:
                     _wait_for_interrupted_child(process, "ffuf")
                 try:
@@ -3965,7 +3965,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                     pass
             return results
 
-        # Method interno (sin ffuf)
+        # Internal method (without ffuf)
         print_warning("ffuf unavailable, using internal method (slower).")
         try:
             with open(wordlist, 'r', encoding='utf-8', errors='ignore') as f:
@@ -4011,8 +4011,8 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
         return results
 
 
-# Una redireccion se considera "rebote a login" si el destino lleva un parametro
-# de retorno tipico (next/return/redirect...) o la ruta es una pagina de auth.
+# A redirect is considered a "bounce to login" if the destination carries a parameter
+# typical return (next/return/redirect...) or the path is an auth page.
 _LOGIN_LOCATION_RE = re.compile(
     r'(?:[?&](?:next|return|returnurl|return_url|redirect|redirect_uri|continue|come_from|dest|destination)=)'
     r'|(?:/(?:account/)?(?:login|signin|sign[-_]?in|auth|sso|session/new)\b)',
@@ -4025,14 +4025,14 @@ def _is_login_location(loc):
 
 
 def _resolve_authenticated_status(url, session, status, size):
-    """En fuzzing autenticado, resuelve los hits 3xx siguiendo la redireccion con
+    """En fuzzing autenticado, resolves 3xx hits by following the redirect with
     the session and returns (final_status, final_size, note).
 
     - If the redirect bounces to a login page (next= parameter or auth route,
-      o el destino sigue mostrando un formulario de login) el endpoint esta
+      or the destination still shows a login form) the endpoint is
       protected: keep the 3xx and record it.
     - If it resolves to real content, return the final status (for example, 200) for
-      no reportar un 302 enganoso cuando el recurso si es accesible autenticado."""
+      avoid reporting a misleading 302 when the resource is in fact accessible when authenticated."""
     if status not in (301, 302, 303, 307, 308):
         return status, size, None
     try:
@@ -4077,7 +4077,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                         entry = line.strip()
                         if not entry or entry.startswith('#'):
                             continue
-                        # Una ruta web no debe contener espacios en blanco internos
+                        # A web path should not contain internal whitespace
                         if any(ch.isspace() for ch in entry):
                             continue
                         dst.write(entry + '\n')
@@ -4112,13 +4112,13 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
             process = None
             try:
                 # No piping: ffuf escribe directamente al terminal → su barra de
-                # progreso funciona correctamente (necesita TTY para actualizarse).
+                # progress works correctly (needs a TTY to update).
                 process = subprocess.Popen(ffuf_cmd)
                 process.wait()
                 rc = process.returncode
                 print()  # blank line after the ffuf progress bar
 
-                # ── Leer resultados limpios desde el JSON ─────────────────────
+                # ── Read clean results from the JSON ─────────────────────
                 if os.path.isfile(tmp_path) and os.path.getsize(tmp_path) > 2:
                     try:
                         hits = _load_ffuf_json_results(tmp_path)
@@ -4134,7 +4134,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                             print(f"\n  {Fore.YELLOW}No results (all filtered by auto-calibration){Style.RESET_ALL}\n")
                         else:
                             if AUTHENTICATED:
-                                print_info("Sesion autenticada: resolviendo redirecciones de los hits 3xx...")
+                                print_info("Authenticated session: resolving redirects for 3xx hits...")
                             table_rows = []
                             for hit in sorted(hits, key=lambda x: (x.get('status', 0), x.get('input', {}).get('FUZZ', ''))):
                                 path    = hit.get('input', {}).get('FUZZ', '') or hit.get('url', '')
@@ -4174,7 +4174,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                     print_error(f"ffuf exited with code {rc}")
 
             except KeyboardInterrupt:
-                print_warning("Fuzzing interrupted por el user; esperando a que ffuf guarde resultados parciales...")
+                print_warning("Fuzzing interrupted by the user; waiting for ffuf to save partial results...")
                 if process:
                     _wait_for_interrupted_child(process, "ffuf")
                 try:
@@ -4217,7 +4217,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                 print_warning("ffuf is not installed. Using internal method (slower).")
             if wordlist is None:
                 paths = COMMON_DIRS
-                print_info(f"Using reduced internal list ({len(paths)} rutas)")
+                print_info(f"Using reduced internal list ({len(paths)} paths)")
             else:
                 with open(wordlist, 'r') as f:
                     paths = [line.strip() for line in f if line.strip() and not line.startswith('#')]
@@ -4241,7 +4241,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                 return None
 
             if HAS_TQDM:
-                with tqdm(total=len(paths), desc="Fuzzing directorios", unit="req", ncols=80) as pbar:
+                with tqdm(total=len(paths), desc="Fuzzing directories", unit="req", ncols=80) as pbar:
                     with ThreadPoolExecutor(max_workers=threads) as executor:
                         future_to_path = {executor.submit(test_path, p): p for p in paths}
                         for future in as_completed(future_to_path):
@@ -4259,7 +4259,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
                     for future in as_completed(future_to_path):
                         completed += 1
                         if completed % 50 == 0 or completed == len(paths):
-                            print_info(f"Progreso: {completed}/{len(paths)} rutas probadas")
+                            print_info(f"Progress: {completed}/{len(paths)} paths tested")
                         res = future.result()
                         if res:
                             url, code, size, note = res
@@ -4347,7 +4347,7 @@ def extract_forms_and_params(target, session):
 
         params.update(spider_params or set())
 
-        # Reutilizar los formularios ya detecteds por el spider (con inputs)
+        # Reuse the form inputs already detected by the spider (with inputs)
         for f in spider_forms or []:
             action_url = f.get('action') or f.get('url') or f.get('page_url') or target
             method = (f.get('method') or 'GET').upper()
@@ -4385,7 +4385,7 @@ def advanced_injection_tests(url, param, session, method='GET'):
                     session.post(url, data={param: payload}, timeout=DEFAULT_TIMEOUT+2)
                 elapsed = time.time() - start
                 if elapsed > 4:
-                    print_vuln(f"Posible SQLi time-based en {param} (retraso {elapsed:.2f}s)")
+                    print_vuln(f"Possible time-based SQLi on {param} (delay {elapsed:.2f}s)")
                     return True
             except KeyboardInterrupt:
                 print_warning("Injection test interrupted by the user.")
@@ -4401,7 +4401,7 @@ def advanced_injection_tests(url, param, session, method='GET'):
                 else:
                     resp = session.post(url, data={param: payload}, timeout=DEFAULT_TIMEOUT)
                 if payload in resp.text and ('<script>' in payload or 'onerror=' in payload):
-                    print_vuln(f"Posible XSS en {param} con payload: {payload}")
+                    print_vuln(f"Possible XSS on {param} with payload: {payload}")
                     return True
             except KeyboardInterrupt:
                 print_warning("Injection test interrupted by the user.")
@@ -4417,7 +4417,7 @@ def advanced_injection_tests(url, param, session, method='GET'):
                 else:
                     resp = session.post(url, data={param: payload}, timeout=DEFAULT_TIMEOUT)
                 if "uid=" in resp.text or "Directory of" in resp.text:
-                    print_vuln(f"Posible Command Injection en {param} con payload: {payload}")
+                    print_vuln(f"Possible Command Injection on {param} with payload: {payload}")
                     return True
             except KeyboardInterrupt:
                 print_warning("Injection test interrupted by the user.")
@@ -4426,7 +4426,7 @@ def advanced_injection_tests(url, param, session, method='GET'):
                 pass
         return False
     except Exception as e:
-        print_error(f"Error en advanced_injection_tests para {param}: {e}")
+        print_error(f"Error in advanced_injection_tests for {param}: {e}")
         return False
 
 def test_path_traversal(url, param, session, method='GET'):
@@ -4442,7 +4442,7 @@ def test_path_traversal(url, param, session, method='GET'):
                     print_vuln(f"Path Traversal en {param}: {payload}")
                     return True
             except KeyboardInterrupt:
-                print_warning("Prueba de Path Traversal interrumpida por el user.")
+                print_warning("Path Traversal test interrupted by the user.")
                 return False
             except:
                 pass
@@ -4466,7 +4466,7 @@ def test_open_redirect(url, param, session, method='GET'):
                         print_vuln(f"Open Redirect en {param} -> {location}")
                         return True
             except KeyboardInterrupt:
-                print_warning("Prueba de Open Redirect interrumpida por el user.")
+                print_warning("Open Redirect test interrupted by the user.")
                 return False
             except:
                 pass
@@ -4497,9 +4497,9 @@ def check_cookie_security(cookies):
         for cookie in cookies:
             name = cookie.name
             if not cookie.secure:
-                print_warning(f"Cookie '{name}' sin flag Secure")
+                print_warning(f"Cookie '{name}' without Secure flag")
             if not cookie.has_nonstandard_attr('HttpOnly'):
-                print_warning(f"Cookie '{name}' sin flag HttpOnly")
+                print_warning(f"Cookie '{name}' without HttpOnly flag")
     except Exception as e:
         print_error(f"Error revisando cookies: {e}")
 
@@ -4539,7 +4539,7 @@ def check_ssl_tls(target):
         with socket.create_connection((hostname, port), timeout=DEFAULT_TIMEOUT) as sock:
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cert = ssock.getpeercert()
-                print_info(f"Certificado para: {cert.get('subject')}")
+                print_info(f"Certificate for: {cert.get('subject')}")
                 version = ssock.version()
                 if version and version not in ('TLSv1.2', 'TLSv1.3'):
                     print_warning(f"Insecure TLS protocol: {version}")
@@ -4571,7 +4571,7 @@ def test_cors_advanced(target, session):
                     else:
                         print_warning(f"CORS: reflected origin without credentials -> {origin}")
                 elif acao == '*':
-                    print_warning("CORS: wildcard (*) sin Allow-Credentials")
+                    print_warning("CORS: wildcard (*) without Allow-Credentials")
                 # Verificar preflight OPTIONS
                 try:
                     pre = session.options(target, timeout=DEFAULT_TIMEOUT, headers={
@@ -4602,7 +4602,7 @@ def discover_api_endpoints(target, session):
     INTERESTING = {200, 201, 202, 204, 301, 302, 307, 308, 401, 403, 405, 500}
 
     def _probe(endpoint, depth_label=""):
-        """Prueba un endpoint con GET. Devuelve dict si es interesting, None si no."""
+        """Tests an endpoint with GET. Returns dict if interesting, None otherwise."""
         url = urljoin(target, endpoint)
         if url in seen_urls:
             return None
@@ -4642,7 +4642,7 @@ def discover_api_endpoints(target, session):
                     print_info(f"  Paths documentadas ({len(paths)}): {', '.join(paths[:12])}")
                     FINDINGS.append({
                         "name": "Documentacion OpenAPI/Swagger expuesta",
-                        "detail": f"{url} expone {len(paths)} rutas de API (OWASP API9).",
+                        "detail": f"{url} exposes {len(paths)} API paths (OWASP API9).",
                         "severity": "medium",
                     })
                     for path in paths:
@@ -4656,7 +4656,7 @@ def discover_api_endpoints(target, session):
         return item
 
     try:
-        print_info(f"Escaneando {len(API_ENDPOINTS)} rutas de API conocidas...")
+        print_info(f"Scanning {len(API_ENDPOINTS)} known API paths...")
         for ep in API_ENDPOINTS:
             item = _probe(ep)
             if item:
@@ -4699,7 +4699,7 @@ def discover_api_endpoints(target, session):
                 seen_fuzz.add(endpoint)
                 fuzz_endpoints.append(endpoint)
         # Tested in parallel: each endpoint is unique and _probe is safe under the GIL
-        # para esta carga (set.add/list.append atomicos; la rama Swagger no aplica a assets).
+        # for this load (atomic set.add/list.append; the Swagger branch doesn't apply to assets).
         with ThreadPoolExecutor(max_workers=max(THREADS, 8)) as ex:
             futures = [ex.submit(_probe, ep, "↳ ") for ep in fuzz_endpoints]
             for fut in as_completed(futures):
@@ -4732,7 +4732,7 @@ def discover_api_endpoints(target, session):
                 headers=["STATUS", "ENDPOINT", "URL", "CONTENT-TYPE"],
                 rows=rows,
                 alignments=['<', '<', '<', '<'],
-                title="Endpoints API descubiertos:",
+                title="Discovered API Endpoints:",
             )
     except Exception as e:
         print_error(f"Error descubriendo endpoints: {e}")
@@ -4749,7 +4749,7 @@ def test_api_auth_bypass(found_endpoints, session):
             return
 
         def _looks_like_real_content(resp):
-            # Evita falsos positivos: un 200 con pagina de login/SPA generica no es bypass.
+            # Avoids false positives: a 200 with a generic login/SPA page is not a bypass.
             if resp.status_code != 200 or len(resp.content) <= 50:
                 return False
             if _response_has_login_form(resp):
@@ -4759,7 +4759,7 @@ def test_api_auth_bypass(found_endpoints, session):
         for item in restricted:
             url = item['url']
             path = urlparse(url).path or '/'
-            # Headers cuyo valor debe apuntar al PATH del propio endpoint restringido
+            # Headers whose value should point to the PATH of the restricted endpoint itself
             bypass_headers_list = [
                 {'X-Original-URL': path},
                 {'X-Rewrite-URL': path},
@@ -4771,10 +4771,10 @@ def test_api_auth_bypass(found_endpoints, session):
             try:
                 resp = unauth_session.get(url, timeout=DEFAULT_TIMEOUT)
                 if _looks_like_real_content(resp):
-                    print_vuln(f"BFLA: accesible sin auth -> {url}")
+                    print_vuln(f"BFLA: accessible without auth -> {url}")
                     FINDINGS.append({
-                        "name": "BFLA / endpoint restringido sin auth",
-                        "detail": f"{url} devuelve 200 con contenido sin autenticacion (OWASP API5).",
+                        "name": "BFLA / restricted endpoint without auth",
+                        "detail": f"{url} returns 200 with content without authentication (OWASP API5).",
                         "severity": "high",
                     })
                     continue
@@ -4785,10 +4785,10 @@ def test_api_auth_bypass(found_endpoints, session):
                     resp = unauth_session.get(url, timeout=DEFAULT_TIMEOUT, headers=hdrs)
                     if _looks_like_real_content(resp):
                         hdr_name = list(hdrs.keys())[0]
-                        print_vuln(f"Auth bypass con {hdr_name} en {url}")
+                        print_vuln(f"Auth bypass with {hdr_name} on {url}")
                         FINDINGS.append({
-                            "name": "Auth bypass por cabecera",
-                            "detail": f"{url} accesible con {hdr_name}: {list(hdrs.values())[0]} (OWASP API5).",
+                            "name": "Auth bypass via header",
+                            "detail": f"{url} accessible with {hdr_name}: {list(hdrs.values())[0]} (OWASP API5).",
                             "severity": "high",
                         })
                         break
@@ -4801,7 +4801,7 @@ def test_api_auth_bypass(found_endpoints, session):
 def test_api_idor(found_endpoints, session):
     """OWASP API1/BOLA: test IDOR by modifying IDs in routes and query parameters."""
     try:
-        # (patron, grupo del id, id_inexistente_para_sonda_de_control)
+        # (pattern, id group, nonexistent_id_for_control_probe)
         id_patterns = [
             (r'((?:/[a-zA-Z_-]+)/)(\d{1,10})(/|$)', 2, '999999999999'),
             (r'([?&](?:id|user_id|uid|account_id|object_id)=)(\d+)', 2, '999999999999'),
@@ -4836,7 +4836,7 @@ def test_api_idor(found_endpoints, session):
                     continue
                 # Control probe with a nonexistent ID. If it returns 200 with
                 # size almost identical to baseline, the endpoint does NOT distinguish by ID
-                # (devuelve siempre el mismo shell/SPA) -> cualquier 200 seria
+                # (always returns the same shell/SPA) -> any 200 would be
                 # falso positivo, se salta el endpoint.
                 control_200 = False
                 control_len = 0
@@ -4863,13 +4863,13 @@ def test_api_idor(found_endpoints, session):
                         continue
                     alt_len = len(resp.content)
                     # If the control returned 200 (representation of "does not exist"),
-                    # exigir que el objeto alterno difiera de esa representacion.
+                    # require that the alternate object differ from that representation.
                     if control_200 and _ratio(alt_len, control_len) < 0.15:
                         continue
                     # Object differs from baseline => access to another resource (BOLA).
-                    detail = (f"{url} -> ID={alt} devuelve 200 ({alt_len}B, "
+                    detail = (f"{url} -> ID={alt} returns 200 ({alt_len}B, "
                               f"base={base_len}B). The endpoint distinguishes by ID and "
-                              f"expone otro objeto sin control de propiedad (OWASP API1).")
+                              f"exposes another object without ownership control (OWASP API1).")
                     print_vuln(f"IDOR/BOLA: {detail}")
                     FINDINGS.append({"name": "IDOR / BOLA", "detail": detail, "severity": "high"})
                     hits += 1
@@ -4945,12 +4945,12 @@ def test_api_mass_assignment(found_endpoints, session):
                                          "severity": "high"})
                         confirmed = True
                         break
-                    # Confirmacion debil: la respuesta refleja el campo con el valor inyectado.
+                    # Weak confirmation: the response reflects the field with the injected value.
                     if _json_field_matches(_safe_json(resp), key, value):
-                        detail = (f"{url} [{method_name}] refleja {key}={value} en la respuesta "
-                                  f"(posible Mass Assignment, sin confirmar persistencia).")
+                        detail = (f"{url} [{method_name}] reflects {key}={value} in the response "
+                                  f"(possible Mass Assignment, persistence not confirmed).")
                         print_warning(detail)
-                        FINDINGS.append({"name": "Mass Assignment (posible)", "detail": detail,
+                        FINDINGS.append({"name": "Mass Assignment (possible)", "detail": detail,
                                          "severity": "medium"})
                         confirmed = True
                         break
@@ -4996,10 +4996,10 @@ def test_graphql(target, session):
                                           timeout=DEFAULT_TIMEOUT)
                         d2 = r2.json()
                         if 'data' in d2 and d2['data'] and 'users' in str(d2['data']):
-                            print_vuln(f"GraphQL expone listado de users en {gql_url}")
+                            print_vuln(f"GraphQL exposes a list of users at {gql_url}")
                             FINDINGS.append({
                                 "name": "GraphQL expone users",
-                                "detail": f"{gql_url} permite enumerar users via query GraphQL "
+                                "detail": f"{gql_url} allows enumerating users via GraphQL query "
                                           f"(OWASP API8/API3).",
                                 "severity": "high",
                             })
@@ -5009,7 +5009,7 @@ def test_graphql(target, session):
             except Exception:
                 pass
         if not found_any:
-            print_info("No endpoints GraphQL detecteds o activos.")
+            print_info("No GraphQL endpoints detected or active.")
     except Exception as e:
         print_error(f"Error en test GraphQL: {e}")
 
@@ -5049,7 +5049,7 @@ def test_api_verbose_errors(found_endpoints, session):
                 except Exception:
                     pass
         if hits == 0:
-            print_info("No errores verbose detecteds en los endpoints probados.")
+            print_info("No verbose errors detected on the tested endpoints.")
     except Exception as e:
         print_error(f"Error en test verbose errors: {e}")
 
@@ -5233,8 +5233,8 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             print_warning("No login forms were detected automatically.")
             manual = input("Enter the data manually? (y/n): ").strip().lower()
             if manual in ('y', 's'):
-                login_url2 = input("URL completa del formulario de login: ").strip()
-                user_field = input("Name del campo de user: ").strip()
+                login_url2 = input("Full login form URL: ").strip()
+                user_field = input("Name of the user field: ").strip()
                 pass_field = input("Password field name: ").strip()
                 if login_url2 and user_field and pass_field:
                     login_forms.append({
@@ -5245,12 +5245,12 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                         'score': 10,
                         'source_page': normalize_url(login_url2),
                     })
-                    print_good("Formulario manual agregado.")
+                    print_good("Manual form added.")
                 else:
                     print_error("Incomplete data. Bruteforce will not run.")
                     return result_data
             else:
-                print_info("Continuando sin bruteforce.")
+                print_info("Continuing without bruteforce.")
                 return result_data
 
         primary_form = max(
@@ -5258,7 +5258,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             key=lambda f: (f.get('score', 0), -len(urlparse(f.get('url', '')).path or '/'))
         )
         print_info(
-            f"Using formulario principal: {primary_form['url']} "
+            f"Using main form: {primary_form['url']} "
             f"({primary_form['user_field']}/{primary_form['pass_field']})"
         )
 
@@ -5367,14 +5367,14 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                     pfile.write(p + '\n')
                 pfile_path = pfile.name
 
-            # Detectar tipo de formulario (POST)
+            # Detect form type (POST)
             login_url_hydra = primary_form['url']
             user_field = primary_form['user_field']
             pass_field = primary_form['pass_field']
             parsed_url = urlparse(login_url_hydra)
             host = parsed_url.hostname
             path = parsed_url.path or '/'
-            # Construir string de datos POST
+            # Build POST data string
             post_data = f"{user_field}=^USER^&{pass_field}=^PASS^"
             for k, v in primary_form.get('hidden_fields', {}).items():
                 post_data += f"&{k}={v}"
@@ -5384,8 +5384,8 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
             cookie_string = _session_cookie_string(session) or _session_header_value(session, "Cookie")
             if cookie_string:
                 hydra_form += f":H=Cookie\\: {cookie_string}"
-            # -t 4: limitar concurrencia (evita duplicados por race entre workers)
-            # -I  : ignorar restorefile previo (sin esperar 10s)
+            # -t 4: limit concurrency (avoids duplicates from races between workers)
+            # -I  : ignore previous restorefile (without waiting 10s)
             # -u  : iterate users first by password (better coverage)
             hydra_cmd = [
                 "hydra", "-L", ufile_path, "-P", pfile_path,
@@ -5411,7 +5411,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                                 continue
                             user = line[login_idx+len("login:"):pass_idx].strip().split()[0]
                             pwd = line[pass_idx+len("password:"):].strip().split()[0]
-                        # Deduplicar (hydra puede reportar el mismo par 2+ veces)
+                        # Deduplicate (hydra can report the same pair 2+ times)
                         if (user, pwd) in seen_creds:
                             continue
                         seen_creds.add((user, pwd))
@@ -5429,14 +5429,14 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
 
             # Verify credentials with the internal method (real session)
             # to detect users that hydra did not find because of CSRF/cookies/rate limiting.
-            usernames_pendientes = [u for u in usernames if u not in {c["username"] for c in result_data["credentials"]}]
-            if usernames_pendientes:
+            usernames_pending = [u for u in usernames if u not in {c["username"] for c in result_data["credentials"]}]
+            if usernames_pending:
                 print_info(
-                    f"Hydra found no credentials for {len(usernames_pendientes)} user(s) "
-                    f"({', '.join(usernames_pendientes)}). Retrying with real session (CSRF-aware)..."
+                    f"Hydra found no credentials for {len(usernames_pending)} user(s) "
+                    f"({', '.join(usernames_pending)}). Retrying with real session (CSRF-aware)..."
                 )
                 # Fall back to the internal method with the reduced list
-                usernames = usernames_pendientes
+                usernames = usernames_pending
                 total_combinations = len(usernames) * len(passwords)
                 result_data["total_combinations"] = (result_data.get("total_combinations") or 0) + total_combinations
             else:
@@ -5596,7 +5596,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 for future in as_completed(futures):
                     completed += 1
                     if completed % 100 == 0 or completed == total_combinations:
-                        print_info(f"Progreso bruteforce: {completed}/{total_combinations} combinations probadas")
+                        print_info(f"Bruteforce progress: {completed}/{total_combinations} combinations tested")
                     future.result()
 
         # Combine with previous credentials (for example, found by hydra before fallback)
@@ -5949,7 +5949,7 @@ def _extract_wpscan_vulnerabilities(data):
             return
         for vuln in raw_vulns:
             if isinstance(vuln, dict):
-                title = vuln.get("title") or vuln.get("name") or vuln.get("id") or "Vulnerabilidad WPScan"
+                title = vuln.get("title") or vuln.get("name") or vuln.get("id") or "WPScan Vulnerability"
                 fixed_in = vuln.get("fixed_in")
                 if isinstance(fixed_in, list):
                     fixed_in = ", ".join(str(x) for x in fixed_in)
@@ -6115,7 +6115,7 @@ def _wpscan_retry_command(cmd, request_timeout=None):
     return retry_cmd
 
 def _run_wpscan_visible(cmd, request_timeout=None, label="WPScan"):
-    print_info(f"Ejecutando {label} con salida nativa: {_format_external_command(cmd)}")
+    print_info(f"Running {label} with native output: {_format_external_command(cmd)}")
     rc, stdout_text = _stream_command_output(cmd, capture=True, prefer_pty=True, interrupt_label="wpscan")
     if rc == 4:
         print_warning("WPScan returned code 4; retrying with more tolerant options.")
@@ -6146,7 +6146,7 @@ def run_wpscan_enumeration(target, session, wpscan_path, api_token=None, threads
                            enum_flags="u,ap,at", label="WPScan enumeration"):
     tmp_fd, tmp_path = tempfile.mkstemp(suffix=".json", prefix="wpscan_enum_")
     os.close(tmp_fd)
-    # Usar enumerate explicito para evitar ambiguedades con versiones de WPScan
+    # Use explicit enumerate to avoid ambiguity across WPScan versions
     enum_flags = str(enum_flags or "u,ap,at").strip() or "u,ap,at"
     base_cmd = [
         wpscan_path,
@@ -6175,7 +6175,7 @@ def run_wpscan_enumeration(target, session, wpscan_path, api_token=None, threads
     if not interrupted:
         json_rc, json_stdout = _run_wpscan_json(json_cmd, request_timeout=request_timeout)
     else:
-        print_info("WPScan interrupted. Se omite la generacion JSON para volver al menu inmediatamente.")
+        print_info("WPScan interrupted. Skipping JSON generation to return to the menu immediately.")
 
     data = _load_json_file(tmp_path)
     try:
@@ -6349,7 +6349,7 @@ def print_wpscan_detailed_summary(scan):
             for u in users if isinstance(u, dict)
         ]
         print_table(
-            headers=["User", "ID", "Name", "Encontrado por"],
+            headers=["User", "ID", "Name", "Found by"],
             rows=user_rows,
             alignments=['<', '<', '<', '<'],
             title=f"WordPress users found ({len(user_rows)}):",
@@ -6536,15 +6536,15 @@ def detect_wordpress_for_full_pentest(target, session):
             SCAN_DATA["wordpress_detection"] = detection
             print_good(f"WhatWeb detecto WordPress: {', '.join(matches[:3])}")
             return detection
-        print_info("WhatWeb no detecto WordPress. Ejecutando deteccion manual por patrones.")
+        print_info("WhatWeb did not detect WordPress. Running manual pattern-based detection.")
     else:
-        print_info("No hay deteccion WhatWeb util para WordPress. Ejecutando deteccion manual por patrones.")
+        print_info("No useful WhatWeb detection for WordPress. Running manual pattern-based detection.")
 
     detection = _manual_wordpress_detection(target, session)
     SCAN_DATA["wordpress_detection"] = detection
     if detection.get("detected"):
         signal_names = sorted({s.get("name", "") for s in detection.get("signals", []) if s.get("name")})
-        print_good(f"Deteccion manual compatible con WordPress: {', '.join(signal_names[:5])}")
+        print_good(f"Manual detection compatible with WordPress: {', '.join(signal_names[:5])}")
     else:
         print_info("No se encontraron patrones manuales suficientes de WordPress.")
     return detection
@@ -6570,7 +6570,7 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
             return existing_users
         wpscan_path = check_wpscan()
         if not wpscan_path:
-            print_warning("WPScan sigue sin estar disponible.")
+            print_warning("WPScan is still not available.")
             return existing_users
 
     api_token = os.environ.get("WPSCAN_API_TOKEN") or os.environ.get("WPVULNDB_API_TOKEN") or ""
@@ -6601,7 +6601,7 @@ def run_wpscan_user_enumeration_if_wordpress(target, session, existing_users=Non
         print_table(
             headers=["User"],
             rows=[[u] for u in wp_users],
-            title=f"Users WordPress identificados con WPScan ({len(wp_users)}):",
+            title=f"WordPress users identified with WPScan ({len(wp_users)}):",
         )
         return merged_users
 
@@ -6617,7 +6617,7 @@ def run_wordpress_attacks(target, session):
             return None
         wpscan_path = check_wpscan()
         if not wpscan_path:
-            print_warning("WPScan sigue sin estar disponible.")
+            print_warning("WPScan is still not available.")
             return None
 
     api_token = os.environ.get("WPSCAN_API_TOKEN") or os.environ.get("WPVULNDB_API_TOKEN") or ""
@@ -6650,7 +6650,7 @@ def run_wordpress_attacks(target, session):
             ["WordPress", version.get("number") or "detected"],
             ["Version status", version.get("status") or "-"],
             ["Main theme", main_theme.get("name") or "-"],
-            ["Plugins detecteds", str(len(plugins))],
+            ["Plugins detected", str(len(plugins))],
             ["Users", str(len(users))],
             ["Vulnerabilities", str(len(vulnerabilities))],
         ]
@@ -6690,7 +6690,7 @@ def run_wordpress_attacks(target, session):
             if not passlist:
                 passlist = _default_wordpress_password_wordlist()
                 if passlist:
-                    print_info(f"Using wordlist por defecto: {passlist}")
+                    print_info(f"Using default wordlist: {passlist}")
             if not passlist or not os.path.isfile(passlist):
                 print_warning("No valid password wordlist. Skipping WordPress bruteforce.")
             else:
@@ -6733,7 +6733,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
             robots_parser = rp
             print_info("robots.txt cargado correctamente.")
         except (OSError, ValueError) as e:
-            print_warning(f"Could not cargar robots.txt ({type(e).__name__}: {e}). Continuando sin restricciones.")
+            print_warning(f"Could not load robots.txt ({type(e).__name__}: {e}). Continuing without restrictions.")
 
     visited = set()
     urls_queue = deque()
@@ -6763,7 +6763,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
                 try:
                     resp = session.get(current_url, timeout=DEFAULT_TIMEOUT)
                 except requests.exceptions.TooManyRedirects:
-                    # Reintentar sin seguir redirecciones para capturar el destino
+                    # Retry without following redirects to capture the destination
                     try:
                         resp = session.get(current_url, timeout=DEFAULT_TIMEOUT, allow_redirects=False)
                     except Exception:
@@ -6817,7 +6817,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
                             all_params.add(name)
                         if not form_inputs:
                             continue
-                        # Deduplicar por (action_url, method, tupla de inputs ordenados)
+                        # Deduplicate by (action_url, method, tuple of sorted inputs)
                         form_key = (
                             form_action_url,
                             method,
@@ -6858,7 +6858,7 @@ def spider_website(target, session, max_pages=500, max_depth=3, use_robots=True)
     if all_params:
         print_info(f"Unique parameters found: {len(all_params)} -> {', '.join(list(all_params)[:20])}")
     if forms_found:
-        print_info(f"Forms detecteds durante el spidering: {len(forms_found)}")
+        print_info(f"Forms detected during spidering: {len(forms_found)}")
     return discovered_urls, all_params, forms_found
 
 # ========== SOURCE CODE ANALYSIS ==========
@@ -6869,7 +6869,7 @@ _SRC_SNIPPET_CHARS = 140
 _SRC_MAX_FINDINGS_PER_FILE = 30
 
 _OSURCE_PATTERNS = [
-    ("critical", "Clave private PEM",
+    ("critical", "PEM Private Key",
      re.compile(r"-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY-----"), False),
     ("critical", "Database connection string with credentials",
      re.compile(r"\b(?:mongodb(?:\+srv)?|mysql|postgres(?:ql)?|redis|amqps?|mssql|jdbc:[a-z]+)://[^\s\"'<>]*:[^\s\"'<>@]+@[^\s\"'<>]+", re.IGNORECASE), False),
@@ -6894,9 +6894,9 @@ _OSURCE_PATTERNS = [
     ("medium", "Comentario HTML sensible",
      re.compile(
          r"<!--\s*("
-         # Contenido del comentario que NO atraviesa '-->'
+         # Comment content that does NOT cross '-->'
          r"(?:(?!-->)[\s\S]){0,400}"
-         # Palabra clave realmente sensible
+         # Genuinely sensitive keyword
          r"(?:password|passwd|pwd|secret|api[_\-]?key|access[_\-]?key|"
          r"private[_\-]?key|client[_\-]?secret|auth[_\-]?token|bearer|"
          r"credentials|hardcoded|backdoor|deprecated|do not commit|"
@@ -6931,7 +6931,7 @@ def _is_source_text_response(content_type, url):
 
 
 def _download_text_capped(session, url, max_bytes=_SRC_MAX_BYTES):
-    """Descarga el cuerpo como texto con un cap de bytes (evita descargas enormes)."""
+    """Downloads the body as text with a byte cap (avoids huge downloads)."""
     try:
         resp = session.get(url, timeout=DEFAULT_TIMEOUT, stream=True, allow_redirects=True)
     except requests.RequestException as e:
@@ -7012,8 +7012,8 @@ def _scan_text_for_secrets(text, source_url):
                 continue
             if label == "Email exposed" and value.lower().endswith(('.png', '.jpg', '.svg', '.gif', '.webp')):
                 continue
-            # Filtro de boilerplate UI para comentarios HTML: si el comentario
-            # es claramente decorativo (footer/header/logo/...) sin contenido
+            # UI boilerplate filter for HTML comments: if the comment
+            # is clearly decorative (footer/header/logo/...) without content
             # realmente sensible alrededor, descartarlo.
             if label == "Comentario HTML sensible":
                 low = value.lower()
@@ -7134,7 +7134,7 @@ def analyze_source_code(target, session, urls=None, max_urls=120, max_assets=200
             f"M:{sev_count.get('medium',0)} L:{sev_count.get('low',0)}) "
             f"across {pages_analyzed} pages + {assets_analyzed} assets."
         )
-        # Tabla visual con los primeros 50 findings ordenados por severity
+        # Visual table with the first 50 findings sorted by severity
         SEV_ORDER = {'critical': 0, 'high': 1, 'medium': 2, 'low': 3}
         SEV_COLOR = {
             'critical': Fore.MAGENTA, 'high': Fore.RED,
@@ -7268,7 +7268,7 @@ def _run_ad_command(cmd, label, timeout=300, secrets=None):
             "output": output,
         }
     except KeyboardInterrupt:
-        print_warning(f"{label} interrupted por el user.")
+        print_warning(f"{label} interrupted by the user.")
         return {
             "label": label,
             "command": visible,
@@ -7478,7 +7478,7 @@ def run_active_directory_pentest(target=None):
     print_warning("Run this module only with explicit authorization for the target domain/AD.")
     parsed = urlparse(target or TARGET_URL or "")
     default_dc = parsed.hostname or ""
-    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} IP/FQDN del Domain Controller [{default_dc}]:")
+    print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain Controller IP/FQDN [{default_dc}]:")
     dc = input("> ").strip() or default_dc
     if not dc:
         print_error("Domain Controller required.")
@@ -7487,7 +7487,7 @@ def run_active_directory_pentest(target=None):
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Domain AD FQDN [{suggested_domain}]:")
     domain = input("> ").strip() or suggested_domain
     if not domain:
-        print_error("Domain required para Kerberos/LDAP/NXC.")
+        print_error("Domain required for Kerberos/LDAP/NXC.")
         return None
     base_dn = _domain_to_base_dn(domain)
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Base DN LDAP [{base_dn}]:")
@@ -7537,8 +7537,8 @@ def run_active_directory_pentest(target=None):
     kerbrute_path = check_kerbrute()
     if kerbrute_path:
         default_users = _default_ad_user_wordlist()
-        prompt_default = default_users or "sin default"
-        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Wordlist de users para kerbrute userenum [{prompt_default}] (empty = skip):")
+        prompt_default = default_users or "no default"
+        print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} User wordlist for kerbrute userenum [{prompt_default}] (empty = skip):")
         user_wl = input_path("> ").strip() or default_users
         ad_user_wordlist = user_wl if user_wl and os.path.isfile(user_wl) else None
         if ad_user_wordlist:
@@ -7619,7 +7619,7 @@ def run_active_directory_pentest(target=None):
                                _adtrim(c.get("os") or "-", 35),
                                _adtrim(c.get("os_version") or "-", 18)] for c in ldap_computers_now[:30]],
                         alignments=['<', '<', '<'],
-                        title=f"LDAP — equipos ({len(ldap_computers_now)}):",
+                        title=f"LDAP — computers ({len(ldap_computers_now)}):",
                     )
             command_data = {
                 "label": run.get("label"),
@@ -7638,7 +7638,7 @@ def run_active_directory_pentest(target=None):
     valid_users_file = _write_ad_user_file(discovered_users, domain, dc)
     if valid_users_file:
         result["artifacts"]["valid_users_file"] = valid_users_file
-        print_good(f"Users validos guardados para roasting: {valid_users_file}")
+        print_good(f"Valid users saved for roasting: {valid_users_file}")
 
     getnp_path = check_impacket_getnpusers()
     if getnp_path:
@@ -7843,7 +7843,7 @@ def install_playwright():
 
 def _attempt_headless_login(login_url, identifier, password, user_agent=None):
     """Headless login with Playwright for SPAs (Angular/Vue/React) and OAuth2/OIDC.
-    Devuelve (cookies_dict, final_url) o (None, None) si falla."""
+    Returns (cookies_dict, final_url) or (None, None) if it fails."""
     if not HAS_PLAYWRIGHT:
         return None, None
     ua = user_agent or "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -7865,7 +7865,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
                     continue
 
             # Some OAuth2 flows have the password field in a second step.
-            # Intentamos hacer clic en "Yesguiente"/"Next"/"Continue" si no hay campo de password visible.
+            # We try clicking "Next"/"Continue" if there is no visible password field.
             try:
                 page.wait_for_selector("input[type='password']", timeout=4000)
             except Exception:
@@ -7888,7 +7888,7 @@ def _attempt_headless_login(login_url, identifier, password, user_agent=None):
                 browser.close()
                 return None, None
 
-            # Enviar formulario.
+            # Submit the form.
             submitted = False
             for btn_sel in [
                 "button[type='submit']", "input[type='submit']",
@@ -7980,8 +7980,8 @@ def _ssrf_payload_response_looks_internal(resp_text):
     body = (resp_text or "").lower()
     return any(m.lower() in body for m in markers)
 
-# Sondas SSRF con oraculo determinista: cada payload provoca que el servidor
-# lea un recurso interno cuyo contenido reconocemos sin falsos positivos (a
+# SSRF probes with deterministic oracle: each payload causes the server
+# reads an internal resource whose content we recognize without false positives (so
 # diferencia de comparar tamanos/respuestas). file:// confirma lectura local.
 SSRF_PROBES = [
     ("file:///etc/passwd",
@@ -7997,7 +7997,7 @@ def _collect_injection_points(target):
     """Collect discovered injection vectors (spider + forms + module
     injection) and the list of known endpoints, so the tests
     advanced (SSRF/SSTI/XXE) hit real app endpoints and not only
-    la root. Devuelve (get_points, post_points, endpoints)."""
+    the root. Returns (get_points, post_points, endpoints)."""
     get_points, post_points = [], []
     endpoints, seen_pt = set(), set()
 
@@ -8060,14 +8060,14 @@ def _send_probe(session, url, param, payload, method):
 
 
 def test_ssrf(target, session, collaborator_url=None):
-    """SSRF: ataca los parametros/endpoints descubiertos por el spider (no solo
+    """SSRF: attacks the parameters/endpoints discovered by the spider (not only
     the root) using deterministic oracles (file://, cloud metadata)."""
     results = []
     confirmed = set()
     get_points, post_points, endpoints = _collect_injection_points(target)
 
-    # Vectores: parametros descubiertos (GET/POST) + nombres SSRF habituales
-    # contra cada endpoint conocido (para cubrir endpoints cuyo form no se
+    # Vectors: discovered parameters (GET/POST) + common SSRF names
+    # against each known endpoint (to cover endpoints whose form isn't
     # capturo, p.ej. /ssrf?url=).
     vectors, vseen = [], set()
 
@@ -8085,21 +8085,21 @@ def test_ssrf(target, session, collaborator_url=None):
         for param in SSRF_URL_PARAMS:
             _add_vec(ep, param, "GET")
 
-    print_info(f"Testing SSRF en {len(vectors)} vectores (parametros + endpoints descubiertos)...")
+    print_info(f"Testing SSRF on {len(vectors)} vectors (discovered parameters + endpoints)...")
     for url, param, method in vectors:
         if (url, param) in confirmed:
             continue
-        # Para el fuzz de nombres common basta el oraculo file://; para puntos
-        # realmente descubiertos se prueban todas las sondas.
+        # For fuzzing common names the file:// oracle is enough; for points
+        # that are actually discovered, all probes are tested.
         probes = SSRF_PROBES if (url, param) in {(u, p) for u, p in get_points + post_points} else SSRF_PROBES[:1]
         for payload, markers in probes:
             resp = _send_probe(session, url, param, payload, method)
             if resp is None or resp.status_code >= 500:
                 continue
             low = (resp.text or "").lower()
-            # Solo marcadores que NO formen parte del payload: si la app refleja
+            # Only markers that are NOT part of the payload: if the app reflects
             # el payload (p.ej. un endpoint SSTI/eco), 'computeMetadata' apareceria
-            # sin que exista SSRF. Exigir un marcador del CONTENIDO interno.
+            # without SSRF existing. Require a marker from the internal CONTENT.
             plow = payload.lower()
             eff_markers = [m for m in markers if m.lower() not in plow]
             if eff_markers and any(m.lower() in low for m in eff_markers):
@@ -8114,7 +8114,7 @@ def test_ssrf(target, session, collaborator_url=None):
             if collaborator_url:
                 _send_probe(session, url, param, collaborator_url, method)
 
-    # Headers con IPs internas (oraculo determinista).
+    # Headers with internal IPs (deterministic oracle).
     print_info("Testing SSRF via HTTP headers...")
     for header in SSRF_HEADERS:
         for payload, markers in SSRF_PROBES[1:]:
@@ -8126,22 +8126,22 @@ def test_ssrf(target, session, collaborator_url=None):
             plow = payload.lower()
             eff_markers = [m for m in markers if m.lower() not in plow]
             if eff_markers and any(m.lower() in low for m in eff_markers):
-                msg = f"SSRF via cabecera '{header}: {payload}' devuelve datos internos"
+                msg = f"SSRF via header '{header}: {payload}' returns internal data"
                 print_vuln(msg)
                 results.append({"type": "ssrf-header", "header": header, "value": payload,
                                 "status": resp.status_code})
                 FINDINGS.append({"name": "SSRF (header)", "detail": msg, "severity": "critical"})
 
     if not results:
-        print_info("No indicios de SSRF en los vectores probados.")
+        print_info("No signs of SSRF in the tested vectors.")
     return results
 
 
 # ========== SSTI ==========
 
-# Operandos distintivos: el producto (1787569) no aparece por azar en una
-# pagina ni dentro del propio payload, asi que su presencia confirma que el
-# motor evaluo la expresion (no una simple reflexion del input).
+# Distinctive operands: the product (1787569) doesn't appear by chance in a
+# page or inside the payload itself, so its presence confirms that the
+# engine evaluated the expression (not a simple reflection of the input).
 SSTI_PROBES = [
     # (payload, expected_in_response, engine_hint)
     ("{{1337*1337}}", "1787569", "Jinja2/Twig/Nunjucks"),
@@ -8154,9 +8154,9 @@ SSTI_PROBES = [
     ("{{1337*'1'}}", "1337", "Twig/Jinja2 str"),
 ]
 
-# Solo firmas de error especificas de motor (clases de excepcion / tracebacks),
+# Only engine-specific error signatures (exception classes / tracebacks),
 # not generic words like "jinja2" or "template" that appear on pages
-# descriptivas sin que exista vulnerabilidad.
+# descriptive without an actual vulnerability existing.
 SSTI_ERROR_MARKERS = [
     "TemplateSyntaxError", "jinja2.exceptions", "UndefinedError",
     "Twig_Error_Syntax", "freemarker.core.", "TemplateError",
@@ -8164,8 +8164,8 @@ SSTI_ERROR_MARKERS = [
 ]
 
 def test_ssti(url, param, session, method="GET", probes=None):
-    """SSTI detection via math probes. Devuelve True si confirma vulnerabilidad.
-    'probes' permite limitar las sondas (fuzz ligero de nombres de parametro)."""
+    """SSTI detection via math probes. Returns True if it confirms vulnerability.
+    'probes' allows limiting the probes (light fuzz of parameter names)."""
     for payload, expected, engine in (probes or SSTI_PROBES):
         try:
             if method == "GET":
@@ -8173,17 +8173,17 @@ def test_ssti(url, param, session, method="GET", probes=None):
             else:
                 resp = session.post(url, data={param: payload}, timeout=DEFAULT_TIMEOUT)
             body = resp.text or ""
-            # El resultado distintivo (p.ej. 1787569) solo aparece si el motor
-            # evaluo la expresion; no esta en el payload ni suele estar en la
-            # pagina, asi que confirma la ejecucion (no una mera reflexion).
+            # The distinctive result (e.g. 1787569) only appears if the engine
+            # evaluated the expression; it's not in the payload and doesn't usually appear in the
+            # page, so it confirms execution (not a mere reflection).
             if expected in body and expected not in payload:
-                msg = f"SSTI confirmado ({engine}) en parametro '{param}' — payload '{payload}' -> '{expected}' en respuesta"
+                msg = f"SSTI confirmed ({engine}) on parameter '{param}' — payload '{payload}' -> '{expected}' in the response"
                 print_vuln(msg)
                 FINDINGS.append({"name": "SSTI", "detail": msg, "severity": "critical",
                                   "url": url, "param": param, "engine": engine})
                 return True
             if any(marker.lower() in body.lower() for marker in SSTI_ERROR_MARKERS):
-                msg = f"SSTI probable (error de template) en '{param}' con payload '{payload}'"
+                msg = f"Probable SSTI (template error) on '{param}' with payload '{payload}'"
                 print_warning(msg)
                 FINDINGS.append({"name": "SSTI (error)", "detail": msg, "severity": "high",
                                   "url": url, "param": param})
@@ -8201,9 +8201,9 @@ XXE_CONTENT_TYPES = [
     "application/soap+xml",
 ]
 
-# Names de campo habituales donde inyectar la entidad. Muchos backends solo
-# reflejan campos concretos (name, message, ...), por lo que un payload
-# <root><data> generico no muestra el contenido; se inyecta en varios a la vez.
+# Common field names where the entity is injected. Many backends only
+# reflect specific fields (name, message, ...), so a payload
+# <root><data> generic doesn't show the content; it's injected into several at once.
 XXE_FIELD_NAMES = [
     "name", "data", "value", "message", "text", "comment",
     "title", "content", "email", "subject", "input", "xml", "body",
@@ -8211,8 +8211,8 @@ XXE_FIELD_NAMES = [
 
 
 def _build_xxe_payloads(field_names=None):
-    """Genera payloads XXE inyectando la entidad en multiples campos para
-    maximizar la reflexion. Devuelve [(payload, markers|None), ...]."""
+    """Generates XXE payloads by injecting the entity into multiple fields to
+    maximize reflection. Returns [(payload, markers|None), ...]."""
     fields = list(dict.fromkeys((field_names or []) + XXE_FIELD_NAMES))
     inner = "".join(f"<{f}>&xxe;</{f}>" for f in fields if re.match(r"^[A-Za-z_][\w.-]*$", f))
     if not inner:
@@ -8232,7 +8232,7 @@ def _build_xxe_payloads(field_names=None):
 
 
 def _xml_endpoint_candidates(target, found_endpoints):
-    """Construye endpoints candidatos para XXE a partir de spider, formularios,
+    """Builds candidate endpoints for XXE from spider, forms,
     known directories and endpoints, deriving API/XML suffixes and normalizing
     prefixes like /lab/<x> -> /<x> and /<x>/api (where the XML parser often lives)."""
     cand = set()
@@ -8275,10 +8275,10 @@ def _xml_endpoint_candidates(target, found_endpoints):
 
 
 def test_xxe(target, session, found_endpoints=None):
-    """XXE: descubre endpoints que aceptan XML (incluidos los derivados como
+    """XXE: discovers endpoints that accept XML (including derived ones such as
     /xxe/api) and test local file reads with a deterministic oracle."""
     results = []
-    # Names de campo descubiertos en formularios, para inyectar donde se reflejen.
+    # Field names discovered in forms, to inject where they get reflected.
     form_fields = []
     for f in ((SCAN_DATA.get("spider") or {}).get("sample_forms") or []):
         form_fields.extend(f.get("inputs") or [])
@@ -8317,7 +8317,7 @@ def test_xxe(target, session, found_endpoints=None):
                     hit_eps.add(endpoint_url)
                     break
     if not results:
-        print_info("No indicios de XXE en los endpoints probados.")
+        print_info("No signs of XXE in the tested endpoints.")
     return results
 
 
@@ -8365,7 +8365,7 @@ def test_crlf(target, session):
                 pass
 
     if not results:
-        print_info("No indicios de CRLF en los vectores probados.")
+        print_info("No signs of CRLF in the tested vectors.")
     return results
 
 
@@ -8383,11 +8383,11 @@ def _find_smuggler_path():
     return None
 
 def test_request_smuggling(target, session):
-    """HTTP Request Smuggling: usa smuggler si esta disponible, sino prueba manual CL.TE / TE.CL."""
+    """HTTP Request Smuggling: uses smuggler if available, otherwise does a manual CL.TE / TE.CL test."""
     results = []
     smuggler = _find_smuggler_path()
     if smuggler:
-        print_info(f"Using smuggler.py para HTTP Request Smuggling...")
+        print_info(f"Using smuggler.py for HTTP Request Smuggling...")
         try:
             cmd = ["python3", smuggler, "-u", target, "-t", str(DEFAULT_TIMEOUT), "-q"]
             if smuggler == "smuggler":
@@ -8395,25 +8395,25 @@ def test_request_smuggling(target, session):
             out = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
             output = (out.stdout or "") + (out.stderr or "")
             if any(x in output.lower() for x in ["vulnerable", "smuggl", "clte", "tecl", "found"]):
-                msg = f"HTTP Request Smuggling detected por smuggler.py en {target}"
+                msg = f"HTTP Request Smuggling detected by smuggler.py on {target}"
                 print_vuln(msg)
                 results.append({"tool": "smuggler", "output_snippet": output[:300]})
                 FINDINGS.append({"name": "HTTP Request Smuggling", "detail": msg, "severity": "critical"})
             else:
-                print_info("smuggler.py no encontro indicios de smuggling.")
+                print_info("smuggler.py found no signs of smuggling.")
         except subprocess.TimeoutExpired:
             print_warning("smuggler.py timeout.")
         except Exception as e:
             print_warning(f"smuggler.py error: {e}")
     else:
-        print_info("smuggler.py no encontrado. Prueba manual de CL.TE / TE.CL...")
-        # Prueba manual CL.TE con un socket raw.
+        print_info("smuggler.py not found. Manual CL.TE / TE.CL test...")
+        # Manual CL.TE test with a raw socket.
         parsed = urlparse(target)
         host = parsed.hostname
         port = parsed.port or (443 if parsed.scheme == "https" else 80)
         use_tls = parsed.scheme == "https"
         path = parsed.path or "/"
-        # Payload CL.TE: Content-Length dice 6, Transfer-Encoding: chunked, body chunked con 0 termina antes.
+        # CL.TE payload: Content-Length says 6, Transfer-Encoding: chunked, chunked body with 0 ends early.
         smuggle_req = (
             f"POST {path} HTTP/1.1\r\n"
             f"Host: {host}\r\n"
@@ -8447,16 +8447,16 @@ def test_request_smuggling(target, session):
             sock.close()
             resp_text = resp_raw.decode("utf-8", errors="ignore")
             if "400" in resp_text and ("bad request" in resp_text.lower() or "invalid" in resp_text.lower()):
-                print_info("CL.TE: servidor devolvio 400 — posible deteccion del conflicto (revisar manualmente).")
-                results.append({"type": "clte-400", "note": "posible smuggling, verificar con smuggler.py"})
+                print_info("CL.TE: server returned 400 — possible conflict detection (review manually).")
+                results.append({"type": "clte-400", "note": "possible smuggling, verify with smuggler.py"})
             else:
-                print_info("No respuesta anomala en prueba manual CL.TE.")
+                print_info("No anomalous response in manual CL.TE test.")
         except Exception as e:
-            print_warning(f"Could not hacer prueba manual de smuggling: {e}")
+            print_warning(f"Could not run manual smuggling test: {e}")
         print_info("For full analysis: pip install requests && git clone https://github.com/defparam/smuggler")
 
     if not results:
-        print_info("No indicios de HTTP Request Smuggling confirmados.")
+        print_info("No confirmed signs of HTTP Request Smuggling.")
     return results
 
 
@@ -8486,7 +8486,7 @@ def test_cache_poisoning(target, session):
             resp1 = session.get(target, headers={header_tpl: value},
                                 timeout=DEFAULT_TIMEOUT, allow_redirects=True)
             body1 = resp1.text or ""
-            # Segunda peticion sin la cabecera: si el valor inyectado aparece, hubo cache poisoning.
+            # Second request without the header: if the injected value appears, cache poisoning occurred.
             resp2 = session.get(target, timeout=DEFAULT_TIMEOUT, allow_redirects=True)
             body2 = resp2.text or ""
 
@@ -8494,12 +8494,12 @@ def test_cache_poisoning(target, session):
             reflected_in_2 = rand_id in body2 or value in body2
 
             if reflected_in_1 and reflected_in_2:
-                msg = f"Cache Poisoning confirmado via '{header_tpl}: {value}' — valor inyectado persiste en respuesta sin cabecera"
+                msg = f"Cache Poisoning confirmed via '{header_tpl}: {value}' — injected value persists in the response without the header"
                 print_vuln(msg)
                 results.append({"header": header_tpl, "value": value, "confirmed": True})
                 FINDINGS.append({"name": "Cache Poisoning", "detail": msg, "severity": "high"})
             elif reflected_in_1:
-                msg = f"Cache Poisoning posible — '{header_tpl}: {value}' se refleja en la respuesta con la cabecera presente"
+                msg = f"Cache Poisoning possible — '{header_tpl}: {value}' is reflected in the response with the header present"
                 print_warning(msg)
                 results.append({"header": header_tpl, "value": value, "confirmed": False, "reflected": True})
                 FINDINGS.append({"name": "Cache Poisoning (reflected)", "detail": msg, "severity": "medium"})
@@ -8518,7 +8518,7 @@ def test_cache_poisoning(target, session):
         pass
 
     if not results:
-        print_info("No indicios de Cache Poisoning en los vectores probados.")
+        print_info("No signs of Cache Poisoning in the tested vectors.")
     return results
 
 
@@ -8619,7 +8619,7 @@ def test_jwt_tokens(target, session):
         # Persistent cookies from the session jar (token saved after login).
         for cookie in session.cookies:
             jwt_candidates.update(jwt_regex.findall(cookie.value or ""))
-        # Cuerpo de la respuesta: las SPAs embeben el token en el HTML/JS.
+        # Response body: SPAs embed the token in the HTML/JS.
         jwt_candidates.update(jwt_regex.findall(resp.text or ""))
         # Responses from discovered API endpoints (headers and body).
         for ep in (SCAN_DATA.get("api_endpoints") or [])[:15]:
@@ -8651,21 +8651,21 @@ def test_jwt_tokens(target, session):
 
                 # alg:none activo.
                 if alg in ("NONE", ""):
-                    msg = "JWT con alg:none — firma ignorada completamente"
+                    msg = "JWT with alg:none — signature completely ignored"
                     print_vuln(msg)
                     FINDINGS.append({"name": "JWT alg:none", "detail": msg, "severity": "critical"})
 
                 # Intentar alg:none bypass.
                 elif _jwt_test_alg_none(target, session, jwt):
-                    msg = "JWT alg:none bypass confirmado — el servidor acepta tokens sin firma"
+                    msg = "JWT alg:none bypass confirmed — the server accepts unsigned tokens"
                     print_vuln(msg)
                     FINDINGS.append({"name": "JWT alg:none bypass", "detail": msg, "severity": "critical"})
                 else:
-                    print_info(f"  alg:none bypass: no aceptado (correcto).")
+                    print_info(f"  alg:none bypass: not accepted (correct).")
 
-                # RS256 -> HS256 key confusion (advertencia).
+                # RS256 -> HS256 key confusion (warning).
                 if alg in ("RS256", "RS384", "RS512"):
-                    msg = f"JWT RSA ({alg}): revisar confusion RS256->HS256 con la clave publica del servidor"
+                    msg = f"JWT RSA ({alg}): review RS256->HS256 confusion with the server's public key"
                     print_warning(msg)
                     FINDINGS.append({"name": "JWT RS256->HS256 confusion", "detail": msg, "severity": "high"})
 
@@ -8677,7 +8677,7 @@ def test_jwt_tokens(target, session):
                         print_vuln(msg)
                         FINDINGS.append({"name": "JWT kid path traversal", "detail": msg, "severity": "high"})
                     elif "sql" in kid.lower() or "'" in kid or '"' in kid:
-                        msg = f"JWT kid con posible SQLi: '{kid}'"
+                        msg = f"JWT kid with possible SQLi: '{kid}'"
                         print_warning(msg)
                         FINDINGS.append({"name": "JWT kid SQLi", "detail": msg, "severity": "high"})
 
@@ -8686,17 +8686,17 @@ def test_jwt_tokens(target, session):
                     print_info(f"  Intentando brute force de secreto HMAC ({alg})...")
                     found_secret = _jwt_brute_secret(jwt)
                     if found_secret is not None:
-                        msg = f"JWT secreto HMAC debil encontrado: '{found_secret}'"
+                        msg = f"Weak HMAC JWT secret found: '{found_secret}'"
                         print_vuln(msg)
                         FINDINGS.append({"name": "JWT weak secret", "detail": msg, "severity": "critical"})
                     else:
-                        print_info("  Secret not found in reduced wordlist (revisar manualmente con hashcat).")
+                        print_info("  Secret not found in reduced wordlist (check manually with hashcat).")
 
                 # Fields de privilegio exposeds.
                 sensitive_keys = {"admin", "role", "is_admin", "permission", "privilege", "scope", "group", "groups"}
                 exposed = [k for k in payload_data if k.lower() in sensitive_keys]
                 if exposed:
-                    msg = f"JWT expone campos de privilegio: {exposed} = {[payload_data[k] for k in exposed]}"
+                    msg = f"JWT exposes privilege fields: {exposed} = {[payload_data[k] for k in exposed]}"
                     print_warning(msg)
                     FINDINGS.append({"name": "JWT sensitive fields", "detail": msg, "severity": "medium"})
 
@@ -8706,7 +8706,7 @@ def test_jwt_tokens(target, session):
                     try:
                         r_expired = session.get(target, timeout=DEFAULT_TIMEOUT)
                         if r_expired.status_code not in (401, 403):
-                            msg = "JWT caducado todavia aceptado por el servidor"
+                            msg = "Expired JWT still accepted by the server"
                             print_vuln(msg)
                             FINDINGS.append({"name": "JWT expired accepted", "detail": msg, "severity": "medium"})
                     except Exception:
@@ -8757,7 +8757,7 @@ def test_api_rate_limiting(target, session):
                 return
 
             if 503 in statuses:
-                print_good(f"Posible rate limiting via 503 en {test_url}")
+                print_good(f"Possible rate limiting via 503 on {test_url}")
                 return
 
             # Soft-block: deteccion de retraso progresivo.
@@ -8765,7 +8765,7 @@ def test_api_rate_limiting(target, session):
                 first_avg = sum(times[:5]) / 5
                 last_avg = sum(times[-5:]) / 5
                 if last_avg > first_avg * 2.5:
-                    msg = f"Soft-block posible en {test_url}: latencia media paso de {first_avg:.2f}s a {last_avg:.2f}s"
+                    msg = f"Possible soft-block on {test_url}: average latency went from {first_avg:.2f}s to {last_avg:.2f}s"
                     print_warning(msg)
                     FINDINGS.append({"name": "Rate limiting (soft-block latency)", "detail": msg, "severity": "low"})
                     return
@@ -8779,9 +8779,9 @@ def test_api_rate_limiting(target, session):
                     FINDINGS.append({"name": "Rate limiting (captcha)", "detail": msg, "severity": "info"})
                     return
 
-            # IP ban / bloqueo por 403.
+            # IP ban / blocking via 403.
             if statuses.count(403) >= 5:
-                msg = f"Posible ban por IP en {test_url}: {statuses.count(403)} respuestas 403 consecutivas"
+                msg = f"Possible IP ban on {test_url}: {statuses.count(403)} consecutive 403 responses"
                 print_good(msg)
                 FINDINGS.append({"name": "Rate limiting (IP ban 403)", "detail": msg, "severity": "info"})
                 return
@@ -8796,11 +8796,11 @@ def test_api_rate_limiting(target, session):
             print_error(f"Error en test rate limiting ({test_url}): {e}")
 
 
-# ========== MODULO INTEGRADOR: PRUEBAS AVANZADAS ==========
+# ========== INTEGRATOR MODULE: ADVANCED TESTS ==========
 
 def run_advanced_security_tests(target, session):
     """Orquesta SSRF, SSTI, XXE, CRLF, HTTP Smuggling, Cache Poisoning."""
-    print_phase("PRUEBAS AVANZADAS DE SEGURIDAD")
+    print_phase("ADVANCED SECURITY TESTS")
     adv = {}
 
     # Colaborador OOB opcional.
@@ -8814,7 +8814,7 @@ def run_advanced_security_tests(target, session):
     ssti_hits = []
     ssti_seen = set()
     get_points, post_points, ssti_endpoints = _collect_injection_points(target)
-    # Names de parametro habituales para plantillas (fuzz ligero, 2 sondas).
+    # Common parameter names for templates (light fuzz, 2 probes).
     SSTI_PARAM_NAMES = ["template", "tpl", "render", "preview", "name", "q",
                         "search", "message", "input", "content", "page", "view"]
     light_probes = SSTI_PROBES[:2]
@@ -8851,7 +8851,7 @@ def run_advanced_security_tests(target, session):
 
     SCAN_DATA["advanced_security"] = adv
 
-    # --- Tablas de resultados por modulo ---
+    # --- Results tables per module ---
     sev_color = {
         "critical": Fore.MAGENTA, "high": Fore.RED,
         "medium": Fore.YELLOW, "low": Fore.CYAN, "info": Fore.WHITE,
@@ -9038,7 +9038,7 @@ def run_vhost_fuzzing(target, session):
     else:
         use_ffuf = False
         print_warning("ffuf is not installed. Using internal method.")
-    # Para vhost fuzzing, el cuello de botella es el RTT del servidor (no CPU
+    # For vhost fuzzing, the bottleneck is the server's RTT (not CPU
     # local), so a high default is useful. The user can lower it if
     # el target tiene WAF/rate-limiting.
     default_threads = max(THREADS, 50)
@@ -9069,7 +9069,7 @@ def run_vhost_fuzzing(target, session):
     SCAN_DATA["vhosts"] = hits
 
 def run_directory_fuzzing(target, session):
-    print_phase("FUZZING DE DIRECTORIOS")
+    print_phase("DIRECTORY FUZZING")
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Use default wordlist (raft-small-directories)? [Y/n]:")
     use_default = input("> ").strip().lower()
     wordlist = None
@@ -9163,7 +9163,7 @@ def run_api_tests(target, session):
         safe_execute(test_api_idor, found, session)
         print_info("[6/7] Mass Assignment...")
         safe_execute(test_api_mass_assignment, found, session)
-        print_info("[7/7] Errores verbose + Auth bypass...")
+        print_info("[7/7] Verbose errors + Auth bypass...")
         safe_execute(test_api_verbose_errors, found, session)
         safe_execute(test_api_auth_bypass, found, session)
     else:
@@ -9191,7 +9191,7 @@ def run_user_enum_bruteforce(target, session):
     if want_brute in ('', 'y', 's'):
         passlist = input_path("Password wordlist path (leave empty to use SecLists default): ").strip()
         if not users:
-            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Introduce users separados por comas:")
+            print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Enter users separated by commas:")
             users_input = input("> ").strip()
             if users_input:
                 users = [u.strip() for u in users_input.split(',') if u.strip()]
@@ -9202,7 +9202,7 @@ def run_user_enum_bruteforce(target, session):
             SCAN_DATA["bruteforce_credentials"] = brute_data.get("credentials", [])
 
 def run_spider(target, session):
-    print_phase("SPIDERING / MAPEO COMPLETO DEL SITIO")
+    print_phase("SPIDERING / FULL SITE MAPPING")
     print(f"{Fore.YELLOW}[?]{Style.RESET_ALL} Maximum number of pages to crawl (default 500):")
     max_pages = input("> ").strip()
     if not max_pages:
@@ -9231,7 +9231,7 @@ def run_spider(target, session):
         print_info(f"Unique parameters found: {len(params)}")
     save = input("Save URL list to a file? (y/n): ").strip().lower()
     if save in ('y', 's'):
-        filename = input("Name del file (default: spider_output.txt): ").strip()
+        filename = input("File name (default: spider_output.txt): ").strip()
         if not filename:
             filename = "spider_output.txt"
         with open(filename, 'w') as f:
@@ -9297,7 +9297,7 @@ def print_final_summary(target):
         return text if len(text) <= width else text[: width - 3] + "..."
 
     def _stringify(item):
-        """Convierte un item (str/dict/otro) a una cadena legible."""
+        """Converts an item (str/dict/other) to a readable string."""
         if isinstance(item, str):
             return item
         if isinstance(item, dict):
@@ -9353,7 +9353,7 @@ def print_final_summary(target):
         ["Technologies", _trim(_join_safe(general.get("technologies", [])) or "-", 90)],
         ["Findings (FINDINGS)", str(len(FINDINGS))],
         ["Open ports (nmap)", str(len(nmap_ports))],
-        ["Resultados Targeted NSEs", str(len(nmap_nse))],
+        ["Targeted NSE Results", str(len(nmap_nse))],
         ["Vulnerabilities Nuclei", str(len(nuclei_findings))],
         ["URLs spider", str(spider.get("total_urls", 0))],
         ["Subdominios (vhosts)", str(len(vhosts))],
@@ -9416,7 +9416,7 @@ def print_final_summary(target):
     # 4. HTTP methods + robots
     misc_rows = []
     if http_methods:
-        misc_rows.append(["HTTP Methods permitidos", _trim(_join_safe(http_methods), 90)])
+        misc_rows.append(["HTTP Methods allowed", _trim(_join_safe(http_methods), 90)])
     if robots_paths:
         misc_rows.append([f"Paths de robots.txt/sitemap ({len(robots_paths)})", _trim(_join_safe(robots_paths[:15]), 90)])
     if misc_rows:
@@ -9462,7 +9462,7 @@ def print_final_summary(target):
             headers=["Port", "Service", "Script", "Output"],
             rows=nse_rows,
             alignments=['<', '<', '<', '<'],
-            title=f"Resultados Targeted NSEs {_count_label(len(nmap_nse), len(nse_rows))}:",
+            title=f"Targeted NSE Results {_count_label(len(nmap_nse), len(nse_rows))}:",
         )
 
     # 5. Spider
@@ -9609,7 +9609,7 @@ def print_final_summary(target):
             headers=["Status", "Endpoint", "Content-Type"],
             rows=api_rows,
             alignments=['<', '<', '<'],
-            title=f"Endpoints API descubiertos {_count_label(len(api_endpoints), len(api_rows))}:",
+            title=f"Discovered API Endpoints {_count_label(len(api_endpoints), len(api_rows))}:",
         )
 
     # 8. Users and emails
@@ -9623,13 +9623,13 @@ def print_final_summary(target):
             headers=["Category", "Values"],
             rows=ue_rows,
             alignments=['<', '<'],
-            title="Users and emails descubiertos:",
+            title="Discovered users and emails:",
         )
 
     # 9. Injection
     if injection.get("executed"):
         inj_rows = [
-            ["Forms detecteds", str(injection.get("forms_found", 0))],
+            ["Forms detected", str(injection.get("forms_found", 0))],
             ["Detected GET parameters", str(injection.get("url_params_found", 0))],
             ["Tested GET parameters", str(len(injection.get("tested_get_params", [])))],
             ["Tested form inputs", str(len(injection.get("tested_form_inputs", [])))],
@@ -9656,7 +9656,7 @@ def print_final_summary(target):
             alignments=['<', '>'],
             title="Advanced Tests de Seguridad:",
         )
-        # Details solo si hay findings.
+        # Details only if there are findings.
         for mod, headers_detail, row_fn in [
             ("ssrf", ["Type", "Vector", "Payload/Value", "HTTP"],
              lambda r: [r.get("type","ssrf"), r.get("param") or r.get("header") or "-",
@@ -9775,7 +9775,7 @@ def print_final_summary(target):
         for f in FINDINGS:
             text = _finding_text(f)
             m = re.match(r'^\[([^\]]+)\]', text)
-            cat = m.group(1) if m else "OTROS"
+            cat = m.group(1) if m else "OTHER"
             cats.setdefault(cat, []).append(text)
         cat_rows = []
         for cat in sorted(cats.keys()):
@@ -9794,7 +9794,7 @@ def print_final_summary(target):
                 cat = m.group(1)
                 msg = m.group(2)
             else:
-                cat, msg = "OTROS", text
+                cat, msg = "OTHER", text
             color = Fore.RED if cat.startswith(("VULN", "NUCLEI:CRITICAL", "NUCLEI:HIGH", "CRED", "WP:VULN")) else (
                 Fore.YELLOW if cat.startswith(("NUCLEI:MEDIUM", "DIR", "VHOST", "WP")) else Fore.CYAN
             )
@@ -9842,7 +9842,7 @@ def run_full_pentest(target, session, interactive_ad=True):
     print_good("Full pentest completed.")
     print_final_summary(target)
 
-# ========== MULTI-OBJETIVO ==========
+# ========== MULTI-TARGET ==========
 
 def _read_target_file(path):
     out = []
@@ -10090,7 +10090,7 @@ def run_multi_interactive(targets):
     while True:
         try:
             show_menu(targets=targets)
-            option = input("Select an option (se aplica a TODOS los targets): ").strip()
+            option = input("Select an option (applies to ALL targets): ").strip()
         except (KeyboardInterrupt, EOFError):
             try:
                 print()
@@ -10117,7 +10117,7 @@ def run_multi_interactive(targets):
             elif option in {str(n) for n in range(1, 16)}:
                 for t in targets:
                     _restore_state(states[t])
-                    print_phase(f"OBJETIVO: {t}")
+                    print_phase(f"TARGET: {t}")
                     sess = _dispatch_scan_option(option, t, sessions[t])
                     if sess is not None:
                         sessions[t] = sess
@@ -10133,7 +10133,7 @@ def run_multi_interactive(targets):
                 _exit_multi()
             continue
         except Exception as e:
-            print_error(f"Error inesperado: {e}")
+            print_error(f"Unexpected error: {e}")
 
         try:
             input("\nPress Enter to continue...")
@@ -10336,7 +10336,7 @@ def main():
                 _exit_gracefully()
             continue
         except Exception as e:
-            print_error(f"Error inesperado: {e}")
+            print_error(f"Unexpected error: {e}")
 
         try:
             input("\nPress Enter to continue...")
