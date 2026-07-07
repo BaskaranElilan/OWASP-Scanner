@@ -603,7 +603,7 @@ def run_nmap_scan(target):
         print_error("Could not extract the host from the target.")
         return None
 
-    print_info(f"Ejecutando: nmap -sV {host}")
+    print_info(f"Running: nmap -sV {host}")
     print()
     try:
         # Increased timeout because 600s can fall short on targets with many ports
@@ -934,7 +934,7 @@ def run_nmap_scan(target, session=None):
         print_error("Could not extract the host from the target.")
         return None
 
-    print_info(f"Ejecutando: nmap -sV {host}")
+    print_info(f"Running: nmap -sV {host}")
     print()
     try:
         proc = subprocess.run(
@@ -1031,7 +1031,7 @@ def install_nuclei():
     if resp not in ('y', 's'):
         return False
     try:
-        print_info("Ejecutando: sudo apt-get install -y nuclei")
+        print_info("Running: sudo apt-get install -y nuclei")
         subprocess.run(["sudo", "apt-get", "install", "-y", "nuclei"], check=True)
         if check_nuclei():
             print_good("Nuclei installed successfully.")
@@ -1054,7 +1054,7 @@ def run_nuclei_scan(target, session=None):
         if not nuclei_path:
             return None
 
-    print_info(f"Ejecutando Nuclei sobre {target}...")
+    print_info(f"Running Nuclei against {target}...")
     findings = []
     process = None
     json_path = None
@@ -3479,7 +3479,7 @@ def check_seclists():
         response = input_path(f"Install SecLists automatically? (requires sudo) [y/N]: ").strip().lower()
         if response in ('y', 's'):
             try:
-                print_info("Ejecutando: sudo apt update && sudo apt install seclists -y")
+                print_info("Running: sudo apt update && sudo apt install seclists -y")
                 subprocess.run(["sudo", "apt", "update"], check=True, capture_output=True)
                 subprocess.run(["sudo", "apt", "install", "seclists", "-y"], check=True, capture_output=True)
                 if os.path.exists(SECLISTS_SMALL):
@@ -3874,7 +3874,7 @@ def vhost_bruteforce(target, session, base_domain, wordlist=None, threads=THREAD
                 ffuf_cmd += ["-rate", str(rate)]
             if baseline_size is not None and use_fs_filter:
                 ffuf_cmd += ["-fs", str(baseline_size)]
-            print_info(f"Ejecutando: {' '.join(ffuf_cmd[:11])} ...")
+            print_info(f"Running: {' '.join(ffuf_cmd[:11])} ...")
             print()
             process = None
             try:
@@ -4105,7 +4105,7 @@ def dir_bruteforce(target, session, wordlist=None, threads=THREADS, use_ffuf=Tru
             if baseline_size:
                 # Filter responses with the exact same size as the root page
                 ffuf_cmd += ["-fs", str(baseline_size)]
-            print_info(f"Ejecutando: {' '.join(ffuf_cmd[:7])}")
+            print_info(f"Running: {' '.join(ffuf_cmd[:7])}")
             print()  # blank line before the native ffuf progress bar
 
             results = []
@@ -5394,7 +5394,7 @@ def bruteforce_login(target, session, usernames, passlist, max_threads=5):
                 "http-post-form",
                 hydra_form
             ]
-            print_info(f"Ejecutando hydra: {_format_external_command(hydra_cmd)}")
+            print_info(f"Running hydra: {_format_external_command(hydra_cmd)}")
             seen_creds = set()
             try:
                 process = subprocess.Popen(hydra_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
@@ -7241,7 +7241,7 @@ def _format_ad_command(cmd, secrets=None):
 
 def _run_ad_command(cmd, label, timeout=300, secrets=None):
     visible = _format_ad_command(cmd, secrets=secrets)
-    print_info(f"Ejecutando {label}: {visible}")
+    print_info(f"Running {label}: {visible}")
     started = time.time()
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
